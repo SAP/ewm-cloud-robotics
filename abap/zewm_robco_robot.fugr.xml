@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_FUGR" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <AREAT>EWM RobCo integration FM for ressources</AREAT>
+   <INCLUDES>
+    <SOBJ_NAME>LZEWM_ROBCO_ROBOTTOP</SOBJ_NAME>
+    <SOBJ_NAME>SAPLZEWM_ROBCO_ROBOT</SOBJ_NAME>
+   </INCLUDES>
+   <FUNCTIONS>
+    <item>
+     <FUNCNAME>ZEWM_ROBOT_RSRC_SET_STAT</FUNCNAME>
+     <SHORT_TEXT>Set Status of Resource</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <TYP>/SCWM/DE_RSRC</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_EXCCODE</PARAMETER>
+       <TYP>/SCWM/DE_EXCCODE</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_SET_BY</PARAMETER>
+       <TYP>/SCWM/DE_MFS_SET_BY</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_CHANGED_BY</PARAMETER>
+       <OPTIONAL>X</OPTIONAL>
+       <TYP>/SCWM/DE_CHANGED_BY</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IS_TELETOTAL</PARAMETER>
+       <OPTIONAL>X</OPTIONAL>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/S_MFS_TELETOTAL</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>/SCWM/CX_MFS</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Lagernummer/Lagerkomplex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Ressource (Transportmittel oder Benutzer)</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_EXCCODE</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Ausnahme-Code</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_SET_BY</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Objekt, welches den Ausnahme Code setzt</STEXT>
+       <INDEX> 004</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_CHANGED_BY</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Geändert von</STEXT>
+       <INDEX> 005</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IS_TELETOTAL</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Mappingstruktur für Standard Aktion</STEXT>
+       <INDEX> 006</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>/SCWM/CX_MFS</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>MFS allgemeine Fehlerklasse</STEXT>
+       <INDEX> 007</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+     <EXCEPTION_CLASSES>X</EXCEPTION_CLASSES>
+    </item>
+   </FUNCTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

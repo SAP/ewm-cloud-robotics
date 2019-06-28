@@ -1,0 +1,30 @@
+{
+  "apiVersion": "sap.com/v1",
+  "kind": "WarehouseOrder",
+  "metadata": {
+    "name": "1710.12345678",
+    "labels": {
+      "cloudrobotics.com/robot-name": "my-robot"
+    }
+  },
+  "spec": {
+    "data": {
+      "lgnum": "1710",
+      "who": "12345678",
+      "status": "",
+      "areawho": "",
+      "lgtyp": "",
+      "lgpla": "",
+      "queue": "",
+      "rsrc": "",
+      "lsd": 0,
+      "topwhoid": "",
+      "refwhoid": "",
+      "flgwho": false,
+      "flgto": false,
+      "warehousetasks" : []},
+    "process_status": [],
+    "order_status": "RUNNING" 
+  },
+  "status": {}
+}

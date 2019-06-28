@@ -1,0 +1,12 @@
+{
+  "apiVersion": "registry.cloudrobotics.com/v1alpha1",
+  "kind": "RobotType",
+  "metadata": {
+    "name": "freight100"
+  },
+  "spec": {
+    "make": "fetch",
+    "model": "freight100"
+  },
+  "status": {}
+}

@@ -1,0 +1,296 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_CLAS" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <VSEOCLASS>
+    <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+    <LANGU>E</LANGU>
+    <DESCRIPT>Data Provider Secondary Class</DESCRIPT>
+    <STATE>1</STATE>
+    <CLSCCINCL>X</CLSCCINCL>
+    <FIXPT>X</FIXPT>
+    <UNICODE>X</UNICODE>
+   </VSEOCLASS>
+   <TPOOL>
+    <item>
+     <ID>I</ID>
+     <KEY>001</KEY>
+     <ENTRY>Robot resource not found.</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>002</KEY>
+     <ENTRY>No Warehouse Order found.</ENTRY>
+     <LENGTH>50</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>003</KEY>
+     <ENTRY>Internal error.</ENTRY>
+     <LENGTH>25</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>004</KEY>
+     <ENTRY>Robot ressource status could not be set.</ENTRY>
+     <LENGTH>80</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>005</KEY>
+     <ENTRY>No ressource type provided.</ENTRY>
+     <LENGTH>54</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>006</KEY>
+     <ENTRY>No ressource group provided.</ENTRY>
+     <LENGTH>56</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>007</KEY>
+     <ENTRY>Ressource already existing.</ENTRY>
+     <LENGTH>54</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>008</KEY>
+     <ENTRY>Ressource type is not robot ressource type.</ENTRY>
+     <LENGTH>84</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>009</KEY>
+     <ENTRY>Database update failed.</ENTRY>
+     <LENGTH>46</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>010</KEY>
+     <ENTRY>Warehouse Order is locked.</ENTRY>
+     <LENGTH>84</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>011</KEY>
+     <ENTRY>Warehouse Order is already assigned.</ENTRY>
+     <LENGTH>64</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>012</KEY>
+     <ENTRY>Warehouse Task is already assigned.</ENTRY>
+     <LENGTH>64</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>013</KEY>
+     <ENTRY>Resource Group not existing.</ENTRY>
+     <LENGTH>56</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>014</KEY>
+     <ENTRY>Error creating Pick HU for Robot Resource.</ENTRY>
+     <LENGTH>84</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>015</KEY>
+     <ENTRY>Queue is not existing.</ENTRY>
+     <LENGTH>44</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>016</KEY>
+     <ENTRY>URL parameters and POST body inconsistent.</ENTRY>
+     <LENGTH>100</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>017</KEY>
+     <ENTRY>Warehouse Task could not be confirmed.</ENTRY>
+     <LENGTH>76</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>018</KEY>
+     <ENTRY>Robot has already a Warehouse Order assigned.</ENTRY>
+     <LENGTH>74</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>019</KEY>
+     <ENTRY>Warehouse Order is in process.</ENTRY>
+     <LENGTH>60</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>020</KEY>
+     <ENTRY>Warehouse Order was not unassigned.</ENTRY>
+     <LENGTH>70</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>021</KEY>
+     <ENTRY>No Error Queue found.</ENTRY>
+     <LENGTH>42</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>022</KEY>
+     <ENTRY>Queue not changed.</ENTRY>
+     <LENGTH>28</LENGTH>
+    </item>
+    <item>
+     <ID>I</ID>
+     <KEY>023</KEY>
+     <ENTRY>Warehouse Task is confirmed already.</ENTRY>
+     <LENGTH>80</LENGTH>
+    </item>
+   </TPOOL>
+   <DESCRIPTIONS>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_DUF</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: Database update failed</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_ECP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Error creating Pick HU for Robot Resource</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_IE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: Internal error</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_NEQ</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: No Error Queue found.</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_NOF</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: No Order found</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_NRG</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: No resource group</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_NRT</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: No resource type</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_QNC</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Queue not changed.</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_QNE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Queue is not existing</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_RAE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: Resource already existing</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_RHO</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Robot has already a Warehouse Order assigned</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_RNE</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Resource Group not existing</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_RNF</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: Robot not found</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_RNR</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: Resource type is not a robot type</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_RSN</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error code: Robot status not set</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_UBI</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: HTTP URL parameters and HTTP body inconsistent</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WAC</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Task is confirmed already.</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WIP</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Order is in process</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WNC</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Task could not be confirmed</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WNU</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Order was not unassigned</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WOA</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Order already assigned</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WOL</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Order locked</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WTA</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Task already assigned</DESCRIPT>
+    </SEOCOMPOTX>
+   </DESCRIPTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

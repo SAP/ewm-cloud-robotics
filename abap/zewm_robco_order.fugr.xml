@@ -1,0 +1,403 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_FUGR" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <AREAT>EWM RobCo integration FM for orders</AREAT>
+   <INCLUDES>
+    <SOBJ_NAME>LZEWM_ROBCO_ORDERTOP</SOBJ_NAME>
+    <SOBJ_NAME>SAPLZEWM_ROBCO_ORDER</SOBJ_NAME>
+   </INCLUDES>
+   <FUNCTIONS>
+    <item>
+     <FUNCNAME>ZASSIGN_WHO_TO_RSRC</FUNCNAME>
+     <SHORT_TEXT>Assign Warehouse Orders to Ressource</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IT_WHOID</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WHOID</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_SET_IP_ONLY</PARAMETER>
+       <DEFAULT>ABAP_FALSE</DEFAULT>
+       <OPTIONAL>X</OPTIONAL>
+       <REFERENCE>X</REFERENCE>
+       <TYP>XFELD</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>ET_WHO</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WHO</TYP>
+      </RSEXP>
+     </EXPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>WHO_LOCKED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHT_ASSIGNED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_ASSIGNED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>NO_OPERATING_ENV</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>RSRC_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_STATUS_NOT_SET</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource (Means of Transportation or User)</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IT_WHOID</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Table of Warehouse Order Numbers</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_SET_IP_ONLY</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Set orders to status in process without ressource assignment</STEXT>
+       <INDEX> 004</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ET_WHO</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Order</STEXT>
+       <INDEX> 005</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_LOCKED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order is locked</STEXT>
+       <INDEX> 006</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHT_ASSIGNED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Tasks already assigned</STEXT>
+       <INDEX> 007</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_ASSIGNED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order already assigned</STEXT>
+       <INDEX> 008</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>NO_OPERATING_ENV</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Unable to get Operation Environment</STEXT>
+       <INDEX> 009</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>RSRC_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Ressource not found</STEXT>
+       <INDEX> 010</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_STATUS_NOT_SET</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order Status could not be set</STEXT>
+       <INDEX> 011</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
+     <FUNCNAME>ZGET_ASSIGNED_ROBOT_WHO</FUNCNAME>
+     <SHORT_TEXT>Get Warehouse Orders which are assigned to the Ressource</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WO_RSRC_TY</TYP>
+      </RSEXP>
+     </EXPORT>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource (Means of Transportation or User)</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Optional Resource Types for Warehouse Order Execution</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
+     <FUNCNAME>ZGET_UNASSIGNED_WHO_FOR_RG</FUNCNAME>
+     <SHORT_TEXT>Get Warehouse Orders for Resource Type which are not assigned yet</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC_TYPE</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC_TYPE</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC_GROUP</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC_GRP</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WO_RSRC_TY</TYP>
+      </RSEXP>
+     </EXPORT>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC_TYPE</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource Type</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC_GROUP</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource Group</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Optional Resource Types for Warehouse Order Execution</STEXT>
+       <INDEX> 004</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
+     <FUNCNAME>ZMOVE_WHO_TO_ERROR_QUEUE</FUNCNAME>
+     <SHORT_TEXT>Change queue of a warehouse order</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IS_RSRC</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/RSRC</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_WHO</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_WHO</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>EV_QUEUE</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/RSRC-QUEUE</TYP>
+      </RSEXP>
+     </EXPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>ROBOT_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_LOCKED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>NO_ERROR_QUEUE</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>QUEUE_NOT_CHANGED</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IS_RSRC</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resources</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_WHO</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Order Number</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>EV_QUEUE</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Queue</STEXT>
+       <INDEX> 004</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Robot ressource was not found</STEXT>
+       <INDEX> 005</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order was not found</STEXT>
+       <INDEX> 006</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_LOCKED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order is locked</STEXT>
+       <INDEX> 007</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>NO_ERROR_QUEUE</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>No error queue for robot type defined</STEXT>
+       <INDEX> 008</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>QUEUE_NOT_CHANGED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Queue could not be changed</STEXT>
+       <INDEX> 009</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
+     <FUNCNAME>ZUNASSIGN_WHO_FROM_RSRC</FUNCNAME>
+     <SHORT_TEXT>Unassign Warehouse Orders from Ressource</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IT_WHOID</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WHOID</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>WHO_LOCKED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_IN_PROCESS</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_NOT_UNASSIGNED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IT_WHOID</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Table of Warehouse Order Numbers</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_LOCKED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order is locked</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_IN_PROCESS</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order in process by resource</STEXT>
+       <INDEX> 004</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_NOT_UNASSIGNED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order could not be unassigned</STEXT>
+       <INDEX> 005</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order was not found</STEXT>
+       <INDEX> 006</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+   </FUNCTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>

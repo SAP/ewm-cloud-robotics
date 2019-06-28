@@ -1,0 +1,18 @@
+{
+  "apiVersion": "sap.com/v1",
+  "kind": "RobotRequest",
+  "metadata": {
+    "labels": {
+      "cloudrobotics.com/robot-name": "my-robot"
+    },
+    "name": "my-robot",
+    "namespace": "default"
+  },
+  "spec": {
+    "lgnum": "1710",
+    "rsrc": "MY_ROBOT",
+    "requestwork": false,
+    "requestnewwho": false
+  },
+  "status": {}
+}

@@ -1,0 +1,66 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<abapGit version="v1.0.0" serializer="LCL_OBJECT_FUGR" serializer_version="v1.0.0">
+ <asx:abap xmlns:asx="http://www.sap.com/abapxml" version="1.0">
+  <asx:values>
+   <AREAT>EWM RobCo alerting FM</AREAT>
+   <INCLUDES>
+    <SOBJ_NAME>LZEWM_ROBCO_ALERTSTOP</SOBJ_NAME>
+    <SOBJ_NAME>SAPLZEWM_ROBCO_ALERTS</SOBJ_NAME>
+   </INCLUDES>
+   <FUNCTIONS>
+    <item>
+     <FUNCNAME>ZWHT_ROBOT_CONF_ERROR_ALERT</FUNCNAME>
+     <SHORT_TEXT>Send alert on robot error when working on warehouse task</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_TANUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TANUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_FINAL_CONF</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>ABAP_BOOL</TYP>
+      </RSIMP>
+     </IMPORT>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+       <INDEX> 001</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_TANUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Task</STEXT>
+       <INDEX> 002</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource (Means of Transportation or User)</STEXT>
+       <INDEX> 003</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_FINAL_CONF</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Checkbox</STEXT>
+       <INDEX> 004</INDEX>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+   </FUNCTIONS>
+  </asx:values>
+ </asx:abap>
+</abapGit>
