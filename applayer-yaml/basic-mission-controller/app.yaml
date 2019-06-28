@@ -1,0 +1,15 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: App
+metadata:
+  name: basic-mission-controller-$APP_VERSION # $APP_VERSION is substituted with desired version (default 'dev') via sed during push in `deploy.sh` script
+spec:
+  components:
+    cloud:
+      inline: $INLINE_CLOUD_CHART # substituted with base64 encoded helm package via sed during push in `deploy.sh` script
+    # robot:
+    #   inline: $INLINE_ROBOT_CHART # substituted with base64 encoded helm package via sed during push in `deploy.sh` script
+---

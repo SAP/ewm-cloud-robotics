@@ -1,0 +1,71 @@
+[
+    {
+        "Lgnum": "0001",
+        "WarehouseDescriptions": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/WarehouseDescriptions"
+            }
+        },
+        "WarehouseOrders": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/WarehouseOrders"
+            }
+        },
+        "StorageBins": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/StorageBins"
+            }
+        },
+        "Robots": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/Robots"
+            }
+        }
+    },
+    {
+        "Lgnum": "1010",
+        "WarehouseDescriptions": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/WarehouseDescriptions"
+            }
+        },
+        "WarehouseOrders": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/WarehouseOrders"
+            }
+        },
+        "StorageBins": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/StorageBins"
+            }
+        },
+        "Robots": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/Robots"
+            }
+        }
+    },
+    {
+        "Lgnum": "1710",
+        "WarehouseDescriptions": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/WarehouseDescriptions"
+            }
+        },
+        "WarehouseOrders": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/WarehouseOrders"
+            }
+        },
+        "StorageBins": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/StorageBins"
+            }
+        },
+        "Robots": {
+            "__deferred": {
+                "uri": "https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/Robots"
+            }
+        }
+    }
+]

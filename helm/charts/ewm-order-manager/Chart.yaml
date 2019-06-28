@@ -1,0 +1,4 @@
+apiVersion: v1
+description: SAP EWM Warehouseorder Manager Extension for Robco Platform
+name: ewm-order-manager
+version: 0.0.1

@@ -1,0 +1,49 @@
+{
+    "name": "odata-mocker",
+    "version": "1.0.0",
+    "description": "Containerized OData Mocker",
+    "scripts": {
+        "start": "concurrently --no-color --kill-others \"node ui5server.js\" \"node exposedserver.js\" \"node dummyclient.js\"  || true",
+        "dev": "concurrently --no-color --kill-others \"nodemon ui5server.js\" \"nodemon exposedserver.js\" \"nodemon dummyclient.js\" || true",
+        "ui-dev": "concurrently --no-color --kill-others \"nodemon ui5server.js\" \"nodemon exposedserver.js\" || true",
+        "testrun": "concurrently --no-color --kill-others \"node ui5server\" \"node exposedserver.js\" \"node dummyclient.js\" \"sleepms 5000 && node odataconsumer.js\"",
+        "build": "rimraf dist && ui5 build self-contained -a",
+        "test": "mocha --timeout 30000"
+    },
+    "author": "d061612",
+    "license": "ISC",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/SAP/ewm-cloud-robotics"
+    },
+    "dependencies": {
+        "@openui5/sap.m": ">=1",
+        "@openui5/sap.ui.core": ">=1",
+        "@openui5/sap.ui.layout": ">=1",
+        "@openui5/sap.ui.support": ">=1",
+        "@openui5/themelib_sap_belize": ">=1",
+        "body-parser": ">=1.18.3",
+        "child-process-promise": ">=2.2.1",
+        "chrome-launcher": ">=0.10.5",
+        "chrome-remote-interface": ">=0.26.1",
+        "compression": ">=1.7.2",
+        "express": ">=4.16.2",
+        "request": "",
+        "express-basic-auth": ">=1.1.7",
+        "path": ">=0.12.7",
+        "uuid": ">=3.3.2",
+        "winston": ">=3.1.0",
+        "ws": ">=6.1.0"
+    },
+    "devDependencies": {
+        "clean-css": ">=4.1.11",
+        "js-yaml": ">=3.13.1",
+        "event-stream": ">=4.0.0",
+        "@ui5/cli": ">=0.2.1",
+        "concurrently": ">=3.5.0",
+        "mocha": ">=5.2.0",
+        "nodemon": "",
+        "rimraf": ">=2.6.2",
+        "sleep-ms": "2.0.1"
+    }
+}

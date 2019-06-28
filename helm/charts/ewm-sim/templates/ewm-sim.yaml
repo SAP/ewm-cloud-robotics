@@ -1,0 +1,76 @@
+# Simulated EWM OData API server that produces a never ending stream of warehouse orders/tasks
+
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: ewm-sim
+spec:
+  replicas: {{ .Values.ewmsim.replicaCount }}
+  selector:
+    matchLabels:
+      app: ewm-sim
+  template:
+    metadata:
+      labels:
+        app: ewm-sim
+    spec:
+      containers:
+      - name: ewm-sim
+        image: {{ .Values.ewmsim.image.repository }}{{ if .Values.ewmsim.image.tag }}:{{ .Values.ewmsim.image.tag }}{{ end }}
+        ports:
+        - containerPort: 8080
+          name: odata-api
+        - containerPort: 8000
+          name: odata-api-tls
+        env:
+        - name: ODATA_USER
+          value: {{ .Values.ewmsim.envs.ewm.user }} 
+        - name: ODATA_PASSWORD
+          value: {{ .Values.ewmsim.envs.ewm.password }} 
+        - name: ODATA_BASEPATH
+          value: {{ .Values.ewmsim.envs.ewm.basepath }} 
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8080
+          periodSeconds: 1
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 10
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8080
+          periodSeconds: 1
+          timeoutSeconds: 1
+          successThreshold: 1
+          failureThreshold: 10
+        volumeMounts:
+        - name: cert
+          mountPath: /app/cert
+      volumes:
+      - name: cert
+        configMap:
+          name: ewm-sim-cert
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: ewm-sim
+  labels:
+    app: ewm-sim
+spec:
+  selector:
+    app: ewm-sim
+  ports:
+  - protocol: TCP
+    name: http
+    port: 8080
+    targetPort: odata-api
+  - protocol: TCP
+    name: https
+    port: 8000
+    targetPort: odata-api-tls
+  type: ClusterIP
+---

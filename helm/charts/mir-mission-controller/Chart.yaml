@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Mission controller for MiR robots
+name: mir-mission-controller
+version: 0.0.1

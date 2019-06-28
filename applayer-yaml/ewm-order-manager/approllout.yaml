@@ -1,0 +1,27 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-order-manager
+  labels:
+    app: ewm-order-manager
+spec:
+  appName: ewm-order-manager-$APP_VERSION
+  cloud: 
+    values:
+      image:
+        repository: "ewmcloudrobotics/order-manager"
+        image.tag: "latest"
+      envs:
+        ewmhost: "" # Host for the OData API endpoint
+        ewmuser: "" # Technical user for all warehouseorder related API calls
+        ewmpassword: "" # Matching password
+        ewmlgnum: "" # Warehouse specification within EWM
+        ewmbasepath: "" # Basepath for the OData API matching the service definition
+        ewmrsrctype: "" # Resource type within EWM
+        ewmrsrcgrp: "" # Resource group within EWM
+---

@@ -1,0 +1,27 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: basic-mission-controller
+  labels:
+    app: basic-mission-controller
+spec:
+  appName: basic-mission-controller-$APP_VERSION
+  cloud: 
+    values:
+      image:
+        repository: "ewmcloudrobotics/basic-mission-controller"
+        image.tag: "latest"
+  # robots:
+  # - selector:
+  #     any: true
+  #   values:
+  #     image:
+  #       repository: ""
+  #       tag: "latest"
+---
+      

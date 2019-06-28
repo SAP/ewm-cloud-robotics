@@ -1,0 +1,13 @@
+replicaCount: 1
+image:
+  repository: "ewmcloudrobotics/mir-mission-controller"
+  tag: "latest"
+
+envs:
+  plctrolley: 5
+  miruser: "admin"
+  mirpassword: ""
+  mirhost: "mir-api.default.svc.cluster.local"
+
+robot:
+  name: ""

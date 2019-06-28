@@ -1,0 +1,64 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  # annotation has to be provided in order to enable cr-syncer to cloud
+  annotations:
+    cr-syncer.cloudrobotics.com/spec-source: robot
+    cr-syncer.cloudrobotics.com/filter-by-robot-name: "True"
+  # name must match the spec fields below, and be in the form: <plural>.<group>
+  name: robotrequests.sap.com
+spec:
+  # list of versions supported by this CustomResourceDefinition
+  group: sap.com
+  # list of versions supported by this CustomResourceDefinition
+  version: v1
+  versions:
+    - name: v1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: true
+  # either Namespaced or Cluster
+  scope: Namespaced
+  # subresources:
+  #   status: {}
+  names:
+    # plural name to be used in the URL: /apis/<group>/<version>/<plural>
+    plural: robotrequests
+    # singular name to be used as an alias on the CLI and for display
+    singular: robotrequest
+    # kind is normally the CamelCased singular type. Your resource manifests use this.
+    kind: RobotRequest
+    # shortNames allow shorter string to match your resource on the CLI
+    shortNames:
+    - robreq
+  validation:
+    openAPIV3Schema:
+      properties:
+        # status: {}
+        spec:
+          required:
+            - lgnum
+            - rsrc
+            - requestwork
+            - requestnewwho
+          properties:
+            lgnum:
+              type: string
+            rsrc:
+              type: string
+            requestwork:
+              type: boolean
+            requestnewwho:
+              type: boolean
+  additionalPrinterColumns:
+  - JSONPath: .status.status
+    name: Status
+    type: string
+  - JSONPath: .metadata.creationTimestamp
+    description: |-
+      CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+
+      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+    name: Age
+    type: date

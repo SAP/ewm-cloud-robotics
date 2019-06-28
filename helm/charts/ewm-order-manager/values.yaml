@@ -1,0 +1,22 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/order-manager"
+  tag: "latest"
+
+envs:
+  project: ""
+  ewmuser: ""
+  ewmhost: ""
+  ewmauth: "Basic"
+  ewmpassword: ""
+  ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmlgnum: "1710"
+  ewmrsrctype: "RB01"
+  ewmrsrcgrp: "RB02"
+
+robot:
+  name: ""
+
+ewmcrds:
+  enabled: true

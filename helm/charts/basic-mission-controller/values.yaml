@@ -1,0 +1,11 @@
+replicaCount: 1
+image:
+  repository: "ewmcloudrobotics/basic-mission-controller"
+  tag: "latest"
+
+robot:
+  name: "dummy"
+  type: "dummy-robot"
+  role: "EWM dummy robot"
+  make: "dummyMake"
+  model: "dummyModel"

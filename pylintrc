@@ -1,0 +1,30 @@
+[MASTER]
+reports=no
+
+max-line-length=99
+
+disable=
+  abstract-class-little-used,
+  abstract-class-not-used,
+  abstract-method,
+  cyclic-import,
+  duplicate-code,
+  global-statement,
+  inconsistent-return-statements,
+  locally-disabled,
+  not-context-manager,
+  redefined-variable-type,
+  too-few-public-methods,
+  too-many-arguments,
+  too-many-branches,
+  too-many-instance-attributes,
+  too-many-lines,
+  too-many-locals,
+  too-many-public-methods,
+  too-many-return-statements,
+  too-many-statements,
+  unused-argument,
+  no-else-return
+
+[EXCEPTIONS]
+overgeneral-exceptions=Exception

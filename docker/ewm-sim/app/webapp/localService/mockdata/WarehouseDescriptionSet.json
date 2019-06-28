@@ -1,0 +1,502 @@
+[
+    {
+        "Spras": "HI",
+        "Lgnum": "1710",
+        "Lnumt": "वेयरहाउस क्रॉस उद्योग"
+    },
+    {
+        "Spras": "ZH",
+        "Lgnum": "1710",
+        "Lnumt": "跨行业仓库"
+    },
+    {
+        "Spras": "TH",
+        "Lgnum": "1710",
+        "Lnumt": "คลังสินค้า - ธุรกิจทั่วไป"
+    },
+    {
+        "Spras": "KO",
+        "Lgnum": "1710",
+        "Lnumt": "산업 전반 창고"
+    },
+    {
+        "Spras": "RO",
+        "Lgnum": "1710",
+        "Lnumt": "Depozit între sectoare industriale"
+    },
+    {
+        "Spras": "SL",
+        "Lgnum": "1710",
+        "Lnumt": "Skladišče za vse panoge"
+    },
+    {
+        "Spras": "HR",
+        "Lgnum": "1710",
+        "Lnumt": "Skladište za sve industrijske grane"
+    },
+    {
+        "Spras": "UK",
+        "Lgnum": "1710",
+        "Lnumt": "Міжгалузевий склад"
+    },
+    {
+        "Spras": "ET",
+        "Lgnum": "1710",
+        "Lnumt": "Ladu: valdkondadeülene"
+    },
+    {
+        "Spras": "AR",
+        "Lgnum": "1710",
+        "Lnumt": "مستودع لكل الصناعات"
+    },
+    {
+        "Spras": "HE",
+        "Lgnum": "1710",
+        "Lnumt": "מחסן בין תעשיות"
+    },
+    {
+        "Spras": "CS",
+        "Lgnum": "1710",
+        "Lnumt": "Sklad nad rámec odvětví"
+    },
+    {
+        "Spras": "DE",
+        "Lgnum": "1710",
+        "Lnumt": "Branchenübergreifendes Lager"
+    },
+    {
+        "Spras": "FR",
+        "Lgnum": "1710",
+        "Lnumt": "Magasin inter-secteurs"
+    },
+    {
+        "Spras": "EL",
+        "Lgnum": "1710",
+        "Lnumt": "Πολλοί Κλάδοι Αποθήκης"
+    },
+    {
+        "Spras": "HU",
+        "Lgnum": "1710",
+        "Lnumt": "Ágazatokat átfogó raktár"
+    },
+    {
+        "Spras": "IT",
+        "Lgnum": "1710",
+        "Lnumt": "Magazzino valido per tutti i settori"
+    },
+    {
+        "Spras": "JA",
+        "Lgnum": "1710",
+        "Lnumt": "倉庫全業種共通"
+    },
+    {
+        "Spras": "DA",
+        "Lgnum": "1710",
+        "Lnumt": "Brancheovergribende lager"
+    },
+    {
+        "Spras": "KK",
+        "Lgnum": "1710",
+        "Lnumt": "Қойма: бірнеше сала"
+    },
+    {
+        "Spras": "PL",
+        "Lgnum": "1710",
+        "Lnumt": "Magazyn dla wszystkich branż"
+    },
+    {
+        "Spras": "ZF",
+        "Lgnum": "1710",
+        "Lnumt": "倉庫跨產業"
+    },
+    {
+        "Spras": "NL",
+        "Lgnum": "1710",
+        "Lnumt": "Brancheoverkoepelend magazijn"
+    },
+    {
+        "Spras": "NO",
+        "Lgnum": "1710",
+        "Lnumt": "Bransjeuavhengig lager"
+    },
+    {
+        "Spras": "PT",
+        "Lgnum": "1710",
+        "Lnumt": "Depósito válido para todos os setores"
+    },
+    {
+        "Spras": "SK",
+        "Lgnum": "1710",
+        "Lnumt": "Sklad - globálne odvetvia"
+    },
+    {
+        "Spras": "ZH",
+        "Lgnum": "0001",
+        "Lnumt": "中央仓库"
+    },
+    {
+        "Spras": "TH",
+        "Lgnum": "0001",
+        "Lnumt": "คลังสินค้ากลาง"
+    },
+    {
+        "Spras": "KO",
+        "Lgnum": "0001",
+        "Lnumt": "중앙 창고"
+    },
+    {
+        "Spras": "RO",
+        "Lgnum": "0001",
+        "Lnumt": "Depozit central"
+    },
+    {
+        "Spras": "HR",
+        "Lgnum": "0001",
+        "Lnumt": "Središnje skladište"
+    },
+    {
+        "Spras": "AR",
+        "Lgnum": "0001",
+        "Lnumt": "مستودع مركزي"
+    },
+    {
+        "Spras": "HE",
+        "Lgnum": "0001",
+        "Lnumt": "מחסן מרכזי"
+    },
+    {
+        "Spras": "CS",
+        "Lgnum": "0001",
+        "Lnumt": "Centrální sklad"
+    },
+    {
+        "Spras": "DE",
+        "Lgnum": "0001",
+        "Lnumt": "Zentrallager"
+    },
+    {
+        "Spras": "EN",
+        "Lgnum": "0001",
+        "Lnumt": "Central Warehouse"
+    },
+    {
+        "Spras": "FR",
+        "Lgnum": "0001",
+        "Lnumt": "Magasin central"
+    },
+    {
+        "Spras": "EL",
+        "Lgnum": "0001",
+        "Lnumt": "Κεντρική Αποθήκη"
+    },
+    {
+        "Spras": "HU",
+        "Lgnum": "0001",
+        "Lnumt": "Központi raktár"
+    },
+    {
+        "Spras": "IT",
+        "Lgnum": "0001",
+        "Lnumt": "Magazzino centrale"
+    },
+    {
+        "Spras": "JA",
+        "Lgnum": "0001",
+        "Lnumt": "中央倉庫"
+    },
+    {
+        "Spras": "DA",
+        "Lgnum": "0001",
+        "Lnumt": "Centrallager"
+    },
+    {
+        "Spras": "PL",
+        "Lgnum": "0001",
+        "Lnumt": "Magazyn centralny"
+    },
+    {
+        "Spras": "ZF",
+        "Lgnum": "0001",
+        "Lnumt": "中央倉庫"
+    },
+    {
+        "Spras": "NL",
+        "Lgnum": "0001",
+        "Lnumt": "Centr.magaz."
+    },
+    {
+        "Spras": "NO",
+        "Lgnum": "0001",
+        "Lnumt": "Hovedlager"
+    },
+    {
+        "Spras": "PT",
+        "Lgnum": "0001",
+        "Lnumt": "Depósito central"
+    },
+    {
+        "Spras": "RU",
+        "Lgnum": "0001",
+        "Lnumt": "Центральный склад"
+    },
+    {
+        "Spras": "ES",
+        "Lgnum": "0001",
+        "Lnumt": "Almacén central"
+    },
+    {
+        "Spras": "TR",
+        "Lgnum": "0001",
+        "Lnumt": "Merkezi depo"
+    },
+    {
+        "Spras": "FI",
+        "Lgnum": "0001",
+        "Lnumt": "Keskusvarasto"
+    },
+    {
+        "Spras": "SV",
+        "Lgnum": "0001",
+        "Lnumt": "Centrallager"
+    },
+    {
+        "Spras": "RU",
+        "Lgnum": "1710",
+        "Lnumt": "Склад для нескольких отраслей"
+    },
+    {
+        "Spras": "ES",
+        "Lgnum": "1710",
+        "Lnumt": "Almacén entre sectores industriales"
+    },
+    {
+        "Spras": "TR",
+        "Lgnum": "1710",
+        "Lnumt": "Sektörler arası depo"
+    },
+    {
+        "Spras": "FI",
+        "Lgnum": "1710",
+        "Lnumt": "Toimialoille yhteinen varasto"
+    },
+    {
+        "Spras": "SV",
+        "Lgnum": "1710",
+        "Lnumt": "Branschövergripande lager"
+    },
+    {
+        "Spras": "BG",
+        "Lgnum": "1710",
+        "Lnumt": "Склад за всички промишлености"
+    },
+    {
+        "Spras": "LT",
+        "Lgnum": "1710",
+        "Lnumt": "Sandėlis (tarp pramonės šakų)"
+    },
+    {
+        "Spras": "LV",
+        "Lgnum": "1710",
+        "Lnumt": "Starpnozaru noliktava"
+    },
+    {
+        "Spras": "CA",
+        "Lgnum": "1710",
+        "Lnumt": "Magatzem vàlid p.tots els sectors"
+    },
+    {
+        "Spras": "SH",
+        "Lgnum": "1710",
+        "Lnumt": "Skladište za sve industrijske grane"
+    },
+    {
+        "Spras": "VI",
+        "Lgnum": "1710",
+        "Lnumt": "Kho theo ngành chéo"
+    },
+    {
+        "Spras": "EN",
+        "Lgnum": "1710",
+        "Lnumt": "Warehouse Cross Industries"
+    },
+    {
+        "Spras": "HI",
+        "Lgnum": "1010",
+        "Lnumt": "वेयरहाउस क्रॉस उद्योगों"
+    },
+    {
+        "Spras": "ZH",
+        "Lgnum": "1010",
+        "Lnumt": "跨行业仓库"
+    },
+    {
+        "Spras": "TH",
+        "Lgnum": "1010",
+        "Lnumt": "คลังสินค้า - ธุรกิจทั่วไป"
+    },
+    {
+        "Spras": "KO",
+        "Lgnum": "1010",
+        "Lnumt": "창고 관련 산업"
+    },
+    {
+        "Spras": "RO",
+        "Lgnum": "1010",
+        "Lnumt": "Depozit între sectoare industriale"
+    },
+    {
+        "Spras": "SL",
+        "Lgnum": "1010",
+        "Lnumt": "Skladišče za vse panoge"
+    },
+    {
+        "Spras": "HR",
+        "Lgnum": "1010",
+        "Lnumt": "Skladište za sve industrijske grane"
+    },
+    {
+        "Spras": "UK",
+        "Lgnum": "1010",
+        "Lnumt": "Міжгалузевий склад"
+    },
+    {
+        "Spras": "ET",
+        "Lgnum": "1010",
+        "Lnumt": "Ladu: valdkondadeülene"
+    },
+    {
+        "Spras": "AR",
+        "Lgnum": "1010",
+        "Lnumt": "مستودع لكل الصناعات"
+    },
+    {
+        "Spras": "HE",
+        "Lgnum": "1010",
+        "Lnumt": "מחסן בין תעשיות"
+    },
+    {
+        "Spras": "CS",
+        "Lgnum": "1010",
+        "Lnumt": "Sklad nad rámec odvětví"
+    },
+    {
+        "Spras": "DE",
+        "Lgnum": "1010",
+        "Lnumt": "Branchenübergreifendes Lager"
+    },
+    {
+        "Spras": "FR",
+        "Lgnum": "1010",
+        "Lnumt": "Magasin inter-secteurs"
+    },
+    {
+        "Spras": "EL",
+        "Lgnum": "1010",
+        "Lnumt": "Πολλοί Κλάδοι Αποθήκης"
+    },
+    {
+        "Spras": "HU",
+        "Lgnum": "1010",
+        "Lnumt": "Ágazatokat átfogó raktár"
+    },
+    {
+        "Spras": "IT",
+        "Lgnum": "1010",
+        "Lnumt": "Magazzino valido per tutti i settori"
+    },
+    {
+        "Spras": "JA",
+        "Lgnum": "1010",
+        "Lnumt": "倉庫全業種共通"
+    },
+    {
+        "Spras": "DA",
+        "Lgnum": "1010",
+        "Lnumt": "Brancheovergribende lager"
+    },
+    {
+        "Spras": "KK",
+        "Lgnum": "1010",
+        "Lnumt": "Қойма: бірнеше сала"
+    },
+    {
+        "Spras": "PL",
+        "Lgnum": "1010",
+        "Lnumt": "Magazyn dla wszystkich branż"
+    },
+    {
+        "Spras": "ZF",
+        "Lgnum": "1010",
+        "Lnumt": "倉庫跨產業"
+    },
+    {
+        "Spras": "NL",
+        "Lgnum": "1010",
+        "Lnumt": "Brancheoverkoepelend magazijn"
+    },
+    {
+        "Spras": "NO",
+        "Lgnum": "1010",
+        "Lnumt": "Bransjeuavhengig lager"
+    },
+    {
+        "Spras": "PT",
+        "Lgnum": "1010",
+        "Lnumt": "Depósito válido para todos os setores"
+    },
+    {
+        "Spras": "SK",
+        "Lgnum": "1010",
+        "Lnumt": "Sklad - globálne odvetvia"
+    },
+    {
+        "Spras": "RU",
+        "Lgnum": "1010",
+        "Lnumt": "Склад для нескольких отраслей"
+    },
+    {
+        "Spras": "ES",
+        "Lgnum": "1010",
+        "Lnumt": "Almacén entre sectores industriales"
+    },
+    {
+        "Spras": "TR",
+        "Lgnum": "1010",
+        "Lnumt": "Sektörler arası depo"
+    },
+    {
+        "Spras": "FI",
+        "Lgnum": "1010",
+        "Lnumt": "Toimialoille yhteinen varasto"
+    },
+    {
+        "Spras": "SV",
+        "Lgnum": "1010",
+        "Lnumt": "Branschövergripande lager"
+    },
+    {
+        "Spras": "BG",
+        "Lgnum": "1010",
+        "Lnumt": "Склад за всички промишлености"
+    },
+    {
+        "Spras": "LT",
+        "Lgnum": "1010",
+        "Lnumt": "Sandėlis (tarp pramonės šakų)"
+    },
+    {
+        "Spras": "LV",
+        "Lgnum": "1010",
+        "Lnumt": "Starpnozaru noliktava"
+    },
+    {
+        "Spras": "CA",
+        "Lgnum": "1010",
+        "Lnumt": "Magatzem entre indústries"
+    },
+    {
+        "Spras": "SH",
+        "Lgnum": "1010",
+        "Lnumt": "Skladište za sve industrijske grane"
+    }
+]

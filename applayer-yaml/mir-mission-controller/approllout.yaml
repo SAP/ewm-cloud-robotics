@@ -1,0 +1,28 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: mir-mission-controller
+  labels:
+    app: mir-mission-controller
+spec:
+  appName: mir-mission-controller-$APP_VERSION
+  # cloud: 
+  #   values:
+  #     image:
+  #       repository: ""
+  #       image.tag: "latest"
+  robots:
+  - selector:
+      matchLabels:
+        model: mir100
+    values:
+      image:
+        repository: "ewmcloudrobotics/mir-mission-controller"
+        tag: "latest"
+---
+      

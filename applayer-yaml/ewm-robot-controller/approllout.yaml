@@ -1,0 +1,26 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-robot-controller
+  labels:
+    app: ewm-robot-controller
+spec:
+  appName: ewm-robot-controller-$APP_VERSION
+  ## Select only robot models with edge clusters, such as
+  ## MiR robots. 
+  robots:
+  - selector:
+      matchLabels:
+        model: mir100
+    values:
+      image:
+        repository: "ewmcloudrobotics/robot-controller"
+        tag: "latest"
+      envs:
+        ewmlgnum: ""
+        chargerlist: ""

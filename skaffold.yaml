@@ -1,0 +1,269 @@
+##
+## Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+##
+## This file is part of ewm-cloud-robotics
+## (see https://github.com/SAP/ewm-cloud-robotics).
+##
+## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+##
+
+
+
+apiVersion: skaffold/v1beta11
+kind: Config
+
+
+## Default profile:
+## Use local Docker daemon & registry to build and test all images, then exit without deployment
+## to verify that builds and tests are OK. 
+build:
+  artifacts:
+    - image: ewm-sim
+      context: docker/ewm-sim/
+      docker:
+        dockerfile: Dockerfile
+    - image: basic-mission-controller
+      context: .
+      docker:
+        dockerfile: docker/basic-mission-controller/Dockerfile
+    - image: fetch-mission-controller
+      context: .
+      docker:
+        dockerfile: docker/fetch-mission-controller/Dockerfile
+    - image: mir-mission-controller
+      context: .
+      docker:
+        dockerfile: docker/mir-mission-controller/Dockerfile
+    - image: order-manager
+      context: .
+      docker:
+        dockerfile: docker/order-manager/Dockerfile
+    - image: robot-controller
+      context: .
+      docker:
+        dockerfile: docker/robot-controller/Dockerfile
+  local: 
+    push: false
+test:
+  - image: ewm-sim
+    structureTests:
+      - docker/ewm-sim/test/container-structure-test/prod.yaml
+  - image: basic-mission-controller
+    structureTests:
+      - docker/basic-mission-controller/test/container-structure-test/prod.yaml
+  - image: mir-mission-controller
+    structureTests:
+      - docker/mir-mission-controller/test/container-structure-test/prod.yaml
+  - image: fetch-mission-controller
+    structureTests:
+      - docker/fetch-mission-controller/test/container-structure-test/prod.yaml
+  - image: order-manager
+    structureTests:
+      - docker/order-manager/test/container-structure-test/prod.yaml
+  - image: robot-controller
+    structureTests:
+      - docker/robot-controller/test/container-structure-test/prod.yaml
+deploy:
+  kubectl:
+    manifests:
+    - ""
+
+#########################################################################################
+
+profiles:
+  ## Build profile to push images to GCR (Google Container Registry). It uses 'eu.gcr.io'
+  ## as host and determines your project dynamically via 'gcloud config get-value project'.
+  ## Each image gets tagged with the current Unix timestamp and 'latest'.
+  - name: gcp
+    build: 
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: ewm-sim
+          custom:
+            buildCommand: ./scripts/gcr-build.sh ewm-sim ./Dockerfile docker/ewm-sim/
+            dependencies:
+              paths: 
+                - .
+        - image: basic-mission-controller
+          custom:
+            buildCommand: ./scripts/gcr-build.sh basic-mission-controller docker/basic-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: mir-mission-controller
+          custom:
+            buildCommand: ./scripts/gcr-build.sh mir-mission-controller docker/mir-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: fetch-mission-controller
+          custom:
+            buildCommand: ./scripts/gcr-build.sh fetch-mission-controller docker/fetch-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-manager
+          custom:
+            buildCommand: ./scripts/gcr-build.sh order-manager docker/order-manager/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: robot-controller
+          custom:
+            buildCommand: ./scripts/gcr-build.sh robot-controller docker/robot-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+  ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
+  ## Tests are executed to verify that correct Dockerfiles were used
+  ## Deploy is left blank since this profile is for updating the container registry.
+  ## Used within CI
+  - name: dockerhub
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: ewm-sim
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh ewm-sim ./Dockerfile docker/ewm-sim/
+            dependencies:
+              paths: 
+                - .
+        - image: basic-mission-controller
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh basic-mission-controller docker/basic-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: mir-mission-controller
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh mir-mission-controller docker/mir-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: fetch-mission-controller
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh fetch-mission-controller docker/fetch-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-manager
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh order-manager docker/order-manager/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: robot-controller
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh robot-controller docker/robot-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+  ## Profiles to build and push application specific images via deploy.sh to
+  ## custom container registry
+  ##
+  ## ewm-order-manager
+  - name: ewm-order-manager
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: order-manager
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh order-manager docker/order-manager/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: order-manager
+        structureTests:
+          - docker/order-manager/test/container-structure-test/prod.yaml
+  ## ewm-robot-controller
+  - name: ewm-robot-controller
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: robot-controller
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh robot-controller docker/robot-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: robot-controller
+        structureTests:
+          - docker/robot-controller/test/container-structure-test/prod.yaml
+  ## ewm-sim        
+  - name: ewm-sim
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: ewm-sim
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh ewm-sim ./Dockerfile docker/ewm-sim/
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: ewm-sim
+        structureTests:
+          - docker/ewm-sim/test/container-structure-test/prod.yaml
+  ## mir-mission-controller
+  - name: mir-mission-controller
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: mir-mission-controller
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh mir-mission-controller docker/mir-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .      
+    test:
+      - image: mir-mission-controller
+        structureTests:
+          - docker/mir-mission-controller/test/container-structure-test/prod.yaml
+  ## basic-mission-controller
+  - name: basic-mission-controller
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: basic-mission-controller
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh basic-mission-controller docker/basic-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: basic-mission-controller
+        structureTests:
+          - docker/basic-mission-controller/test/container-structure-test/prod.yaml
+  ## fetch-mission-controller
+  - name: fetch-mission-controller
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: fetch-mission-controller
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh fetch-mission-controller docker/fetch-mission-controller/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: fetch-mission-controller
+        structureTests:
+          - docker/fetch-mission-controller/test/container-structure-test/prod.yaml

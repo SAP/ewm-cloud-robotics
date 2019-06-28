@@ -1,0 +1,11 @@
+replicaCount: 1
+image:
+  repository: "ewmcloudrobotics/fetch-mission-controller"
+  tag: "latest"
+
+envs:
+  clientsecret: ""
+  password: ""
+  user: ""
+  host: ""
+  clientid: ""

@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Mission controller for Fetch robots
+name: fetch-mission-controller
+version: 0.0.1

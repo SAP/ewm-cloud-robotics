@@ -1,0 +1,22 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: fetch-mission-controller
+  labels:
+    app: fetch-mission-controller
+spec:
+  appName: fetch-mission-controller-$APP_VERSION
+  cloud: 
+    values:
+      image:
+        repository: "ewmcloudrobotics/fetch-mission-controller"
+        image.tag: "latest"
+      # envs:
+      #   someEnv: ""
+---
+      

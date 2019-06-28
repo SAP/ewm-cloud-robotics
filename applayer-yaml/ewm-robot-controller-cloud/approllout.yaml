@@ -1,0 +1,31 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-robot-controller
+  labels:
+    app: ewm-robot-controller
+spec:
+  appName: ewm-robot-controller-cloud-$APP_VERSION
+  cloud: 
+    values:
+      image:
+        repository: "ewmcloudrobotics/robot-controller"
+        image.tag: "latest"
+      envs:
+        ewmlgnum: ""
+        chargerlist: ""
+  ## Select only those robot models that require cloud controllers
+  ## such as Fetch robots. Do not select robots running edge clusters.
+  robots:
+  - selector:
+      matchLabels:
+        model: freight100
+  - selector:
+      matchLabels:
+        model: dummyModel
+---
