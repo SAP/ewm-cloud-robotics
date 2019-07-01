@@ -3,7 +3,7 @@
 
 
 ## Description
-Human-safe collaborative robots ("Cobots") are widely available from hundreds of low-cost vendors, leading to heterogenous fleets of cobots that need to easily integrate with corresponding management systems. **ewm-cloud-robotics** represents such an integration, leveraging the core of [Google Cloud Robotics](http://cloud.google.com/cloud-robotics/) ([repo](https://github.com/googlecloudrobotics/core), [doc](https://googlecloudrobotics.github.io/core/)) to package and distribute [applications](#cloud-robotics-apps) for autonomous fulfilment of warehouse orders & tasks commissioned by [SAP EWM (Extended Warehouse Management](https://www.sap.com/germany/products/extended-warehouse-management.html)) just like in the video below.
+Human-safe collaborative robots ("Cobots") are widely available from hundreds of low-cost vendors, leading to heterogenous fleets of cobots that need to easily integrate with corresponding management systems. **ewm-cloud-robotics** represents such an integration, leveraging the core of Google Cloud Robotics ([repo](https://github.com/googlecloudrobotics/core), [doc](https://googlecloudrobotics.github.io/core/)) to package and distribute [applications](#cloud-robotics-apps) for autonomous fulfilment of warehouse orders & tasks commissioned by [SAP EWM (Extended Warehouse Management](https://www.sap.com/germany/products/extended-warehouse-management.html)) just like in the video below.
 <div align="center">
   <a href="https://youtu.be/CFo4-BlGO74"><img src="https://img.youtube.com/vi/CFo4-BlGO74/0.jpg" alt="EWM Cloud Robotics"></a>
 </div>
