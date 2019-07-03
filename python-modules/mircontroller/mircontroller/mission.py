@@ -67,7 +67,8 @@ class MissionController(K8sCRHandler):
         self.register_callback('DELETED', ['DELETED'], self.robco_mission_deleted_cb)
 
         # Mission watcher thread
-        self.mission_watcher_thread = threading.Thread(target=self._watch_missions_loop)
+        self.mission_watcher_thread = threading.Thread(
+            target=self._watch_missions_loop, daemon=True)
         self._controller_upstart = True
 
         # Robot status watcher thread
@@ -117,7 +118,11 @@ class MissionController(K8sCRHandler):
     def _watch_missions_loop(self) -> None:
         """Watch missions of the robot."""
         _LOGGER.info('Watch missions loop started')
+        heartbeat_ts = time.time()
         while self.thread_run:
+            if time.time() - heartbeat_ts > 600:
+                heartbeat_ts = time.time()
+                _LOGGER.info('Watch missions loop heartbeat')
             # Copy mission dict, it might be changed while loop is running
             missions = deepcopy(self._missions)
             for mission in missions.values():
@@ -131,9 +136,10 @@ class MissionController(K8sCRHandler):
 
                     status = mission.get('status', {})
                     if status.get('status') in status_to_run:
-                        # Run mission in an own thread
+                        # Run mission
                         self._active_mission = deepcopy(mission)
-                        threading.Thread(target=self.run_mission, daemon=True).start()
+                        self.run_mission()
+                        self._active_mission.clear()
 
             # After missions are processed for the first time, controller is not in upstart
             # mode anymore
@@ -147,7 +153,11 @@ class MissionController(K8sCRHandler):
     def _watch_robot_status_loop(self) -> None:
         """Watch robot status."""
         _LOGGER.info('Watch robot status loop started')
+        heartbeat_ts = time.time()
         while self.thread_run:
+            if time.time() - heartbeat_ts > 600:
+                heartbeat_ts = time.time()
+                _LOGGER.info('Watch robot status loop heartbeat')
             # Reset potential MiR error
             self._mir_robot.unpause_robot_reset_error(reset_error=True)
             time.sleep(2.0)
@@ -195,12 +205,10 @@ class MissionController(K8sCRHandler):
                 'status']['message'] = 'Mission {} aborted - no actions attribute in CR'.format(
                     name)
             self.update_cr_status(name, self._active_mission['status'])
-            # quit
-            self._active_mission.clear()
             return
 
         for i, action in enumerate(actions):
-            # Get task ID from FetchCore if existing in CR
+            # Get mission queue id from MiR if existing in CR
             try:
                 mission_queue_id = self._active_mission['status']['missionQueueIds'][i]
             except IndexError:
@@ -230,8 +238,6 @@ class MissionController(K8sCRHandler):
                     'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                         tzinfo=datetime.timezone.utc).isoformat()
                 self.update_cr_status(name, self._active_mission['status'])
-                # quit
-                self._active_mission.clear()
                 _LOGGER.error(
                     'Mission %s on robot %s ended in state %s', name,
                     self._mir_robot.robco_robot_name, result)
@@ -245,8 +251,6 @@ class MissionController(K8sCRHandler):
                 tzinfo=datetime.timezone.utc).isoformat()
         self._active_mission['status']['activeAction'] = {}
         self.update_cr_status(name, self._active_mission['status'])
-        # quit
-        self._active_mission.clear()
         _LOGGER.info(
             'Mission %s on robot %s  successfully finished', name,
             self._mir_robot.robco_robot_name)

@@ -82,6 +82,10 @@ class MiRRobot:
         'returnTrolley': 'mission_returnTrolley'
         }
 
+    POSTYPE_DOCK = 'dock'
+    POSTYPE_CHARGER = 'charger'
+    POSTYPE_POSITION = 'position'
+
     def __init__(self, mir_api: MiRInterface) -> None:
         """Construct."""
         self._mir_api = mir_api
@@ -155,14 +159,27 @@ class MiRRobot:
             if item['name'] == mission:
                 return item['guid']
 
-    def position_guid_by_name(self, position: str, map_guid: str) -> Optional[str]:
+    def position_guid_by_name(self, position: str, map_guid: str, pos_type: str) -> Optional[str]:
         """Get the GUID of a position by its name."""
+        cls = self.__class__
+
+        if pos_type == cls.POSTYPE_DOCK:
+            type_ids = [5, 9, 11]
+        elif pos_type == cls.POSTYPE_CHARGER:
+            type_ids = [7]
+        elif pos_type == cls.POSTYPE_POSITION:
+            type_ids = [0]
+        else:
+            raise ValueError('Position type "{}" is not known'.format(pos_type))
+
         # Get data from REST interface
         http_resp = self._mir_api.http_get('positions')
 
         # Get position GUID from response
         for item in http_resp.json():
-            if item['map'] == map_guid and item['name'] == position:
+            if (item['map'] == map_guid
+                    and item['name'] == position
+                    and item['type_id'] in type_ids):
                 return item['guid']
 
         # Otherwise ERROR
@@ -172,7 +189,7 @@ class MiRRobot:
         """Go to the docking position and get a trolley there."""
         cls = self.__class__
         # Get relevant parameters
-        pos_guid = self.position_guid_by_name(dock_name, self.active_map)
+        pos_guid = self.position_guid_by_name(dock_name, self.active_map, cls.POSTYPE_DOCK)
         mis_guid = self.mission_guid_by_name(cls.mission_mapping['getTrolley'])
 
         # Prepare POST body for request
@@ -192,7 +209,7 @@ class MiRRobot:
         """Go to the docking position and return robot's trolley there."""
         cls = self.__class__
         # Get relevant parameters
-        pos_guid = self.position_guid_by_name(dock_name, self.active_map)
+        pos_guid = self.position_guid_by_name(dock_name, self.active_map, cls.POSTYPE_DOCK)
         mis_guid = self.mission_guid_by_name(cls.mission_mapping['returnTrolley'])
 
         # Prepare POST body for request
@@ -212,7 +229,7 @@ class MiRRobot:
         """Move robot to a named position of the map."""
         cls = self.__class__
         # Get relevant parameters
-        pos_guid = self.position_guid_by_name(target_name, self.active_map)
+        pos_guid = self.position_guid_by_name(target_name, self.active_map, cls.POSTYPE_POSITION)
         mis_guid = self.mission_guid_by_name(cls.mission_mapping['moveToNamedPosition'])
 
         # Prepare POST body for request
@@ -233,7 +250,7 @@ class MiRRobot:
         """Charge robot at the charging position."""
         cls = self.__class__
         # Get relevant parameters
-        pos_guid = self.position_guid_by_name(charger_name, self.active_map)
+        pos_guid = self.position_guid_by_name(charger_name, self.active_map, cls.POSTYPE_CHARGER)
         mis_guid = self.mission_guid_by_name(cls.mission_mapping['charge'])
 
         # Prepare POST body for request
