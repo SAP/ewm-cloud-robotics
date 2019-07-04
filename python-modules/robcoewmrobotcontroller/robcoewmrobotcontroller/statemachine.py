@@ -850,8 +850,10 @@ class RobotEWMMachine(Machine):
                     wht = task
                     target = StorageBin(task.lgnum, task.nlpla)
                     _LOGGER.info(
-                        'Target: target bin of warehouse task %s, HU "%s"',
-                        task.tanum, task.nlenr)
+                        'Target: target bin of warehouse task %s, HU "%s", enforcing first '
+                        'confirmation', task.tanum, task.nlenr)
+                    # Enforce first confirmation that warehouse order is flagged "started" in EWM
+                    self.confirm_api(wht, enforce_first_conf=True)
                     break
 
         # Start moving to the target

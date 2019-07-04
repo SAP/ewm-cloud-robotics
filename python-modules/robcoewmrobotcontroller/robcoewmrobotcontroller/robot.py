@@ -216,16 +216,19 @@ class EWMRobot:
         return False
 
     @retry(wait_fixed=100)
-    def confirm_warehousetask(self, wht: WarehouseTask) -> None:
+    def confirm_warehousetask(self, wht: WarehouseTask, enforce_first_conf: bool = False) -> None:
         """Confirm warehouse task."""
         confirmations = []
         clear_progress = False
-        if wht.vlpla:
+        if wht.vlpla or enforce_first_conf:
             confirmation = ConfirmWarehouseTask(
                 lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.rsrc, who=wht.who,
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
-            _LOGGER.info('Source bin reached - confirming')
+            if enforce_first_conf:
+                _LOGGER.info('First confirmation enforced - confirming')
+            else:
+                _LOGGER.info('Source bin reached - confirming')
             confirmations.append(confirmation)
         elif wht.nlpla:
             confirmation = ConfirmWarehouseTask(
