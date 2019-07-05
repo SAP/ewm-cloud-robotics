@@ -48,6 +48,7 @@ class MissionController(K8sCRHandler):
 
         self._active_missions = {}
         self._missions = OrderedDict()
+        self._missions_lock = threading.RLock()
 
         # Init CR superclass
         labels = {}
@@ -86,7 +87,8 @@ class MissionController(K8sCRHandler):
         if robot in self._fetch_robots.robots:
             if not self._missions.get(name):
                 # New mission
-                self._missions[name] = custom_res
+                with self._missions_lock:
+                    self._missions[name] = custom_res
                 if not custom_res.get('status'):
                     # Update status, that CR was accepted
                     status = cls.m_status_templ.copy()
@@ -96,7 +98,8 @@ class MissionController(K8sCRHandler):
                     self.update_cr_status(name, status)
                     _LOGGER.info('Accepted new mission %s for robot %s', name, robot)
             else:
-                self._missions[name] = custom_res
+                with self._missions_lock:
+                    self._missions[name] = custom_res
 
     def robco_mission_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Process Cloud Robotics delete mission CR."""
@@ -107,13 +110,15 @@ class MissionController(K8sCRHandler):
                 _LOGGER.warning(
                     'Mission %s is active on robot %s, but CR was deleted', name, robot)
             else:
-                self._missions.pop(name, None)
+                with self._missions_lock:
+                    self._missions.pop(name, None)
 
     def _watch_missions_loop(self) -> None:
         """Start the mission."""
         while self.thread_run:
             # Copy mission dict, it might be changed while loop is running
-            missions = deepcopy(self._missions)
+            with self._missions_lock:
+                missions = deepcopy(self._missions)
             for mission in missions.values():
                 # Check if there is an active mission for that robot
                 robot = mission['metadata']['labels']['cloudrobotics.com/robot-name']

@@ -64,10 +64,11 @@ class RobcoMissionStates(RobotMission):
             return cls.STATE_RUNNING
         elif mir_state == 'Done':
             return cls.STATE_SUCCEEDED
-        elif mir_state == 'Aborted' and message == 'Aborted - User Request':
-            return cls.STATE_CANCELED
-        elif mir_state == 'Aborted':
-            return cls.STATE_FAILED
+        elif mir_state in ['Aborted', 'Abort']:
+            if message == 'Aborted - User Request':
+                return cls.STATE_CANCELED
+            else:
+                return cls.STATE_FAILED
         else:
             raise ValueError('State {} is unknown'.format(mir_state))
 
