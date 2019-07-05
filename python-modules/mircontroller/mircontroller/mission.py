@@ -14,8 +14,10 @@
 
 import logging
 import datetime
+import sys
 import time
 import threading
+import traceback
 
 from copy import deepcopy
 from collections import OrderedDict
@@ -25,7 +27,7 @@ from requests import RequestException
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
 from .mirrobot import MiRRobot, RobcoMissionStates
-from .helper import get_sample_cr
+from .helper import get_sample_cr, MainLoopController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -120,52 +122,72 @@ class MissionController(K8sCRHandler):
                     self._missions.pop(name, None)
 
     def _watch_missions_loop(self) -> None:
-        """Watch missions of the robot."""
+        """Run watch missions of the robot in a loop."""
+        loop_control = MainLoopController()
         _LOGGER.info('Watch missions loop started')
-        heartbeat_ts = time.time()
         while self.thread_run:
-            if time.time() - heartbeat_ts > 600:
-                heartbeat_ts = time.time()
-                _LOGGER.info('Watch missions loop heartbeat')
-            # Copy mission dict, it might be changed while loop is running
-            with self._missions_lock:
-                missions = deepcopy(self._missions)
-            for mission in missions.values():
-                if not self._active_mission:
-                    # On upstart try to start RUNNING mission first
-                    if self._controller_upstart is True:
-                        status_to_run = [
-                            RobcoMissionStates.STATE_RUNNING, RobcoMissionStates.STATE_ACCEPTED]
-                    else:
-                        status_to_run = [RobcoMissionStates.STATE_ACCEPTED]
-
-                    status = mission.get('status', {})
-                    if status.get('status') in status_to_run:
-                        # Run mission
-                        self._active_mission = deepcopy(mission)
-                        self.run_mission()
-                        self._active_mission.clear()
-
-            # After missions are processed for the first time, controller is not in upstart
-            # mode anymore
-            if missions:
-                self._controller_upstart = False
-
-            time.sleep(0.5)
+            try:
+                self._watch_missions()
+                loop_control.sleep(0.5)
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                _LOGGER.error(
+                    '%s/%s: Error watching missions of robot - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['mission_loop'] = exc
+                # Stop the watcher
+                self.stop_watcher()
 
         _LOGGER.info('Watch missions loop stopped')
 
+    def _watch_missions(self) -> None:
+        """Watch missions of the robot."""
+        # Copy mission dict, it might be changed while loop is running
+        with self._missions_lock:
+            missions = deepcopy(self._missions)
+        for mission in missions.values():
+            if not self._active_mission:
+                # On upstart try to start RUNNING mission first
+                if self._controller_upstart is True:
+                    status_to_run = [
+                        RobcoMissionStates.STATE_RUNNING, RobcoMissionStates.STATE_ACCEPTED]
+                else:
+                    status_to_run = [RobcoMissionStates.STATE_ACCEPTED]
+
+                status = mission.get('status', {})
+                if status.get('status') in status_to_run:
+                    # Run mission
+                    self._active_mission = deepcopy(mission)
+                    self.run_mission()
+                    self._active_mission.clear()
+
+        # After missions are processed for the first time, controller is not in upstart
+        # mode anymore
+        if missions:
+            self._controller_upstart = False
+
     def _watch_robot_status_loop(self) -> None:
-        """Watch robot status."""
+        """Run watch status of the robot in a loop."""
+        loop_control = MainLoopController()
         _LOGGER.info('Watch robot status loop started')
-        heartbeat_ts = time.time()
         while self.thread_run:
-            if time.time() - heartbeat_ts > 600:
-                heartbeat_ts = time.time()
-                _LOGGER.info('Watch robot status loop heartbeat')
-            # Reset potential MiR error
-            self._mir_robot.unpause_robot_reset_error(reset_error=True)
-            time.sleep(2.0)
+            try:
+                # Reset potential MiR error
+                self._mir_robot.unpause_robot_reset_error(reset_error=True)
+                loop_control.sleep(2.0)
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                _LOGGER.error(
+                    '%s/%s: Error watching status of robot - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['status_loop'] = exc
+                # Stop the watcher
+                self.stop_watcher()
+
         _LOGGER.info('Watch robot status loop stopped')
 
     def run_mission(self) -> None:

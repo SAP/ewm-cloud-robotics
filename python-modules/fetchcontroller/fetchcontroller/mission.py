@@ -14,8 +14,10 @@
 
 import logging
 import datetime
+import sys
 import time
 import threading
+import traceback
 
 from copy import deepcopy
 from collections import OrderedDict
@@ -24,7 +26,7 @@ from typing import Dict, Optional
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
 from .fetchrobot import FetchRobots, RobcoMissionStates, FetchCapabilityError
-from .helper import get_sample_cr
+from .helper import get_sample_cr, MainLoopController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -114,37 +116,53 @@ class MissionController(K8sCRHandler):
                     self._missions.pop(name, None)
 
     def _watch_missions_loop(self) -> None:
-        """Start the mission."""
+        """Run watch missions of the robot in a loop."""
+        loop_control = MainLoopController()
+        _LOGGER.info('Watch missions loop started')
         while self.thread_run:
-            # Copy mission dict, it might be changed while loop is running
-            with self._missions_lock:
-                missions = deepcopy(self._missions)
-            for mission in missions.values():
-                # Check if there is an active mission for that robot
-                robot = mission['metadata']['labels']['cloudrobotics.com/robot-name']
-                if self._active_missions.get(robot) is None:
-                    # On upstart try to start RUNNING mission first
-                    if self._controller_upstart is True:
-                        status_to_run = [
-                            RobcoMissionStates.STATE_RUNNING, RobcoMissionStates.STATE_ACCEPTED]
-                    else:
-                        status_to_run = [RobcoMissionStates.STATE_ACCEPTED]
-
-                    status = mission.get('status', {})
-                    if status.get('status') in status_to_run:
-                        # Run mission in an own thread
-                        self._active_missions[robot] = deepcopy(mission)
-                        threading.Thread(
-                            target=self.run_mission, args=(robot,), daemon=True).start()
-
-            # After missions are processed for the first time, controller is not in upstart
-            # mode anymore
-            if missions:
-                self._controller_upstart = False
-
-            time.sleep(0.5)
+            try:
+                self._watch_missions()
+                loop_control.sleep(0.5)
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                _LOGGER.error(
+                    '%s/%s: Error watching missions of robot - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['mission_loop'] = exc
+                # Stop the watcher
+                self.stop_watcher()
 
         _LOGGER.info('Watch missions loop stopped')
+
+    def _watch_missions(self) -> None:
+        """Watch missions of the robot."""
+        # Copy mission dict, it might be changed while loop is running
+        with self._missions_lock:
+            missions = deepcopy(self._missions)
+        for mission in missions.values():
+            # Check if there is an active mission for that robot
+            robot = mission['metadata']['labels']['cloudrobotics.com/robot-name']
+            if self._active_missions.get(robot) is None:
+                # On upstart try to start RUNNING mission first
+                if self._controller_upstart is True:
+                    status_to_run = [
+                        RobcoMissionStates.STATE_RUNNING, RobcoMissionStates.STATE_ACCEPTED]
+                else:
+                    status_to_run = [RobcoMissionStates.STATE_ACCEPTED]
+
+                status = mission.get('status', {})
+                if status.get('status') in status_to_run:
+                    # Run mission in an own thread
+                    self._active_missions[robot] = deepcopy(mission)
+                    threading.Thread(
+                        target=self.run_mission, args=(robot,), daemon=True).start()
+
+        # After missions are processed for the first time, controller is not in upstart
+        # mode anymore
+        if missions:
+            self._controller_upstart = False
 
     def run_mission(self, robot: str) -> None:
         """Run a mission with all its actions."""

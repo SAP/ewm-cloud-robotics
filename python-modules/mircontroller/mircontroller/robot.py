@@ -14,7 +14,9 @@
 
 import logging
 import datetime
+import sys
 import threading
+import traceback
 
 from copy import deepcopy
 
@@ -48,8 +50,7 @@ class RobotController(K8sCRHandler):
         )
 
         # Init threads
-        self.robot_status_update_thread = threading.Thread(
-            target=self.update_robot_status, daemon=True)
+        self.robot_status_update_thread = threading.Thread(target=self._update_robot_status_loop)
 
     def run(self, watcher: bool = True, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
@@ -63,25 +64,42 @@ class RobotController(K8sCRHandler):
         # Start update thread
         self.robot_status_update_thread.start()
 
-    def update_robot_status(self) -> None:
-        """Continously update status of robot CR."""
+    def _update_robot_status_loop(self) -> None:
+        """Run update robot status continiously."""
         loop_control = MainLoopController()
-        status = deepcopy(self.robot_template_cr)['status']
+        _LOGGER.info('Watch robot status loop started')
         while self.thread_run:
-            # Update MiR robot
-            self._mir_robot.update()
-            # Update robot CR status
-            status['configuration']['trolleyAttached'] = self._mir_robot.trolley_attached
-            status['robot']['batteryPercentage'] = self._mir_robot.battery_percentage
-            status['robot']['lastStateChangeTime'] = self._mir_robot.last_state_change
-            status['robot']['state'] = self._mir_robot.state
-            status['robot']['updateTime'] = datetime.datetime.utcnow().replace(
-                tzinfo=datetime.timezone.utc).isoformat()
-
             try:
-                self.update_cr_status(self._mir_robot.robco_robot_name, status)
-            except ApiException:
+                self.update_robot_status()
+                loop_control.sleep(2)
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
                 _LOGGER.error(
-                    'Status CR of robot %s could not be updated', self._mir_robot.robco_robot_name)
+                    '%s/%s: Error watching robot status - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['status_loop'] = exc
+                # Stop the watcher
+                self.stop_watcher()
 
-            loop_control.sleep(2)
+        _LOGGER.info('Watch robot status loop stopped')
+
+    def update_robot_status(self) -> None:
+        """Update status of robot CR."""
+        # Update MiR robot
+        self._mir_robot.update()
+        # Update robot CR status
+        status = deepcopy(self.robot_template_cr)['status']
+        status['configuration']['trolleyAttached'] = self._mir_robot.trolley_attached
+        status['robot']['batteryPercentage'] = self._mir_robot.battery_percentage
+        status['robot']['lastStateChangeTime'] = self._mir_robot.last_state_change
+        status['robot']['state'] = self._mir_robot.state
+        status['robot']['updateTime'] = datetime.datetime.utcnow().replace(
+            tzinfo=datetime.timezone.utc).isoformat()
+
+        try:
+            self.update_cr_status(self._mir_robot.robco_robot_name, status)
+        except ApiException:
+            _LOGGER.error(
+                'Status CR of robot %s could not be updated', self._mir_robot.robco_robot_name)

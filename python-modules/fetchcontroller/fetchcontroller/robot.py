@@ -14,7 +14,9 @@
 
 import logging
 import datetime
+import sys
 import threading
+import traceback
 
 from copy import deepcopy
 from typing import Dict
@@ -62,8 +64,7 @@ class RobotController(K8sCRHandler):
         )
 
         # Init threads
-        self.robot_status_update_thread = threading.Thread(
-            target=self.update_robot_status, daemon=True)
+        self.robot_status_update_thread = threading.Thread(target=self.update_robot_status)
 
         # register callbacks
         self.robottype_controller.register_callback(
@@ -141,25 +142,42 @@ class RobotController(K8sCRHandler):
         self.robottype_controller.stop_watcher()
         super().stop_watcher()
 
+    def _update_robot_status_loop(self) -> None:
+        """Run update robot status continiously."""
+        loop_control = MainLoopController()
+        _LOGGER.info('Watch robot status loop started')
+        while self.thread_run:
+            try:
+                self.update_robot_status()
+                loop_control.sleep(2)
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                _LOGGER.error(
+                    '%s/%s: Error watching robot status - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['status_loop'] = exc
+                # Stop the watcher
+                self.stop_watcher()
+
+        _LOGGER.info('Watch robot status loop stopped')
+
     def update_robot_status(self) -> None:
         """Continously update status of robot CR."""
-        loop_control = MainLoopController()
         status = deepcopy(self.robot_template_cr)['status']
-        while self.thread_run:
-            # Get updated robot states from FetchCore
-            self._fetch_robots.update()
-            # Update robot CR status
-            for name, robot in self._fetch_robots.robots.items():
-                status['configuration']['trolleyAttached'] = robot.trolley_attached
-                status['robot']['batteryPercentage'] = robot.battery_percentage
-                status['robot']['lastStateChangeTime'] = robot.last_state_change
-                status['robot']['state'] = robot.state
-                status['robot']['updateTime'] = datetime.datetime.utcnow().replace(
-                    tzinfo=datetime.timezone.utc).isoformat()
+        # Get updated robot states from FetchCore
+        self._fetch_robots.update()
+        # Update robot CR status
+        for name, robot in self._fetch_robots.robots.items():
+            status['configuration']['trolleyAttached'] = robot.trolley_attached
+            status['robot']['batteryPercentage'] = robot.battery_percentage
+            status['robot']['lastStateChangeTime'] = robot.last_state_change
+            status['robot']['state'] = robot.state
+            status['robot']['updateTime'] = datetime.datetime.utcnow().replace(
+                tzinfo=datetime.timezone.utc).isoformat()
 
-                try:
-                    self.update_cr_status(name, status)
-                except ApiException:
-                    _LOGGER.error('Status CR of robot %s could not be updated', name)
-
-            loop_control.sleep(2)
+            try:
+                self.update_cr_status(name, status)
+            except ApiException:
+                _LOGGER.error('Status CR of robot %s could not be updated', name)
