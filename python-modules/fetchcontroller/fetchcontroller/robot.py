@@ -64,7 +64,7 @@ class RobotController(K8sCRHandler):
         )
 
         # Init threads
-        self.robot_status_update_thread = threading.Thread(target=self.update_robot_status)
+        self.robot_status_update_thread = threading.Thread(target=self._update_robot_status_loop)
 
         # register callbacks
         self.robottype_controller.register_callback(
