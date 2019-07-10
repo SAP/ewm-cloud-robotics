@@ -9,8 +9,8 @@
 ## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 ##
 
-## TODO: Verify push to dockerhub via Skaffold profile. Implement after switch to public repository
+echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-# curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
-# chmod +x skaffold
-# skaffold run -p dockerhub
+curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v0.31.0/skaffold-linux-amd64 
+chmod +x skaffold
+skaffold run -p dockerhub

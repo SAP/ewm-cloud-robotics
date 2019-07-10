@@ -35,5 +35,5 @@ jobs:
       script: sh ./scripts/bandit.sh    
     ## release-images
     - stage: release
-      name: "release"
+      name: "Docker Image Releases"
       script: sh ./ci/release.sh
