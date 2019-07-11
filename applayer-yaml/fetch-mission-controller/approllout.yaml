@@ -22,5 +22,3 @@ spec:
         password: "" # Password for fetch core user
         host: "" # Host name of fetch core instance
         clientid: "" # Client ID of fetch core instance
----
-      
