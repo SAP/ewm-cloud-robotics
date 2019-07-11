@@ -10,6 +10,8 @@ robot:
 envs:
   ewmlgnum: "1710"
   chargerlist: "Charger"
+  batterymin: 10
+  batteryok: 70
 
 ewmcrds:
   enabled: true

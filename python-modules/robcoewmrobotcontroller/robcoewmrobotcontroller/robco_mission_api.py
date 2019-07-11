@@ -94,10 +94,19 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
             if val is None:
                 raise ValueError('Environment variable "{}" is not set'.format(var))
 
+        # Optional parameters
+        envvar['EWM_BATTERY_MIN'] = os.environ.get('EWM_BATTERY_MIN')
+        envvar['EWM_BATTERY_OK'] = os.environ.get('EWM_BATTERY_OK')
+
+        # Cloud Robotics robot name
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
+        # List of chargers
         self._chargers = [x.strip() for x in envvar['CHARGER_LIST'].split(',')]
         self._chargers_generator = self._iterate_chargers()
         _LOGGER.info('Using chargers: %s', self._chargers)
+        # Battery levels in %
+        self.battery_min = float(envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10
+        self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 70
 
     def update_mission_status_cb(self, name: str, custom_res: Dict) -> None:
         """Update self.mission_status."""
@@ -262,10 +271,9 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
         # Default mission
         mission = RobotMission()
         # Get relevant parameters
-        # TODO parameter for charge
         action = {'charge': {'chargerName': self.charger,
-                             'thresholdBatteryPercent': 50,
-                             'targetBatteryPercent': 75}}
+                             'thresholdBatteryPercent': self.battery_min,
+                             'targetBatteryPercent': self.battery_ok}}
         spec = {'actions': [action]}
         mission_name = str(time.time())
 
@@ -368,7 +376,6 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
 
     def api_check_state_ok(self) -> bool:
         """Check if robot is in state ok."""
-        # TODO verify state checker
         return bool(self.robot_state == 'AVAILABLE')
 
     def api_get_battery_percentage(self) -> float:

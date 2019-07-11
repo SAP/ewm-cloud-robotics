@@ -22,5 +22,7 @@ spec:
         repository: "ewmcloudrobotics/robot-controller"
         tag: "latest"
       envs:
-        ewmlgnum: ""
-        chargerlist: ""
+        ewmlgnum: "" # Warehouse Number in SAP EWM the robot is operating
+        chargerlist: "" # Names of chargers available for the robots separated by commas
+        batterymin: 10 # If battery is below this level, a charging mission will be created next
+        batteryok: 70 # Battery level to which a robot will be charged during charging mission

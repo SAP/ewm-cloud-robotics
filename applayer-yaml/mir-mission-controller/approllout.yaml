@@ -11,11 +11,6 @@ metadata:
     app: mir-mission-controller
 spec:
   appName: mir-mission-controller-$APP_VERSION
-  # cloud: 
-  #   values:
-  #     image:
-  #       repository: ""
-  #       image.tag: "latest"
   robots:
   - selector:
       matchLabels:
@@ -24,5 +19,10 @@ spec:
       image:
         repository: "ewmcloudrobotics/mir-mission-controller"
         tag: "latest"
+      envs:
+        plctrolley: 0 # PLC register of robot which is set to 1 when a trolley is attached
+        miruser: "" # User to connect to MiR API
+        mirpassword: "" # Password for MiR user
+        mirhost: "" # Host name of MiR API
 ---
       
