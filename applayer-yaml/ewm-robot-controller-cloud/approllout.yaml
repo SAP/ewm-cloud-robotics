@@ -15,7 +15,7 @@ spec:
     values:
       image:
         repository: "ewmcloudrobotics/robot-controller"
-        image.tag: "latest"
+        tag: "latest"
       envs:
         ewmlgnum: "" # Warehouse Number in SAP EWM the robot is operating
         chargerlist: "" # Names of chargers available for the robots separated by commas

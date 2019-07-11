@@ -15,7 +15,7 @@ spec:
     values:
       image:
         repository: "ewmcloudrobotics/ewm-sim"
-        image.tag: "latest"
+        tag: "latest"
       envs:
         ewmhost: "" # Host for the OData API endpoint
         ewmuser: "" # Technical user for all warehouseorder related API calls
