@@ -15,7 +15,7 @@ spec:
   #   values:
   #     image:
   #       repository: ""
-  #       image.tag: "latest"
+  #       tag: "latest"
   robots:
   - selector:
       matchLabels:

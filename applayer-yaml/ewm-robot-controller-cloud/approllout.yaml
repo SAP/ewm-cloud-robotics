@@ -15,7 +15,7 @@ spec:
     values:
       image:
         repository: "ewmcloudrobotics/robot-controller"
-        image.tag: "latest"
+        tag: "latest"
       envs:
         ewmlgnum: ""
         chargerlist: ""

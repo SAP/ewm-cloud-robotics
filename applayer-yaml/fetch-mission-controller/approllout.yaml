@@ -15,7 +15,7 @@ spec:
     values:
       image:
         repository: "ewmcloudrobotics/fetch-mission-controller"
-        image.tag: "latest"
+        tag: "latest"
       # envs:
       #   someEnv: ""
 ---
