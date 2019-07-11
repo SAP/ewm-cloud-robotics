@@ -54,9 +54,8 @@ If all components are installed to their target location and linked as depicted 
 8. [\<ROBOT\>-mission-controller](#Mission-controllers) interprets the missions, executes the required actions and reports back
 9. [etc.] Status changes and confirmations as well as errors are propagated back to SAP EWM
 <div align="center">
-  <img src="https://drive.google.com/uc?export=view&id=1WAclQuUh7-NVDPgXB7C3zpC6hgS2PJDI" alt="architecture_overview.png">
+  <img src="./docs/img/architecture_overview.png" alt="architecture_overview.png">
 </div>
-
 
 
 ## Instructions
@@ -170,8 +169,7 @@ SAP EWM extension for Cloud Robotics includes all developments required to run C
 
 All foundations and the **Move Handling Unit** process are part of this repository. The robot enabled **Pick, Pack and Pass** scenario can be found in a separate [repository](https://github.com/SAP/ewm-cloud-robotics-s4), because it includes some modifications of the system.
 Both repositories can be deployed to a SAP system using [abapGit](https://github.com/larshp/abapGit) and [abapGit-Plugins](https://github.com/larshp/abapGit-Plugins).
-
-
+[This document](./docs/setup-EWM.md) describes the configuration steps in SAP EWM after the deployment of the code.
 
 ### Cloud Robotic apps
 
