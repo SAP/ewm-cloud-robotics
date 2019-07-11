@@ -169,6 +169,8 @@ SAP EWM extension for Cloud Robotics includes all developments required to run C
 
 All foundations and the **Move Handling Unit** process are part of this repository. The robot enabled **Pick, Pack and Pass** scenario can be found in a separate [repository](https://github.com/SAP/ewm-cloud-robotics-s4), because it includes some modifications of the system.
 Both repositories can be deployed to a SAP system using [abapGit](https://github.com/larshp/abapGit) and [abapGit-Plugins](https://github.com/larshp/abapGit-Plugins).
+
+
 [This document](./docs/setup-EWM.md) describes the configuration steps in SAP EWM after the deployment of the code.
 
 ### Cloud Robotic apps
