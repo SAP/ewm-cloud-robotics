@@ -94,8 +94,6 @@ build() {
     export CR=$registry
     skaffold run -p $1
     unset CR
-
-    printf "\n\nBuild successful, images are available at "$registry".\n"
 }
 
 push() {
