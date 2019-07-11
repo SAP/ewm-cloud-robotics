@@ -10,16 +10,19 @@ FROM python:3.7.4-slim-stretch
 RUN pip3 install -U wss_plugin
 
 COPY ./python-modules/k8scrhandler /k8scrhandler
-RUN pip3 install ./k8scrhandler
-RUN rm -rf /k8scrhandler
+RUN pip3 install /k8scrhandler && \
+    rm -rf /k8scrhandler && \
+    python3 -c "import k8scrhandler"
 
 COPY ./python-modules/robcoewmtypes /robcoewmtypes
-RUN pip3 install ./robcoewmtypes
-RUN rm -rf /robcoewmtypes
+RUN pip3 install /robcoewmtypes && \
+    rm -rf /robcoewmtypes && \
+    python3 -c "import robcoewmtypes"
 
 COPY ./python-modules/robcoewmrobotcontroller /robcoewmrobotcontroller
-RUN pip3 install ./robcoewmrobotcontroller
-RUN rm -rf /robcoewmrobotcontroller
+RUN pip3 install /robcoewmrobotcontroller && \
+    rm -rf /robcoewmrobotcontroller && \
+    python3 -c "import robcoewmrobotcontroller"
 
 COPY docker/robot-controller/app /app
 WORKDIR /app

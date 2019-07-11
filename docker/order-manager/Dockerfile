@@ -10,20 +10,24 @@ FROM python:3.7.4-slim-stretch
 RUN pip3 install -U wss_plugin
 
 COPY ./python-modules/k8scrhandler /k8scrhandler
-RUN pip3 install ./k8scrhandler
-RUN rm -rf /k8scrhandler
+RUN pip3 install /k8scrhandler && \
+    rm -rf /k8scrhandler && \
+    python3 -c "import k8scrhandler"
 
 COPY ./python-modules/robcoewmtypes /robcoewmtypes
-RUN pip3 install ./robcoewmtypes
-RUN rm -rf /robcoewmtypes
+RUN pip3 install /robcoewmtypes && \
+    rm -rf /robcoewmtypes && \
+    python3 -c "import robcoewmtypes"
 
 COPY ./python-modules/robcoewminterface /robcoewminterface
-RUN pip3 install ./robcoewminterface
-RUN rm -rf /robcoewminterface
+RUN pip3 install /robcoewminterface && \
+    rm -rf /robcoewminterface && \
+    python3 -c "import robcoewminterface"
 
 COPY ./python-modules/robcoewmordermanager /robcoewmordermanager
-RUN pip3 install ./robcoewmordermanager
-RUN rm -rf /robcoewmordermanager
+RUN pip3 install /robcoewmordermanager && \
+    rm -rf /robcoewmordermanager && \
+    python3 -c "import robcoewmordermanager"
 
 ## TODO: replace with Volume mapping to ConfigMap & Helm value
 # COPY docker/order-manager/cert /cert
