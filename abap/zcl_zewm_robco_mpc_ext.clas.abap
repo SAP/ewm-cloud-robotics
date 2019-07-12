@@ -27,7 +27,9 @@ CLASS ZCL_ZEWM_ROBCO_MPC_EXT IMPLEMENTATION.
 **
 
     data: lo_entity_type  type ref to /iwbep/if_mgw_odata_entity_typ,
-          lo_complex_type type ref to /iwbep/if_mgw_odata_cmplx_type.
+          lo_complex_type type ref to /iwbep/if_mgw_odata_cmplx_type,
+          lo_property     type ref to /iwbep/if_mgw_odata_property,
+          lo_action       type ref to /iwbep/if_mgw_odata_action.
 
     super->define( ).
 
@@ -38,6 +40,22 @@ CLASS ZCL_ZEWM_ROBCO_MPC_EXT IMPLEMENTATION.
 * For ComplexType NewWarehouseOrder
     lo_complex_type = model->get_complex_type( iv_cplx_type_name = 'NewWarehouseOrder' ).
     lo_complex_type->get_property( 'Lsd' )->disable_conversion( ).
+
+* Define optional import parameters
+* For function import ConfirmWarehouseTask
+    lo_action = model->get_action( iv_action_name = 'ConfirmWarehouseTask' ).
+    lo_property = lo_action->get_input_parameter( iv_name = 'Altme' ).
+    lo_property->set_nullable( iv_nullable = abap_true ).
+    lo_property = lo_action->get_input_parameter( iv_name = 'ConfExc' ).
+    lo_property->set_nullable( iv_nullable = abap_true ).
+    lo_property = lo_action->get_input_parameter( iv_name = 'Nista' ).
+    lo_property->set_nullable( iv_nullable = abap_true ).
+    lo_property = lo_action->get_input_parameter( iv_name = 'Nlenr' ).
+    lo_property->set_nullable( iv_nullable = abap_true ).
+    lo_property = lo_action->get_input_parameter( iv_name = 'Nlpla' ).
+    lo_property->set_nullable( iv_nullable = abap_true ).
+    lo_property = lo_action->get_input_parameter( iv_name = 'Parti' ).
+    lo_property->set_nullable( iv_nullable = abap_true ).
 
   endmethod.
 ENDCLASS.
