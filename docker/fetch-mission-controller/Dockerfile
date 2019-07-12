@@ -8,12 +8,14 @@
 FROM python:3.7.4-slim-stretch
 
 COPY ./python-modules/k8scrhandler /k8scrhandler
-RUN pip3 install ./k8scrhandler
-RUN rm -rf /k8scrhandler
+RUN pip3 install /k8scrhandler && \
+    rm -rf /k8scrhandler && \
+    python3 -c "import k8scrhandler"
 
 COPY ./python-modules/fetchcontroller /fetchcontroller
-RUN pip3 install ./fetchcontroller
-RUN rm -rf /fetchcontroller
+RUN pip3 install /fetchcontroller && \
+    rm -rf /fetchcontroller && \
+    python3 -c "import fetchcontroller"
 
 COPY docker/fetch-mission-controller/app /app
 WORKDIR /app

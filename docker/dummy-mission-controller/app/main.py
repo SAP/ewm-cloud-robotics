@@ -9,13 +9,13 @@
 # This file is licensed under the Apache Software License, v. 2 except as noted
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
-"""Run the Fetchcore mission controller."""
+"""Run the dummy mission controller."""
 
 import sys
 import traceback
 import logging
 
-from fetchcontroller import run as mc
+from dummycontroller import run as mc
 
 
 # According to

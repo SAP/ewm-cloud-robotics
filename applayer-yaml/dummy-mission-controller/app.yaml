@@ -5,7 +5,7 @@
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: App
 metadata:
-  name: basic-mission-controller-$APP_VERSION # $APP_VERSION is substituted with desired version (default 'dev') via sed during push in `deploy.sh` script
+  name: dummy-mission-controller-$APP_VERSION # $APP_VERSION is substituted with desired version (default 'dev') via sed during push in `deploy.sh` script
 spec:
   components:
     cloud:

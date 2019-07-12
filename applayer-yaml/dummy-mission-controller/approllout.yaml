@@ -1,0 +1,20 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: dummy-mission-controller
+  labels:
+    app: dummy-mission-controller
+spec:
+  appName: dummy-mission-controller-$APP_VERSION
+  cloud: 
+    values:
+      image:
+        repository: "ewmcloudrobotics/dummy-mission-controller"
+        tag: "latest"
+---
+      

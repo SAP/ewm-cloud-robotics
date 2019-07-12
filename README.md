@@ -31,7 +31,7 @@ Human-safe collaborative robots ("Cobots") are widely available from hundreds of
     - [Mission controllers](#mission-controllers)
       - [mir-mission-controller](#mir-mission-controller)
       - [fetch-mission-controller](#fetch-mission-controller)
-      - [basic-mission-controller](#basic-mission-controller)
+      - [dummy-mission-controller](#dummy-mission-controller)
 - [Known issues & limitations](#known-issues--limitations)
 - [Upcoming changes](#upcoming-changes)
 - [Get involved](#get-involved)
@@ -193,8 +193,8 @@ A mission controller watches and interprets mission CRs and calls the correspond
 ##### fetch-mission-controller 
 🚧🚧 The fetch-mission-controller is currently under construction and will be added within the next couple of weeks (status June 18th, 2019). For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/3).
 
-##### basic-mission-controller 
-🚧🚧 The basic-mission-controller is currently under construction and will be added within the next couple of weeks (status June 18th, 2019). For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/3).
+##### dummy-mission-controller 
+🚧🚧 The dummy-mission-controller is currently under construction and will be added within the next couple of weeks (status June 18th, 2019). For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/3).
 
 
 

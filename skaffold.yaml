@@ -22,10 +22,10 @@ build:
       context: docker/ewm-sim/
       docker:
         dockerfile: Dockerfile
-    - image: basic-mission-controller
+    - image: dummy-mission-controller
       context: .
       docker:
-        dockerfile: docker/basic-mission-controller/Dockerfile
+        dockerfile: docker/dummy-mission-controller/Dockerfile
     - image: fetch-mission-controller
       context: .
       docker:
@@ -48,9 +48,9 @@ test:
   - image: ewm-sim
     structureTests:
       - docker/ewm-sim/test/container-structure-test/prod.yaml
-  - image: basic-mission-controller
+  - image: dummy-mission-controller
     structureTests:
-      - docker/basic-mission-controller/test/container-structure-test/prod.yaml
+      - docker/dummy-mission-controller/test/container-structure-test/prod.yaml
   - image: mir-mission-controller
     structureTests:
       - docker/mir-mission-controller/test/container-structure-test/prod.yaml
@@ -86,9 +86,9 @@ profiles:
             dependencies:
               paths: 
                 - .
-        - image: basic-mission-controller
+        - image: dummy-mission-controller
           custom:
-            buildCommand: ./scripts/gcr-build.sh basic-mission-controller docker/basic-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh dummy-mission-controller docker/dummy-mission-controller/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -132,9 +132,9 @@ profiles:
             dependencies:
               paths: 
                 - .
-        - image: basic-mission-controller
+        - image: dummy-mission-controller
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh basic-mission-controller docker/basic-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh dummy-mission-controller docker/dummy-mission-controller/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -233,23 +233,23 @@ profiles:
       - image: mir-mission-controller
         structureTests:
           - docker/mir-mission-controller/test/container-structure-test/prod.yaml
-  ## basic-mission-controller
-  - name: basic-mission-controller
+  ## dummy-mission-controller
+  - name: dummy-mission-controller
     build:
       tagPolicy:
         envTemplate:
           template: "{{.IMAGE_NAME}}:dirty"
       artifacts:
-        - image: basic-mission-controller
+        - image: dummy-mission-controller
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh basic-mission-controller docker/basic-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh dummy-mission-controller docker/dummy-mission-controller/Dockerfile ./
             dependencies:
               paths: 
                 - .
     test:
-      - image: basic-mission-controller
+      - image: dummy-mission-controller
         structureTests:
-          - docker/basic-mission-controller/test/container-structure-test/prod.yaml
+          - docker/dummy-mission-controller/test/container-structure-test/prod.yaml
   ## fetch-mission-controller
   - name: fetch-mission-controller
     build:

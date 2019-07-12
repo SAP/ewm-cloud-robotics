@@ -15,12 +15,10 @@ spec:
     values:
       image:
         repository: "ewmcloudrobotics/fetch-mission-controller"
-        image.tag: "latest"
+        tag: "latest"
       envs:
         clientsecret: "" # Client secret of fetch core instance
         user: "" # User to connect to fetch core
         password: "" # Password for fetch core user
         host: "" # Host name of fetch core instance
         clientid: "" # Client ID of fetch core instance
----
-      
