@@ -1,0 +1,19 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dummy-mission-controller
+spec:
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: dummy-mission-controller
+  template:
+    metadata:
+      labels:
+        app: dummy-mission-controller
+    spec:
+      containers:
+      - name: dummy-mission-controller
+        image: {{ .Values.image.repository }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}
+        imagePullPolicy: Always
