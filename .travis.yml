@@ -9,8 +9,8 @@
 
 language: python
 sudo: required
-dist: trusty
-python: "3.6.1"
+dist: xenial
+python: "3.7"
 services:
   - docker
 git:
