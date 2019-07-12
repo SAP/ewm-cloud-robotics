@@ -168,7 +168,7 @@ SAP EWM extension for Cloud Robotics includes all developments required to run C
 2. The **Pick, Pack and Pass** scenario designed for collaboration of human pickers and robots. In this scenario warehouse orders are assigned to a robot which is waiting for the picker at the source bins. The picker scans the robot to start the picking process.
 
 All foundations and the **Move Handling Unit** process are part of this repository. The robot enabled **Pick, Pack and Pass** scenario can be found in a separate [repository](https://github.com/SAP/ewm-cloud-robotics-s4), because it includes some modifications of the system.
-Both repositories can be deployed to a SAP system using [abapGit](https://github.com/larshp/abapGit) and [abapGit-Plugins](https://github.com/larshp/abapGit-Plugins).
+Both repositories can be deployed to a SAP system using [abapGit](https://github.com/larshp/abapGit).
 
 
 [This document](./docs/setup-EWM.md) describes the configuration steps in SAP EWM after the deployment of the code.
