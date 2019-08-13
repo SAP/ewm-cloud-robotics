@@ -1,0 +1,23 @@
+---
+apiVersion: registry.cloudrobotics.com/v1alpha1
+kind: RobotType
+metadata:
+  name: {{ .Values.robotMetadata.type }}
+spec:
+  make: {{ .Values.robotMetadata.make }}
+  model: {{ .Values.robotMetadata.model }}
+---
+{{- range .Values.dummyrobots }}
+apiVersion: registry.cloudrobotics.com/v1alpha1
+kind: Robot
+metadata:
+  name: {{ . | quote }}
+  labels:
+    cloudrobotics.com/robot-name: {{ . | quote }}
+    model: {{ $.Values.robotMetadata.model }}
+    make: {{ $.Values.robotMetadata.make }}
+spec:
+  role: {{ $.Values.robotMetadata.role }}
+  type: {{ $.Values.robotMetadata.type }}
+---
+{{- end }}

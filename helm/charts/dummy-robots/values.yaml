@@ -1,0 +1,10 @@
+robotMetadata:
+  type: "dummy-robot"
+  role: "ewm-dummy-robot"
+  make: "dummy-make"
+  model: "dummy-model"
+
+dummyrobots:
+  - dummy-one
+  - dummy-two
+  - dummy-three

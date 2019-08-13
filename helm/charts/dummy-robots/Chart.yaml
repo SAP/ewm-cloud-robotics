@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Basic mission controller confirming every mission CRD
+name: dummy-robots
+version: 0.0.1
