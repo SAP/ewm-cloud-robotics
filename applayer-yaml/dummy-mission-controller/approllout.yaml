@@ -16,5 +16,9 @@ spec:
       image:
         repository: "ewmcloudrobotics/dummy-mission-controller"
         tag: "latest"
+  ## Select dummy robots only!
+  robots:
+  - selector:
+      matchLabels:
+        model: dummy-model
 ---
-      

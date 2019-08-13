@@ -29,5 +29,5 @@ spec:
         model: freight100
   - selector:
       matchLabels:
-        model: dummyModel
+        model: dummy-model
 ---
