@@ -61,7 +61,7 @@ If all components are installed to their target location and linked as depicted 
 ## Instructions
 ### Prerequisites
 __ewm-cloud-robotics__ can be developed and deployed on macOS or Linux, it requires the following components to be installed:
-- [install helm](https://helm.sh/docs/using_helm/#installing-helm) (tested with 2.13.1)
+- [install helm](https://helm.sh/docs/using_helm/#installing-helm) (tested with 3.0.0-alpha.2)
 - [install kubectl](https://kubernetes.io/docs/tasks/tools/install-minikube/#install-kubectl) 
 - [install docker](https://runnable.com/docker/getting-started/) (tested with engine v18.09.2)
 - [install skaffold](https://github.com/GoogleContainerTools/skaffold) (tested with v0.31)
@@ -77,8 +77,13 @@ If you have not yet set up a Cloud Robotics cluster, it is also required to inst
 # Using Homebrew🍺 (https://brew.sh/):
 # kubectl
 brew install kubernetes-cli
+
 # Helm
-brew install kubernetes-helm
+## TODO:
+## If Helm 3 available via brew:
+## brew install kubernetes-helm
+curl -LO https://get.helm.sh/helm-v3.0.0-alpha.2-darwin-amd64.tar.gz && tar -x helm-v3.0.0-alpha.2-darwin-amd64.tar.gz && sudo mv darwin-amd64/helm /usr/local/bin/helm
+
 # skaffold
 brew install skaffold
 
@@ -98,7 +103,10 @@ sudo apt-get update
 sudo apt-get install -y kubectl
 
 # Helm (for specific versions refer to https://helm.sh/docs/using_helm/#from-the-binary-releases)
-sudo snap install helm --classic
+## TODO:
+## If Helm 3 available via snap:
+## sudo snap install helm --classic
+curl -LO https://get.helm.sh/helm-v3.0.0-alpha.2-linux-amd64.tar.gz && tar -x helm-v3.0.0-alpha.2-linux-amd64.tar.gz && sudo mv linux-amd64/helm /usr/local/bin/helm
 
 # skaffold
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
