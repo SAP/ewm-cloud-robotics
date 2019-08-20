@@ -12,10 +12,15 @@ RUN pip3 install /k8scrhandler && \
     rm -rf /k8scrhandler && \
     python3 -c "import k8scrhandler"
 
-#COPY ./python-modules/dummycontroller /dummycontroller
-#RUN pip3 install /dummycontroller/ && \
-#    rm -rf /dummycontroller && \
-#    python3 -c "import dummycontroller"
+COPY ./python-modules/robcoewmtypes /robcoewmtypes
+RUN pip3 install /robcoewmtypes && \
+    rm -rf /robcoewmtypes && \
+    python3 -c "import robcoewmtypes"
+
+COPY ./python-modules/dummycontroller /dummycontroller
+RUN pip3 install /dummycontroller/ && \
+    rm -rf /dummycontroller && \
+    python3 -c "import dummycontroller"
 
 COPY docker/dummy-mission-controller/app /app
 WORKDIR /app
@@ -23,5 +28,4 @@ WORKDIR /app
 RUN pip3 install -r ./requirements.txt
 
 STOPSIGNAL SIGTERM
-#ENTRYPOINT [ "python3", "/app/main.py" ]
-ENTRYPOINT [ "echo", "Hello World!" ]
+ENTRYPOINT [ "python3", "/app/main.py" ]
