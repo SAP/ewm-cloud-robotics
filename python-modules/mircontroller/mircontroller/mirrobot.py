@@ -10,7 +10,7 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""Representation of a Fetch robot in RobCo."""
+"""Representation of a MiR robot in RobCo."""
 
 import logging
 import datetime
