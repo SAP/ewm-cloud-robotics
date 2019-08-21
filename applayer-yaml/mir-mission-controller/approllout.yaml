@@ -25,4 +25,3 @@ spec:
         mirpassword: "" # Password for MiR user
         mirhost: "" # Host name of MiR API
 ---
-      

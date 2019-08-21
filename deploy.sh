@@ -42,7 +42,6 @@ package_chart() {
 
     mkdir tmp/packages
     cd "$chart_path"
-    helm dependency update
     helm lint --strict .
     helm package . --destination "$loc/tmp/packages"
 
@@ -84,6 +83,14 @@ help() {
     printf '               version ("-v <V> | --version <V> | --version=<V>"): Specify the version used within the AppRollout (default = "dev")\n'
     printf '                   - "./deploy.sh --version=0.0.1 rollout ewm-order-manager"\n'
     printf '                   - "./deploy.sh -v 0.0.1 rollout mir-mission-controller"\n'
+    printf '    dummies:   Instantiate dummy robots in your cluster based upon Helm chart: helm/dummy-robots\n'    
+    printf '               DEFAULT:\n'
+    printf '                   - "./deploy.sh dummies install"\n'
+    printf '               OPTIONS:\n'
+    printf '               install: Add dummy-robots to your cluster\n'
+    printf '                   - "./deploy.sh dummies install"\n'
+    printf '               uninstall: Remove dummy-robots from cluster\n'
+    printf '                   - "./deploy.sh dummies uninstall"\n'
 }
 
 build() {
@@ -165,6 +172,18 @@ rollout() {
     rm -rf tmp/
 }
 
+dummies() {
+    verify_kubectl_context
+
+    if [[ $1 = install ]]; then
+        helm install dummy-robots ./helm/charts/dummy-robots
+    elif  [[ $1 = uninstall ]]; then
+        helm uninstall dummy-robots
+    else 
+        printf 'Please specify whether you want to install/uninstall dummy-robots.\n'
+    fi
+}
+
 ## COMMANDS
 #########################################################################################
 ## MAIN
@@ -237,10 +256,12 @@ done
 
 #############################################
 ## CALL COMMAND (FROM REMAINING POSITIONAL PARAMETERS)
-if [[ ! ""$1"" =~ ^(build|push|rollout|help)$ ]]; then
+if [[ ! ""$1"" =~ ^(build|push|rollout|help|dummies)$ ]]; then
     help && exit 1
 else
     if [ "$2" ]; then
+        "$@"
+    elif [ ""$1"" =  "dummies" ]; then
         "$@"
     else
         help && die 'Please specify the application you want to '$1

@@ -61,7 +61,7 @@ If all components are installed to their target location and linked as depicted 
 ## Instructions
 ### Prerequisites
 __ewm-cloud-robotics__ can be developed and deployed on macOS or Linux, it requires the following components to be installed:
-- [install helm](https://helm.sh/docs/using_helm/#installing-helm) (tested with 2.13.1)
+- [install helm](https://helm.sh/docs/using_helm/#installing-helm) (tested with 3.0.0-alpha.2)
 - [install kubectl](https://kubernetes.io/docs/tasks/tools/install-minikube/#install-kubectl) 
 - [install docker](https://runnable.com/docker/getting-started/) (tested with engine v18.09.2)
 - [install skaffold](https://github.com/GoogleContainerTools/skaffold) (tested with v0.31)
@@ -77,8 +77,13 @@ If you have not yet set up a Cloud Robotics cluster, it is also required to inst
 # Using Homebrew🍺 (https://brew.sh/):
 # kubectl
 brew install kubernetes-cli
+
 # Helm
-brew install kubernetes-helm
+## TODO:
+## If Helm 3 available via brew:
+## brew install kubernetes-helm
+curl -LO https://get.helm.sh/helm-v3.0.0-alpha.2-darwin-amd64.tar.gz && tar -x helm-v3.0.0-alpha.2-darwin-amd64.tar.gz && sudo mv darwin-amd64/helm /usr/local/bin/helm
+
 # skaffold
 brew install skaffold
 
@@ -98,7 +103,10 @@ sudo apt-get update
 sudo apt-get install -y kubectl
 
 # Helm (for specific versions refer to https://helm.sh/docs/using_helm/#from-the-binary-releases)
-sudo snap install helm --classic
+## TODO:
+## If Helm 3 available via snap:
+## sudo snap install helm --classic
+curl -LO https://get.helm.sh/helm-v3.0.0-alpha.2-linux-amd64.tar.gz && tar -x helm-v3.0.0-alpha.2-linux-amd64.tar.gz && sudo mv linux-amd64/helm /usr/local/bin/helm
 
 # skaffold
 curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
@@ -179,23 +187,51 @@ Both repositories can be deployed to a SAP system using [abapGit](https://github
 The ewm-order-manager runs in the cloud cluster and represents the interface between an SAP EWM system and Cloud Robotics. It watches for available robots with free capacities and subsequently requests warehouse orders from SAP EWMs OData interface. It also processes warehouse order confirmations by robots and propagates the new status to SAP EWM.
 
 #### ewm-robot-controller
-The ewm-robot-controller is an app which should run on the robot and includes the business logic for robots to process SAP EWM warehouse orders autonomously. It currently supports the Move Handling Unit and the robot enabled Pick, Pack and Pass scenario including error handling capabilities. It uses the Cloud Robotics mission API to control the robots.
+The ewm-robot-controller is an app which should run per robot and includes the business logic for robots to process SAP EWM warehouse orders autonomously. It currently supports the Move Handling Unit and the robot enabled Pick, Pack and Pass scenario including error handling capabilities. It uses the Cloud Robotics mission API to control the robots. There are two distinct versions available at the moment, __ewm-robot-controller__ and __ewm-robot-controller-cloud__ that differ regarding their deployment target (robot cluster vs. cloud cluster). The robot selector within the AppRollout YAML has to be used to specify which ewm-robot-controller is responsible for certain types of robots.
 
 #### ewm-sim
 🚧🚧 The ewm-sim application is currently being redesigned in order to make it slimmer and remove obsolete parts. For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/1).
 
 #### Mission controllers
-A mission controller watches and interprets mission CRs and calls the corresponding robot APIs. Consequently, a separate mission controller is required per robot manufacturer/model. This repository contains sample implementations for a small choice of robots as well as a **basic mission controller**, meant for development/testing that simply confirms every mission generated.
+A mission controller watches and interprets mission CRs and calls the corresponding robot APIs. Consequently, a separate mission controller is required per robot manufacturer/model. This repository contains sample implementations for a small choice of robots as well as a **dummy-mission-controller**, meant for development/testing that simply confirms every mission generated.
 
 ##### mir-mission-controller 
-🚧🚧 The mir-mission-controller is currently under construction and will be added within the next couple of weeks (status June 18th, 2019). For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/3).
+The mir-mission-controller is deployed to robot clusters. It watches on mission CRs, interprets the contained work instructions and issues corresponding calls to the MiR API, which is specified in the mir-mission-controller rollout configurations. 
 
 ##### fetch-mission-controller 
-🚧🚧 The fetch-mission-controller is currently under construction and will be added within the next couple of weeks (status June 18th, 2019). For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/3).
+The fetch mission controller is deployed to the cloud cluster. It watches on mission CRs for all existing Fetch robots, interprets the contained work instructions and issues corresponding calls to the FetchCore instance specified in the rollout. 
 
 ##### dummy-mission-controller 
-🚧🚧 The dummy-mission-controller is currently under construction and will be added within the next couple of weeks (status June 18th, 2019). For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/3).
+The dummy-mission-controller allows testing the warehouse scenarios without deploying actual robots by adding one or more dummies to the cluster. This can be achieved by either installing the Helm chart in `helm/charts/dummy-robots` or via the `deploy.sh` script:
+```bash
+# Add dummy robots:
+./deploy.sh dummies install
 
+# Remove dummy robots:
+./deploy.sh dummies uninstall
+```
+The number of robots can be varied by modifying the corresponding list in the charts' `values.yaml` file. Once the robots are installed, a suitable mission controller is required, that can be installed just as every other app (cf. [Deployment](#deployment)):
+```bash
+# Build and push containers
+./deploy.sh build dummy-mission-controller
+
+# Register the app with Cloud Robotics
+./deploy.sh push dummy-mission-controller
+
+# Rollout the application
+./deploy.sh rollout dummy-mission-controller
+```
+
+Since the dummy robots do not have individual clusters, they also require the [ewm-robot-controller-cloud](#ewm-robot-controller) to be pushed and rolled out. The complete Pod setup should look somewhat like this:
+```
+NAMESPACE                        NAME                                                             READY   STATUS    RESTARTS   AGE
+app-dummy-mission-controller     dummy-mission-controller-dummy-one-784d7b988c-zdns2              1/1     Running   0          1d
+app-dummy-mission-controller     dummy-mission-controller-dummy-three-6c57788c7f-dpjjc            1/1     Running   0          1d
+app-dummy-mission-controller     dummy-mission-controller-dummy-two-78ddb86d85-9mtlr              1/1     Running   0          1d
+app-ewm-robot-controller-cloud   robot-controller-dummy-one-758d789dcc-tqfgh                      1/1     Running   0          1d
+app-ewm-robot-controller-cloud   robot-controller-dummy-three-6768897989-tpljk                    1/1     Running   0          1d
+app-ewm-robot-controller-cloud   robot-controller-dummy-two-79b7cdb649-qnjrw                      1/1     Running   0          1d
+```
 
 
 ## Known issues & limitations

@@ -11,3 +11,6 @@ envs:
 
 robot:
   name: ""
+
+missioncrd:
+  enabled: true
