@@ -72,7 +72,7 @@ metadata:
 spec:
   ports:
   - name: metrics
-    port: 8765
+    port: 8000
   selector:
     app: order-manager
   type: ClusterIP

@@ -14,10 +14,12 @@
 
 import logging
 import datetime
+import time
 import os
 
 from typing import Optional, Tuple
 from requests import RequestException
+from prometheus_client import Histogram
 
 from robcoewmtypes.robot import RobotMission
 
@@ -87,14 +89,32 @@ class MiRRobot:
     POSTYPE_CHARGER = 'charger'
     POSTYPE_POSITION = 'position'
 
+    BUCKETS = (
+        1.0, 5.0, 10.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0, 420.0, 480.0, 540.0,
+        600.0, '+Inf')
+
+    # Prometheus logging
+    p_angular_speed = Histogram(
+        'mir_robot_angular_speed', 'Robot\'s angular speed (rad/s)', ['robot'], buckets=BUCKETS)
+    p_linear_speed = Histogram(
+        'mir_robot_linear_speed', 'Robot\'s linear speed (m/s)', ['robot'], buckets=BUCKETS)
+    p_battery_percentage = Histogram(
+        'mir_robot_battery_percentage', 'Robot\'s battery percentage (%)', ['robot'],
+        buckets=BUCKETS)
+    p_state = Histogram(
+        'mir_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
+
     def __init__(self, mir_api: MiRInterface) -> None:
         """Construct."""
         self._mir_api = mir_api
         self.battery_percentage = 1.0
         self.state = RobcoRobotStates.STATE_UNDEFINED
         self.last_state_change = '1970-01-01T00:00:00.000Z'
+        self.last_state_change_ts = time.time()
         self.trolley_attached = False
         self.active_map = None
+        self.angular_speed = 0.0
+        self.linear_speed = 0.0
         # Init attributes from environment variables
         self.init_robot_fromenv()
 
@@ -288,9 +308,23 @@ class MiRRobot:
             json_resp = http_resp.json()
             self.active_map = '/v2.0.0/maps/{id}'.format(id=json_resp['map_id'])
             self.battery_percentage = json_resp['battery_percentage']
+            self.p_battery_percentage.labels(  # pylint: disable=no-member
+                robot=self.robco_robot_name).observe(self.battery_percentage)
+            self.angular_speed = json_resp['velocity']['angular']
+            self.p_angular_speed.labels(  # pylint: disable=no-member
+                robot=self.robco_robot_name).observe(self.angular_speed)
+            self.linear_speed = json_resp['velocity']['linear']
+            self.p_linear_speed.labels(  # pylint: disable=no-member
+                robot=self.robco_robot_name).observe(self.linear_speed)
+
             if self.state != json_resp['state_id']:
+                self.p_state.labels(  # pylint: disable=no-member
+                    robot=self.robco_robot_name, state=self.state).observe(
+                        time.time() - self.last_state_change_ts)
+                self.last_state_change_ts = time.time()
                 self.last_state_change = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
+
             self.state = RobcoRobotStates.MIR_TO_ROBCO.get(
                 json_resp['state_id'], RobcoRobotStates.STATE_UNDEFINED)
 

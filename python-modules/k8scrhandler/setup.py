@@ -14,7 +14,7 @@
 from setuptools import find_packages, setup
 
 REQUIRES = [
-    'kubernetes==9.0.0',
+    'kubernetes==10.0.1',
     'retrying'
     ]
 

@@ -13,16 +13,16 @@ stringData:
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: mir-mission-controller
+  name: mir-mission-controller-{{ .Values.robot.name }}
 spec:
   replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
-      app: mir-mission-controller
+      app: mir-mission-controller-{{ .Values.robot.name }}
   template:
     metadata:
       labels:
-        app: mir-mission-controller
+        app: mir-mission-controller-{{ .Values.robot.name }}
     spec:
       containers:
       - name: mir-mission-controller
@@ -48,3 +48,30 @@ spec:
           value: "{{ .Values.robot.name }}"
         - name: PLC_TROLLEY_ATTACHED
           value: "{{ .Values.envs.plctrolley }}"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mir-mission-controller-{{ .Values.robot.name }}
+  labels:
+    app: mir-mission-controller-{{ .Values.robot.name }}
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+  selector:
+    app: mir-mission-controller-{{ .Values.robot.name }}
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: mir-mission-controller-{{ .Values.robot.name }}
+  labels:
+    prometheus: kube-prometheus
+spec:
+  endpoints:
+  - port: metrics
+  selector:
+    matchLabels:
+      app: mir-mission-controller-{{ .Values.robot.name }}

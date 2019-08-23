@@ -23,6 +23,7 @@ from copy import deepcopy
 from collections import OrderedDict
 from typing import Dict, Optional
 from requests import RequestException
+from prometheus_client import Counter
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
@@ -43,6 +44,11 @@ class MissionController(K8sCRHandler):
             tzinfo=datetime.timezone.utc).isoformat()}
 
     activeaction_templ = {'status': 'DOCKING'}
+
+    # Prometheus logging
+    mission_counter = Counter(
+        'mir_robot_mission_results', 'Completed Cloud Robotics missions',
+        ['robot', 'action', 'status'])
 
     def __init__(self, mir_robot: MiRRobot) -> None:
         """Constructor."""
@@ -160,7 +166,12 @@ class MissionController(K8sCRHandler):
                 if status.get('status') in status_to_run:
                     # Run mission
                     self._active_mission = deepcopy(mission)
-                    self.run_mission()
+                    result = self.run_mission()
+                    # Log mission status in prometheus
+                    for action in self._active_mission['spec']['actions']:
+                        self.mission_counter.labels(  # pylint: disable=no-member
+                            robot=self._mir_robot.robco_robot_name,
+                            action=action, status=result).inc()
                     self._active_mission.clear()
 
         # After missions are processed for the first time, controller is not in upstart
@@ -190,12 +201,12 @@ class MissionController(K8sCRHandler):
 
         _LOGGER.info('Watch robot status loop stopped')
 
-    def run_mission(self) -> None:
+    def run_mission(self) -> RobcoMissionStates:
         """Run a mission with all its actions."""
         cls = self.__class__
         if not self._active_mission:
             _LOGGER.error('No active mission for robot %s', self._mir_robot.robco_robot_name)
-            return
+            return RobcoMissionStates.STATE_FAILED
 
         name = self._active_mission['metadata']['name']
 
@@ -232,7 +243,7 @@ class MissionController(K8sCRHandler):
                 'status']['message'] = 'Mission {} aborted - no actions attribute in CR'.format(
                     name)
             self.update_cr_status(name, self._active_mission['status'])
-            return
+            return RobcoMissionStates.STATE_FAILED
 
         for i, action in enumerate(actions):
             # Get mission queue id from MiR if existing in CR
@@ -268,7 +279,7 @@ class MissionController(K8sCRHandler):
                 _LOGGER.error(
                     'Mission %s on robot %s ended in state %s', name,
                     self._mir_robot.robco_robot_name, result)
-                return
+                return result
 
         # each action ran successfully
         # Update status, that mission succeeded
@@ -281,7 +292,7 @@ class MissionController(K8sCRHandler):
         _LOGGER.info(
             'Mission %s on robot %s  successfully finished', name,
             self._mir_robot.robco_robot_name)
-        return
+        return RobcoMissionStates.STATE_SUCCEEDED
 
     def run_action_charge(
             self, charger_name: str, threshold_battery: float, target_battery: float,
