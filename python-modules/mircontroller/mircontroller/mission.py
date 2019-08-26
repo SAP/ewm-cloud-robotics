@@ -169,9 +169,11 @@ class MissionController(K8sCRHandler):
                     result = self.run_mission()
                     # Log mission status in prometheus
                     for action in self._active_mission['spec']['actions']:
-                        self.mission_counter.labels(  # pylint: disable=no-member
-                            robot=self._mir_robot.robco_robot_name,
-                            action=action, status=result).inc()
+                        for action_key in action.keys():
+                            if action_key in self._mir_robot.mission_mapping:
+                                self.mission_counter.labels(  # pylint: disable=no-member
+                                    robot=self._mir_robot.robco_robot_name,
+                                    action=action_key, status=result).inc()
                     self._active_mission.clear()
 
         # After missions are processed for the first time, controller is not in upstart
