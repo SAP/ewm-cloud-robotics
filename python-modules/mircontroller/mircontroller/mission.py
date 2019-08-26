@@ -48,7 +48,14 @@ class MissionController(K8sCRHandler):
     # Prometheus logging
     mission_counter = Counter(
         'mir_robot_mission_results', 'Completed Cloud Robotics missions',
-        ['robot', 'action', 'status'])
+        ['robot', 'action', 'target', 'status'])
+
+    action_to_target_mapping = {
+        'moveToNamedPosition': 'targetName',
+        'charge': 'chargerName',
+        'getTrolley': 'dockName',
+        'returnTrolley': 'dockName'
+        }
 
     def __init__(self, mir_robot: MiRRobot) -> None:
         """Constructor."""
@@ -150,6 +157,7 @@ class MissionController(K8sCRHandler):
 
     def _watch_missions(self) -> None:
         """Watch missions of the robot."""
+        cls = self.__class__
         # Copy mission dict, it might be changed while loop is running
         with self._missions_lock:
             missions = deepcopy(self._missions)
@@ -169,11 +177,13 @@ class MissionController(K8sCRHandler):
                     result = self.run_mission()
                     # Log mission status in prometheus
                     for action in self._active_mission['spec']['actions']:
-                        for action_key in action.keys():
+                        for action_key, action_value in action.items():
                             if action_key in self._mir_robot.mission_mapping:
+                                target = action_value.get(
+                                    cls.action_to_target_mapping.get(action_key), 'UNKNOWN')
                                 self.mission_counter.labels(  # pylint: disable=no-member
-                                    robot=self._mir_robot.robco_robot_name,
-                                    action=action_key, status=result).inc()
+                                    robot=self._mir_robot.robco_robot_name, action=action_key,
+                                    target=target, status=result).inc()
                     self._active_mission.clear()
 
         # After missions are processed for the first time, controller is not in upstart
