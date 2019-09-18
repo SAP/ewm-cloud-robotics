@@ -17,7 +17,7 @@ REQUIRES = [
     'attrs==19.1.0',
     'cattrs==0.9.0',
     'requests',
-    'transitions==0.7.0',
+    'transitions==0.7.1',
     'prometheus-client',
     'retrying',
     'robcoewmtypes',

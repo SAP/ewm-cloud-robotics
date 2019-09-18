@@ -229,6 +229,7 @@ class FetchRobot:
             try:
                 # Verify that position is existing
                 xytheta = self.fetch_map.get_pose(target).get_xytheta()
+                pose_id = self.fetch_map.get_pose(target).id
             except ValueError:
                 _LOGGER.error('Target position is unknown')
             else:
@@ -250,6 +251,7 @@ class FetchRobot:
                             'preemptable': 'HARD',
                             'inputs': {
                                 'pose_name': target,
+                                'pose_id': pose_id,
                                 'clear_costmaps': True
                                 },
                             'outputs': {},
@@ -292,6 +294,7 @@ class FetchRobot:
             try:
                 # Verify that position is existing
                 xytheta = self.fetch_map.get_pose(target).get_xytheta()
+                pose_id = self.fetch_map.get_pose(target).id
             except ValueError:
                 _LOGGER.error('Target position is unknown')
             else:
@@ -304,6 +307,7 @@ class FetchRobot:
                         'preemptable': 'HARD',
                         'inputs': {
                             'pose_name': target,
+                            'pose_id': pose_id,
                             'clear_costmaps': True
                             },
                         'outputs': {},

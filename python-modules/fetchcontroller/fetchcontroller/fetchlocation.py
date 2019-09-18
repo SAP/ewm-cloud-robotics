@@ -30,6 +30,7 @@ class FetchPose:
     """Representation of a FetchCore pose."""
 
     name: str = attr.ib(validator=attr.validators.instance_of(str))
+    id: int = attr.ib(validator=attr.validators.instance_of(int))
     x: float = attr.ib(default=0.0, validator=attr.validators.instance_of(float))
     y: float = attr.ib(default=0.0, validator=attr.validators.instance_of(float))
     theta: float = attr.ib(default=0.0, validator=attr.validators.instance_of(float))
@@ -89,6 +90,7 @@ class FetchMap:
         else:
             poses = {}
             for result in fetch_poses['results']:
-                pose = FetchPose(result['name'], result['x'], result['y'], result['theta'])
+                pose = FetchPose(
+                    result['name'], result['id'], result['x'], result['y'], result['theta'])
                 poses[pose.name] = pose
             self._poses = poses
