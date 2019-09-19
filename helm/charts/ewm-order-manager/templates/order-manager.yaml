@@ -81,6 +81,8 @@ apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
   name: order-manager
+  labels:
+    prometheus: kube-prometheus
 spec:
   endpoints:
   - port: metrics

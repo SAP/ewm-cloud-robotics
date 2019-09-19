@@ -14,9 +14,11 @@
 
 import logging
 import threading
+import time
 
 from typing import Dict, List, Set, Optional
 from requests import RequestException
+from prometheus_client import Gauge, Histogram
 
 from .fetchcore import FetchInterface, HTTPstatusNotFound
 from .fetchlocation import FetchMap
@@ -64,6 +66,14 @@ class FetchRobot:
 
     # TODO: Define Charge Missions
 
+    # Prometheus logging
+    BUCKETS = (5.0, 10.0, 30.0, 60.0, 120.0, 300.0, 600.0, 1800.0, 3600.0, '+Inf')
+
+    p_battery_percentage = Gauge(
+        'sap_robot_battery_percentage', 'Robot\'s battery percentage (%)', ['robot'])
+    p_state = Histogram(
+        'sap_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
+
     def __init__(self, name: str, fetch_api: FetchInterface) -> None:
         """Construct."""
         self.name = name
@@ -71,6 +81,7 @@ class FetchRobot:
         self.battery_percentage = 1.0
         self.state = RobcoRobotStates.STATE_UNDEFINED
         self.last_state_change = '1970-01-01T00:00:00.000Z'
+        self.last_state_change_ts = time.time()
         self.trolley_attached = False
         self.active_map = None
         self.fetch_map = None
@@ -345,6 +356,8 @@ class FetchRobot:
 
         self.last_state_change = robots.get('last_status_change', self.last_state_change)
 
+        state_old = self.state
+
         if robots.get('error_status'):
             self.state = RobcoRobotStates.STATE_ERROR
         elif robots.get('status') == 'IDLE':
@@ -363,6 +376,12 @@ class FetchRobot:
             self.state = RobcoRobotStates.STATE_UNAVAILABLE
         else:
             self.state = RobcoRobotStates.STATE_UNDEFINED
+
+        if self.state != state_old:
+            self.p_state.labels(  # pylint: disable=no-member
+                robot=self.name, state=state_old).observe(
+                    time.time() - self.last_state_change_ts)
+            self.last_state_change_ts = time.time()
 
     def update_trolley_attached(self, robots: Dict) -> None:
         """
@@ -416,6 +435,9 @@ class FetchRobot:
             return
 
         self.battery_percentage = states.get('battery_level', self.battery_percentage / 100) * 100
+
+        self.p_battery_percentage.labels(  # pylint: disable=no-member
+            robot=self.name).set(self.battery_percentage)
 
 
 class FetchRobots:

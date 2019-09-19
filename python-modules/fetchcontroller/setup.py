@@ -17,6 +17,7 @@ REQUIRES = [
     'attrs==19.1.0',
     'requests',
     'retrying',
+    'prometheus-client',
     'k8scrhandler'
     ]
 

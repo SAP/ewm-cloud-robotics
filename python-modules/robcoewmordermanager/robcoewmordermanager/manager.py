@@ -51,7 +51,7 @@ class EWMOrderManager:
 
     # Prometheus logging
     who_counter = Counter(
-        'sap_warehouse_orders', 'Completed EWM Warehouse orders', ['robot', 'result'])
+        'sap_ewm_warehouse_orders', 'Completed EWM Warehouse orders', ['robot', 'result'])
 
     def __init__(self) -> None:
         """Constructor."""

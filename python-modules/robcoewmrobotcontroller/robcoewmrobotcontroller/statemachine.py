@@ -171,14 +171,14 @@ class RobotEWMMachine(Machine):
 
     # Prometheus logging
     who_counter = Counter(
-        'sap_robot_warehouse_order_results', 'Completed EWM Warehouse orders',
+        'sap_ewm_robot_warehouse_order_results', 'Completed EWM Warehouse orders',
         ['robot', 'order_type', 'result'])
     who_times = Histogram(
-        'sap_robot_warehouse_order_times',
+        'sap_ewm_robot_warehouse_order_times',
         'Robot\'s processing time for warehouse orders (seconds)',
         ['robot', 'order_type', 'activity'], buckets=BUCKETS)
     state_rentention_times = Histogram(
-        'sap_robot_state_retention_time', 'Robot\'s retention time in a state (seconds)',
+        'sap_ewm_robot_state_retention_time', 'Robot\'s retention time in a state (seconds)',
         ['robot', 'state'], buckets=BUCKETS)
 
     def __init__(

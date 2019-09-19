@@ -56,3 +56,30 @@ spec:
             secretKeyRef:
               name: fetchcore-api
               key: clientid
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fetch-mission-controller
+  labels:
+    app: fetch-mission-controller
+spec:
+  ports:
+  - name: metrics
+    port: 8000
+  selector:
+    app: fetch-mission-controller
+  type: ClusterIP
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: fetch-mission-controller
+  labels:
+    prometheus: kube-prometheus
+spec:
+  endpoints:
+  - port: metrics
+  selector:
+    matchLabels:
+      app: fetch-mission-controller

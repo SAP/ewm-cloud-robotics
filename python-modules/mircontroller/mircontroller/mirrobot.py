@@ -19,7 +19,7 @@ import os
 
 from typing import Optional, Tuple
 from requests import RequestException
-from prometheus_client import Histogram
+from prometheus_client import Gauge, Histogram
 
 from robcoewmtypes.robot import RobotMission
 
@@ -89,20 +89,17 @@ class MiRRobot:
     POSTYPE_CHARGER = 'charger'
     POSTYPE_POSITION = 'position'
 
-    BUCKETS = (
-        1.0, 5.0, 10.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0, 420.0, 480.0, 540.0,
-        600.0, '+Inf')
-
     # Prometheus logging
-    p_angular_speed = Histogram(
-        'mir_robot_angular_speed', 'Robot\'s angular speed (rad/s)', ['robot'], buckets=BUCKETS)
-    p_linear_speed = Histogram(
-        'mir_robot_linear_speed', 'Robot\'s linear speed (m/s)', ['robot'], buckets=BUCKETS)
-    p_battery_percentage = Histogram(
-        'mir_robot_battery_percentage', 'Robot\'s battery percentage (%)', ['robot'],
-        buckets=BUCKETS)
+    BUCKETS = (5.0, 10.0, 30.0, 60.0, 120.0, 300.0, 600.0, 1800.0, 3600.0, '+Inf')
+
+    p_angular_speed = Gauge(
+        'sap_robot_angular_speed', 'Robot\'s angular speed (rad/s)', ['robot'])
+    p_linear_speed = Gauge(
+        'sap_robot_linear_speed', 'Robot\'s linear speed (m/s)', ['robot'])
+    p_battery_percentage = Gauge(
+        'sap_robot_battery_percentage', 'Robot\'s battery percentage (%)', ['robot'])
     p_state = Histogram(
-        'mir_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
+        'sap_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
 
     def __init__(self, mir_api: MiRInterface) -> None:
         """Construct."""
@@ -309,13 +306,13 @@ class MiRRobot:
             self.active_map = '/v2.0.0/maps/{id}'.format(id=json_resp['map_id'])
             self.battery_percentage = json_resp['battery_percentage']
             self.p_battery_percentage.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).observe(self.battery_percentage)
+                robot=self.robco_robot_name).set(self.battery_percentage)
             self.angular_speed = json_resp['velocity']['angular']
             self.p_angular_speed.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).observe(self.angular_speed)
+                robot=self.robco_robot_name).set(self.angular_speed)
             self.linear_speed = json_resp['velocity']['linear']
             self.p_linear_speed.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).observe(self.linear_speed)
+                robot=self.robco_robot_name).set(self.linear_speed)
 
             if self.state != json_resp['state_id']:
                 self.p_state.labels(  # pylint: disable=no-member

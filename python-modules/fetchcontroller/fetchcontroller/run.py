@@ -16,6 +16,8 @@ import sys
 import traceback
 import logging
 
+from prometheus_client import start_http_server
+
 from fetchcontroller.fetchcore import FetchInterface
 from fetchcontroller.fetchrobot import FetchRobots
 from fetchcontroller.helper import MainLoopController
@@ -27,6 +29,8 @@ _LOGGER = logging.getLogger(__name__)
 
 def run_missioncontroller():
     """Run one instance of the FetchCore mission controller."""
+    # Start prometheus client
+    start_http_server(8000)
     # Register handler to control main loop
     loop_control = MainLoopController()
 

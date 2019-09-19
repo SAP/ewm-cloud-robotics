@@ -31,7 +31,7 @@ class ODataHandler:
 
     # Prometheus logging
     odata_counter = Counter(
-        'sap_odata_calls', 'OData calls to SAP EWM', ['endpoint', 'result'])
+        'sap_ewm_odata_calls', 'OData calls to SAP EWM', ['endpoint', 'result'])
 
     def __init__(self, config: ODataConfig) -> None:
         """Constructor."""

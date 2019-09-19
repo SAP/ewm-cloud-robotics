@@ -47,7 +47,7 @@ class MissionController(K8sCRHandler):
 
     # Prometheus logging
     mission_counter = Counter(
-        'mir_robot_mission_results', 'Completed Cloud Robotics missions',
+        'sap_robot_mission_results', 'Completed Cloud Robotics missions',
         ['robot', 'action', 'target', 'status'])
 
     action_to_target_mapping = {
