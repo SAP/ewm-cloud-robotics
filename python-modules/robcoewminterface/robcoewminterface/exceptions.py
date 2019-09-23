@@ -20,6 +20,7 @@ ODATA_ERROR_CODES = {
     'NO_ORDER_FOUND': 'No Warehouse Order found.',
     'ROBOT_STATUS_NOT_SET': 'Robot ressource status could not be set.',
     'INTERNAL_ERROR': 'Internal error.',
+    'INTERNAL_SERVER_ERROR': 'Internal server error. Not a SAP EWM application error.',
     'NO_RESOURCE_TYPE': 'No ressource type provided.',
     'NO_RESOURCE_GROUP': 'No ressource group provided.',
     'RESOURCE_EXISTING': 'Ressource already existing.',
