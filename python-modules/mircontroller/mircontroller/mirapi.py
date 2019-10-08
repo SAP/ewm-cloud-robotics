@@ -77,6 +77,26 @@ class MiRInterface:
             password=envvar['MIR_PASSWORD'])
 
     @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
+    def http_delete(self, endpoint: str) -> Optional[requests.Response]:
+        """Delete data via MiR REST interface."""
+        # Prepare uri
+        uri = 'http://{host}/api/v2.0.0/{endpoint}'.format(
+            host=self.mirconfig.host, endpoint=endpoint)
+        # Prepare additional headers
+        headers = {'Accept': 'application/json'}
+
+        # Call REST service
+        resp = requests.delete(uri, headers=headers, timeout=5.0, auth=(
+            self.mirconfig.user, self.mirconfig.password))
+
+        if 400 <= resp.status_code < 500:
+            _LOGGER.error('%s error on DELETE call to %s', resp.status_code, uri)
+            raise HTTPbadPostRequest
+        elif resp.status_code not in HTTP_SUCCESS:
+            _LOGGER.error('%s error on DELETE call to %s', resp.status_code, uri)
+            raise HTTPstatusCodeFailed
+
+    @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
     def http_get(self, endpoint: str) -> Optional[requests.Response]:
         """Get data from MiR REST interface."""
         # Prepare uri

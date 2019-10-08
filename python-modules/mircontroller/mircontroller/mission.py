@@ -127,12 +127,19 @@ class MissionController(K8sCRHandler):
         robot = custom_res['metadata'].get('labels', {}).get('cloudrobotics.com/robot-name')
         # Only process missions for this MiR robot
         if robot == self._mir_robot.robco_robot_name:
-            if self._active_mission.get(robot, {}).get('metadata', {}).get('name') == name:
-                _LOGGER.warning(
-                    'Mission %s is active on robot %s, but CR was deleted', name, robot)
-            else:
-                with self._missions_lock:
-                    self._missions.pop(name, None)
+            if self._active_mission.get('metadata', {}).get('name') == name:
+                mission_queue_id = self._active_mission['status']['missionQueueIds'][-1]
+                if self._mir_robot.cancel_mission(mission_queue_id):
+                    _LOGGER.info(
+                        'CR of active mission %s deleted. Mission canceled on robot %s', name,
+                        robot)
+                else:
+                    _LOGGER.info(
+                        'CR of active mission %s deleted. Canceling mission on robot %s failed',
+                        name, robot)
+
+            with self._missions_lock:
+                self._missions.pop(name, None)
 
     def _watch_missions_loop(self) -> None:
         """Run watch missions of the robot in a loop."""
@@ -230,7 +237,11 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
-            self.update_cr_status(name, self._active_mission['status'])
+            if self.check_cr_exists(name):
+                self.update_cr_status(name, self._active_mission['status'])
+            else:
+                _LOGGER.info('CR of mission %s deleted, canceling mission', name)
+                return
         elif not self._active_mission.get('status'):
             _LOGGER.info('Starting mission %s on robot %s', name, self._mir_robot.robco_robot_name)
             self._active_mission['status'] = cls.m_status_templ.copy()
@@ -238,7 +249,11 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
-            self.update_cr_status(name, self._active_mission['status'])
+            if self.check_cr_exists(name):
+                self.update_cr_status(name, self._active_mission['status'])
+            else:
+                _LOGGER.info('CR of mission %s deleted, canceling mission', name)
+                return
         else:
             _LOGGER.info('Resuming mission %s on robot %s', name, self._mir_robot.robco_robot_name)
 
@@ -254,7 +269,10 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['message'] = 'Mission {} aborted - no actions attribute in CR'.format(
                     name)
-            self.update_cr_status(name, self._active_mission['status'])
+            if self.check_cr_exists(name):
+                self.update_cr_status(name, self._active_mission['status'])
+            else:
+                _LOGGER.error('CR of mission %s deleted, cannot update status', name)
             return RobcoMissionStates.STATE_FAILED
 
         for i, action in enumerate(actions):
@@ -287,7 +305,10 @@ class MissionController(K8sCRHandler):
                 self._active_mission[
                     'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                         tzinfo=datetime.timezone.utc).isoformat()
-                self.update_cr_status(name, self._active_mission['status'])
+                if self.check_cr_exists(name):
+                    self.update_cr_status(name, self._active_mission['status'])
+                else:
+                    _LOGGER.warning('CR of mission %s deleted, cannot update status', name)
                 _LOGGER.error(
                     'Mission %s on robot %s ended in state %s', name,
                     self._mir_robot.robco_robot_name, result)
@@ -300,7 +321,10 @@ class MissionController(K8sCRHandler):
             'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                 tzinfo=datetime.timezone.utc).isoformat()
         self._active_mission['status']['activeAction'] = {}
-        self.update_cr_status(name, self._active_mission['status'])
+        if self.check_cr_exists(name):
+            self.update_cr_status(name, self._active_mission['status'])
+        else:
+            _LOGGER.warning('CR of mission %s deleted, cannot update status', name)
         _LOGGER.info(
             'Mission %s on robot %s  successfully finished', name,
             self._mir_robot.robco_robot_name)
@@ -328,9 +352,15 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
-            self.update_cr_status(
-                self._active_mission['metadata']['name'],
-                self._active_mission['status'])
+            if self.check_cr_exists(self._active_mission['metadata']['name']):
+                self.update_cr_status(
+                    self._active_mission['metadata']['name'],
+                    self._active_mission['status'])
+            else:
+                _LOGGER.info(
+                    'CR of mission %s deleted, mission was canceled',
+                    self._active_mission['metadata']['name'])
+                return RobcoMissionStates.STATE_CANCELED
 
         return self.watch_running_mission(mission_queue_id, False)
 
@@ -354,9 +384,15 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
-            self.update_cr_status(
-                self._active_mission['metadata']['name'],
-                self._active_mission['status'])
+            if self.check_cr_exists(self._active_mission['metadata']['name']):
+                self.update_cr_status(
+                    self._active_mission['metadata']['name'],
+                    self._active_mission['status'])
+            else:
+                _LOGGER.info(
+                    'CR of mission %s deleted, mission was canceled',
+                    self._active_mission['metadata']['name'])
+                return RobcoMissionStates.STATE_CANCELED
 
         return self.watch_running_mission(mission_queue_id, False)
 
@@ -380,9 +416,15 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
-            self.update_cr_status(
-                self._active_mission['metadata']['name'],
-                self._active_mission['status'])
+            if self.check_cr_exists(self._active_mission['metadata']['name']):
+                self.update_cr_status(
+                    self._active_mission['metadata']['name'],
+                    self._active_mission['status'])
+            else:
+                _LOGGER.info(
+                    'CR of mission %s deleted, mission was canceled',
+                    self._active_mission['metadata']['name'])
+                return RobcoMissionStates.STATE_CANCELED
 
         return self.watch_running_mission(mission_queue_id, True)
 
@@ -406,9 +448,15 @@ class MissionController(K8sCRHandler):
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
-            self.update_cr_status(
-                self._active_mission['metadata']['name'],
-                self._active_mission['status'])
+            if self.check_cr_exists(self._active_mission['metadata']['name']):
+                self.update_cr_status(
+                    self._active_mission['metadata']['name'],
+                    self._active_mission['status'])
+            else:
+                _LOGGER.info(
+                    'CR of mission %s deleted, mission was canceled',
+                    self._active_mission['metadata']['name'])
+                return RobcoMissionStates.STATE_CANCELED
 
         return self.watch_running_mission(mission_queue_id, True)
 
@@ -454,9 +502,15 @@ class MissionController(K8sCRHandler):
                 self._active_mission[
                     'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                         tzinfo=datetime.timezone.utc).isoformat()
-                self.update_cr_status(
-                    self._active_mission['metadata']['name'],
-                    self._active_mission['status'])
+                if self.check_cr_exists(self._active_mission['metadata']['name']):
+                    self.update_cr_status(
+                        self._active_mission['metadata']['name'],
+                        self._active_mission['status'])
+                else:
+                    _LOGGER.info(
+                        'CR of mission %s deleted, mission was canceled',
+                        self._active_mission['metadata']['name'])
+                    return RobcoMissionStates.STATE_CANCELED
 
         # Save last status message before quitting
         self._active_mission['status']['message'] = message

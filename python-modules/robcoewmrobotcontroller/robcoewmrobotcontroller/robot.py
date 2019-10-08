@@ -133,6 +133,8 @@ class EWMRobot:
         self.idle_time_start = 0
         # Number of failed status updates
         self._failed_status_updates = 0
+        # Robot is at staging position
+        self.at_staging_position = False
 
     def init_robot_fromenv(self) -> None:
         """Initialize EWM Robot from environment variables."""
@@ -361,6 +363,9 @@ class EWMRobot:
         # Get current state of the state machine
         state = self.state_machine.state
 
+        if state not in ['idling', 'atTarget']:
+            self.at_staging_position = False
+
         # Run functions for current state
         if state == 'noWarehouseorder':
             self._run_state_nowarehouseorder()
@@ -409,6 +414,9 @@ class EWMRobot:
             # Generic moving is done
             if (state == 'moving' and
                     self.state_machine.mission.status == RobotMission.STATE_SUCCEEDED):
+                # Robot reached staging position
+                if self.state_machine.mission.target_name == self.state_machine.TARGET_STAGING:
+                    self.at_staging_position = True
                 # Set state target reached
                 self.state_machine.target_reached()
             # EWM process related moving is done
@@ -598,12 +606,16 @@ class EWMRobot:
     def _run_state_idling(self) -> None:
         """Run functions for robot state 'idling'."""
         battery = self.state_machine.get_battery_level()
-        # Go to charger if battery is below min level
-        if battery < self.state_machine.battery_min:
+        # Go to charger if battery is below idle level
+        if battery < self.state_machine.battery_idle:
             self.state_machine.charge_battery()
         # Warn when robot is idle for too long
-        if time.time() - self.idle_time_start > 600:
+        elif time.time() - self.idle_time_start > 600:
             if self.mission_api.api_check_state_ok():
+                if self.at_staging_position is False:
+                    _LOGGER.info(
+                        'Robot is idling but not at staging position. Move to staging position')
+                    self.state_machine.goto_target(target=self.state_machine.TARGET_STAGING)
                 _LOGGER.warning('Robot is idling for 10 minutes. Requesting work')
                 self.request_work()
                 self.idle_time_start = time.time()

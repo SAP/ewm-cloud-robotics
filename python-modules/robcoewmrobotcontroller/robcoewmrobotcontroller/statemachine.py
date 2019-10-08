@@ -56,7 +56,7 @@ class RobotEWMMachine(Machine):
     transitions = [
         # General transitions
         {'trigger': 'process_warehouseorder',
-         'source': ['noWarehouseorder', 'finishedWarehouseorder', 'charging', 'idling'],
+         'source': ['noWarehouseorder', 'finishedWarehouseorder', 'charging', 'idling', 'moving'],
          'dest': 'startedWarehouseorder',
          'conditions': '_check_who_arg',
          'before': '_save_active_who'},
@@ -265,6 +265,7 @@ class RobotEWMMachine(Machine):
         # Optional parameters
         envvar['EWM_BATTERY_MIN'] = os.environ.get('EWM_BATTERY_MIN')
         envvar['EWM_BATTERY_OK'] = os.environ.get('EWM_BATTERY_OK')
+        envvar['EWM_BATTERY_IDLE'] = os.environ.get('EWM_BATTERY_IDLE')
 
         # Robot identifier
         self.lgnum = envvar['EWM_LGNUM']
@@ -275,6 +276,7 @@ class RobotEWMMachine(Machine):
         # Battery levels in %
         self.battery_min = float(envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10
         self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 70
+        self.battery_idle = float(envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 50
 
     def get_battery_level(self) -> float:
         """Get robot's battery level in percent."""
@@ -408,14 +410,21 @@ class RobotEWMMachine(Machine):
         if self.active_who is None:
             # Get robots battery level
             battery = self.get_battery_level()
+            mission_name = self._mission.name
             if self.state == 'moving':
                 _LOGGER.info(
-                    'New warehouse order %s received while robot is moving, order enqueued',
-                    warehouseorder.who)
+                    'New warehouse order %s received while robot is moving, cancel move mission '
+                    'and start processing', warehouseorder.who)
+                self.process_warehouseorder(warehouseorder=warehouseorder)
+                # Cancel move mission
+                self.mission_api.api_cancel_mission(mission_name)
             elif self.state != 'charging' or battery >= self.battery_ok:
                 _LOGGER.info(
-                    'New warehouse order %s received, start processing', warehouseorder.who)
+                    'New warehouse order %s received while robot is charging. Battery percentage '
+                    'OK, cancel charging and start processing', warehouseorder.who)
                 self.process_warehouseorder(warehouseorder=warehouseorder)
+                # Cancel charge mission
+                self.mission_api.api_cancel_mission(mission_name)
             else:
                 _LOGGER.info(
                     'New warehouse order %s received, but robot battery level is too low at "%s" '

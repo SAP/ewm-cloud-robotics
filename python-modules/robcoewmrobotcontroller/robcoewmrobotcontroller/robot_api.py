@@ -26,6 +26,10 @@ _LOGGER = logging.getLogger(__name__)
 class RobotMissionAPI:
     """Template class to define robot APIs."""
 
+    def api_cancel_mission(self, name: str) -> bool:
+        """Cancel a mission."""
+        raise NotImplementedError
+
     def api_moveto_storagebin_position(
             self, storagebin: StorageBin) -> RobotMission:
         """Move robot to a storage bin position of the map."""

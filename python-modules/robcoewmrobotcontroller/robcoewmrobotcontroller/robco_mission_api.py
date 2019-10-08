@@ -247,6 +247,15 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
             for charger in self._chargers:
                 yield charger
 
+    def api_cancel_mission(self, name: str) -> bool:
+        """Cancel a mission."""
+        if self.check_cr_exists(name):
+            # Mission is canceled by deleting its CR
+            return self.delete_cr(name)
+        else:
+            _LOGGER.error('Mission CR %s does not exist and cannot be deleted', name)
+            return False
+
     def api_moveto_storagebin_position(
             self, storagebin: StorageBin) -> RobotMission:
         """Move robot to a storage bin position of the map."""

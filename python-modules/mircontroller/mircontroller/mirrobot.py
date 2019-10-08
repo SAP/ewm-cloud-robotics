@@ -23,7 +23,7 @@ from prometheus_client import Gauge, Histogram
 
 from robcoewmtypes.robot import RobotMission
 
-from .mirapi import MiRInterface
+from .mirapi import MiRInterface, HTTPstatusCodeFailed
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -129,6 +129,16 @@ class MiRRobot:
 
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
         self.trolley_attached_plc = int(envvar['PLC_TROLLEY_ATTACHED'])
+
+    def cancel_mission(self, mission: str) -> bool:
+        """Cancel a mission from mission queue."""
+        # POST request
+        try:
+            self._mir_api.http_delete('mission_queue/{qm}'.format(qm=mission))
+        except HTTPstatusCodeFailed:
+            return False
+
+        return True
 
     def get_mission_active_action(self, mission: str) -> str:
         """Get active action of a mission."""

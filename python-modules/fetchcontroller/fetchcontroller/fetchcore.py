@@ -143,6 +143,23 @@ class FetchInterface:
 
     @retry(retry_on_exception=identify_requests_exception, wait_fixed=1000,
            stop_max_attempt_number=5)
+    def http_patch(self, endpoint: str, body: Dict) -> Dict:
+        """Perform a HTTP PATCH request to the given FetchCore endpoint."""
+        headers = {'Authorization': 'Bearer {}'.format(self._bearer)}
+        url = 'https://{}{}'.format(self._fetchcore_host, endpoint)
+        resp = requests.patch(url, headers=headers, json=body)
+        if resp.status_code == 200:
+            return json.loads(resp.text)
+        elif resp.status_code == 401:
+            _LOGGER.error('401 error calling %s', url)
+            self._auth_error = True
+            raise HTTPAuthError
+        else:
+            _LOGGER.error('%s error calling %s', resp.status_code, url)
+            raise HTTPstatusCodeFailed
+
+    @retry(retry_on_exception=identify_requests_exception, wait_fixed=1000,
+           stop_max_attempt_number=5)
     def http_post(self, endpoint: str, body: Dict) -> Dict:
         """Perform a HTTP POST request to the given FetchCore endpoint."""
         headers = {'Authorization': 'Bearer {}'.format(self._bearer)}

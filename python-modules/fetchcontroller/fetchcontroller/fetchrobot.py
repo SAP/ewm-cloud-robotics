@@ -87,6 +87,30 @@ class FetchRobot:
         self.fetch_map = None
         self.installed_actions = []
 
+    def cancel_task(self, task_id: int) -> bool:
+        """Cancel a task."""
+        # Check if tasks exists and is in correct state
+        status = self.get_task_status(task_id)
+
+        if status not in [RobcoMissionStates.STATE_ACCEPTED, RobcoMissionStates.STATE_RUNNING]:
+            _LOGGER.info('Task %s neither running nor queued, nothing to cancel', task_id)
+            return False
+
+        # Create PATCH body
+        patch_body = {'status': 'CANCELED', 'externally_paused': False}
+
+        endpoint = '/api/v1/tasks/{}/'.format(task_id)
+        try:
+            self._fetch_api.http_patch(endpoint, patch_body)
+        except HTTPstatusNotFound:
+            _LOGGER.error('Task %s does not exist in FetchCore', task_id)
+            return False
+        except RequestException as err:
+            _LOGGER.error('Exception %s when connecting to FetchCore endpoint %s', err, endpoint)
+            return False
+        else:
+            return True
+
     def display_hmi_buttons(
             self, button_names: List, button_data: Optional[List] = None) -> Optional[int]:
         """Display buttons on robots HMI screen."""
