@@ -11,7 +11,8 @@ envs:
   ewmlgnum: "1710"
   chargerlist: "Charger"
   batterymin: 10
-  batteryok: 70
+  batteryok: 80
+  batteryidle: 40
 
 ewmcrds:
   enabled: true

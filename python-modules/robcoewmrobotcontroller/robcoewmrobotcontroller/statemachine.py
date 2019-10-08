@@ -275,8 +275,8 @@ class RobotEWMMachine(Machine):
         self.robot_name = envvar['ROBCO_ROBOT_NAME']
         # Battery levels in %
         self.battery_min = float(envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10
-        self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 70
-        self.battery_idle = float(envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 50
+        self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 80
+        self.battery_idle = float(envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 40
 
     def get_battery_level(self) -> float:
         """Get robot's battery level in percent."""

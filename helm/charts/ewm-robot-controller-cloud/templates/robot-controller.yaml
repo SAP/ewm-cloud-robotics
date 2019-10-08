@@ -25,6 +25,12 @@ spec:
           value: "{{ $.Values.envs.ewmlgnum }}"
         - name: CHARGER_LIST
           value: "{{ $.Values.envs.chargerlist }}"
+        - name: EWM_BATTERY_MIN
+          value: "{{ $.Values.envs.batterymin }}"
+        - name: EWM_BATTERY_OK
+          value: "{{ $.Values.envs.batteryok }}"
+        - name: EWM_BATTERY_IDLE
+          value: "{{ $.Values.envs.batteryidle }}"
 ---
 apiVersion: v1
 kind: Service

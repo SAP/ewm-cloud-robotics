@@ -28,6 +28,8 @@ spec:
           value: "{{ .Values.envs.batterymin }}"
         - name: EWM_BATTERY_OK
           value: "{{ .Values.envs.batteryok }}"
+        - name: EWM_BATTERY_IDLE
+          value: "{{ .Values.envs.batteryidle }}"
 ---
 apiVersion: v1
 kind: Service
