@@ -418,17 +418,26 @@ class RobotEWMMachine(Machine):
                 self.process_warehouseorder(warehouseorder=warehouseorder)
                 # Cancel move mission
                 self.mission_api.api_cancel_mission(mission_name)
-            elif self.state != 'charging' or battery >= self.battery_ok:
+            elif self.state == 'charging' and battery >= self.battery_ok:
                 _LOGGER.info(
                     'New warehouse order %s received while robot is charging. Battery percentage '
                     'OK, cancel charging and start processing', warehouseorder.who)
                 self.process_warehouseorder(warehouseorder=warehouseorder)
                 # Cancel charge mission
                 self.mission_api.api_cancel_mission(mission_name)
-            else:
+            elif self.state == 'charging':
                 _LOGGER.info(
                     'New warehouse order %s received, but robot battery level is too low at "%s" '
                     'percent. Continue charging', warehouseorder.who, battery)
+            elif self.state == 'idling':
+                _LOGGER.info(
+                    'New warehouse order %s received, while robot is idling. Start processing',
+                    warehouseorder.who)
+                self.process_warehouseorder(warehouseorder=warehouseorder)
+            else:
+                _LOGGER.error(
+                    'New warehouse order %s received, while robot is in state "%s" with no active'
+                    'warehouse order. This should not happen', warehouseorder.who, self.state)
         # An active warehouse order changed
         elif warehouseorder.who == self.active_who.who and warehouseorder != self.active_who:
             # Find new target if active warehouse order was updated for sub
