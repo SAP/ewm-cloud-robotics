@@ -429,10 +429,10 @@ class RobotEWMMachine(Machine):
                 _LOGGER.info(
                     'New warehouse order %s received, but robot battery level is too low at "%s" '
                     'percent. Continue charging', warehouseorder.who, battery)
-            elif self.state == 'idling':
+            elif self.state in ['noWarehouseorder', 'idling']:
                 _LOGGER.info(
-                    'New warehouse order %s received, while robot is idling. Start processing',
-                    warehouseorder.who)
+                    'New warehouse order %s received, while robot is in state "%s". Start '
+                    'processing', warehouseorder.who, self.state)
                 self.process_warehouseorder(warehouseorder=warehouseorder)
             else:
                 _LOGGER.error(
