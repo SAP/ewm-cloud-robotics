@@ -30,10 +30,9 @@ from robcoewmrobotcontroller.robot import EWMRobot
 from robcoewmrobotcontroller.robot_api import RobotMissionAPI
 from robcoewmrobotcontroller.robco_robot_api import RobCoRobotAPI
 from robcoewmrobotcontroller.robco_mission_api import RobCoMissionAPI
+from robcoewmrobotcontroller.robotconfigcontroller import RobotConfigurationController
 
 _LOGGER = logging.getLogger(__name__)
-
-K8S_CR_HANDLER = 'K8S_CR'
 
 
 class MainLoopController:
@@ -73,23 +72,29 @@ def run_robot():
     """Determine robot type and run one instance of it."""
     # Start prometheus client
     start_http_server(8000)
+    # Create Robot configuration interface
+    robot_config = RobotConfigurationController()
+    # Start robot configuration interface
+    robot_config.run(reprocess=True)
+    # Wait 1 seconds for initial messages being processed
+    time.sleep(1.0)
     # Create RobCo robot interface
     robco_robot = RobCoRobotAPI()
     # Create RobCo mission interface
-    robco_mission = RobCoMissionAPI(robco_robot)
+    robco_mission = RobCoMissionAPI(robot_config, robco_robot)
     # Start RobCo interface
     robco_mission.run(reprocess=True)
     # Wait 1 seconds for initial messages being processed
     time.sleep(1.0)
     # Start main loop
-    robot_main_loop(robco_mission, robco_robot)
-    # In the end stop Mission CR Watcher
+    robot_main_loop(robot_config, robco_mission, robco_robot)
+    # In the end stop Mission and Config CR watchers
     robco_mission.stop_watcher()
+    robot_config.stop_watcher()
 
 
-def robot_main_loop(
-        robot_mission_api: RobotMissionAPI,
-        robot_status_api: Optional[RobCoRobotAPI] = None) -> None:
+def robot_main_loop(robot_config: RobotConfigurationController, robot_mission_api: RobotMissionAPI,
+                    robot_status_api: Optional[RobCoRobotAPI] = None) -> None:
     """Run one main loop of a EWM robot."""
     # Register handler to control main loop
     loop_control = MainLoopController()
@@ -98,12 +103,10 @@ def robot_main_loop(
     k8s_oc = OrderController()
     k8s_rc = RobotRequestController()
 
-    # Get warehouse order where the robot should continue
-    who_restore = k8s_oc.get_who_in_process()
     # Create robot controller instance
     # TODO: Replace dummy confirmation method by real method
     robot = EWMRobot(
-        robot_mission_api, confirm_target=dummy_confirm_true, state_restore=who_restore)
+        robot_mission_api, robot_config, k8s_oc, k8s_rc, confirm_target=dummy_confirm_true)
 
     # K8S custom resource callbacks
     # Order controller
@@ -112,16 +115,10 @@ def robot_main_loop(
     # Robot request controller
     k8s_rc.register_callback(
         'Robot', ['MODIFIED', 'REPROCESS'], robot.robotrequest_callback)
-    # Warehouse task confirmation publisher
-    robot.send_wht_confirmation = k8s_oc.confirm_wht
-    # Save warehouse task progress publisher
-    robot.send_wht_progress_update = k8s_oc.send_wht_progress_update
-    # Request work publisher
-    robot.send_robot_request = k8s_rc.send_robot_request
     # Start
     k8s_oc.run(reprocess=True)
     k8s_rc.run(reprocess=True)
-    _LOGGER.info('SAP EWM Robot "%s" started - K8S CR mode', robot.rsrc)
+    _LOGGER.info('SAP EWM Robot "%s" started - K8S CR mode', robot.robot_config.rsrc)
 
     # Wait 1 seconds for initial messages being processed
     time.sleep(1.0)
@@ -148,14 +145,16 @@ def robot_main_loop(
                     'Uncovered exception in "%s" thread of robotrequestcontroller. Raising it in '
                     'main thread', k)
                 raise exc
-
-            # Check if K8S CR handler exception occured
+            for k, exc in robot_config.thread_exceptions.items():
+                _LOGGER.error(
+                    'Uncovered exception in "%s" thread of robotconfigurationcontroller. Raising '
+                    'it in main thread', k)
+                raise exc
             for k, exc in robot_mission_api.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robot_mission_api . Raising it in '
                     'main thread', k)
                 raise exc
-            # Check if K8S CR handler exception occured
             for k, exc in robot_status_api.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robot_status_api. Raising it in '

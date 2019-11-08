@@ -10,7 +10,7 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""Run the SAP EWM order manager."""
+"""Run the SAP EWM robot configurator."""
 
 import sys
 import signal
@@ -18,11 +18,9 @@ import traceback
 import logging
 import time
 
-from prometheus_client import start_http_server
-
-from robcoewmordermanager.ordercontroller import OrderController
-from robcoewmordermanager.robotrequestcontroller import RobotRequestController
-from robcoewmordermanager.manager import EWMOrderManager
+from robcoewmrobotconfigurator.ewm_robot_sync import EWMRobotSync
+from robcoewmrobotconfigurator.robotconfigcontroller import RobotConfigurationController
+from robcoewmrobotconfigurator.robco_robot_api import RobCoRobotAPI
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -54,54 +52,41 @@ class MainLoopController:
         self.last_time = time.time()
 
 
-def run_ordermanager():
-    """Run one instance of the order manager."""
+def run_robotconfigurator():
+    """Run one instance of the robot configurator."""
     # Register handler to control main loop
     loop_control = MainLoopController()
 
-    # Start prometheus client
-    start_http_server(8000)
+    # Create CR watcher instances
+    k8s_rb = RobCoRobotAPI()
+    k8s_rc = RobotConfigurationController()
 
-    # Create order manager instance
-    manager = EWMOrderManager()
+    # Create EWM robot syncer instance
+    robotsync = EWMRobotSync()
 
     # Register callback functions
-    # Create K8S handler instances
-    k8s_oc = OrderController()
-    k8s_rc = RobotRequestController()
-    # K8S custom resource callbacks
-    # Warehouse order status callback
-    k8s_oc.register_callback(
-        'KubernetesWhoCR', ['MODIFIED', 'REPROCESS'], manager.process_who_cr_cb)
-    # Robot request controller
+    k8s_rb.register_callback('ConfigurationController', ['ADDED'], k8s_rc.robco_robot_cb)
     k8s_rc.register_callback(
-        'RobotRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], manager.robotrequest_callback)
-    # Warehouse order publisher
-    manager.send_who_to_robot = k8s_oc.send_who_to_robot
-    # Warehouse order cleanup
-    manager.cleanup_who = k8s_oc.cleanup_who
-    # Robot request cleanup
-    manager.update_robotrequest_status = k8s_rc.update_request
-
+        'EWMRobotSync', ['ADDED', 'MODIFIED', 'REPROCESS'], robotsync.robotconfiguration_cb)
     # Start
-    k8s_oc.run(reprocess=True, multiple_executor_threads=True)
-    k8s_rc.run(reprocess=True, multiple_executor_threads=True)
+    k8s_rb.run()
+    k8s_rc.run(reprocess=True)
 
-    _LOGGER.info('SAP EWM Order Manager started - K8S CR mode')
+    _LOGGER.info('SAP EWM Robot Configurator started - K8S CR mode')
 
     try:
         # Looping while K8S watchers are running
         while loop_control.shutdown is False:
             # Check if K8S CR handler exception occured
-            for k, exc in k8s_oc.thread_exceptions.items():
+            for k, exc in k8s_rb.thread_exceptions.items():
                 _LOGGER.error(
-                    'Uncovered exception in "%s" thread of ordercontroller. Raising it in main '
+                    'Uncovered exception in "%s" thread of RobCoRobotAPI. Raising it in main '
                     'thread', k)
                 raise exc
             for k, exc in k8s_rc.thread_exceptions.items():
                 _LOGGER.error(
-                    'Uncovered exception in "%s" thread of robotrequestcontroller. Raising it in '
-                    'main thread', k)
+                    'Uncovered exception in "%s" thread of RobotConfigurationController. Raising '
+                    'it in main thread', k)
                 raise exc
             # Sleep maximum 1.0 second
             loop_control.sleep(1.0)
@@ -112,7 +97,7 @@ def run_ordermanager():
     finally:
         # Stop K8S CR watchers
         _LOGGER.info('Stopping K8S CR watchers')
-        k8s_oc.stop_watcher()
+        k8s_rb.stop_watcher()
         k8s_rc.stop_watcher()
 
 
@@ -133,9 +118,9 @@ if __name__ == '__main__':
 
     # Add ch to logger
     ROOT_LOGGER.addHandler(CH)
-    # Run order manager
+    # Run robot master
     try:
-        run_ordermanager()
+        run_robotconfigurator()
     except Exception:  # pylint: disable=broad-except
         EXC_INFO = sys.exc_info()
         _LOGGER.fatal(

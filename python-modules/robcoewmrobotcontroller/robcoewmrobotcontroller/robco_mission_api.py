@@ -12,7 +12,6 @@
 
 """RobCo mission API interface for robcoewm robot."""
 
-import os
 import sys
 import traceback
 import logging
@@ -31,6 +30,7 @@ from k8scrhandler.k8scrhandler import K8sCRHandler
 
 from .robot_api import RobotMissionAPI
 from .robco_robot_api import RobCoRobotAPI
+from .robotconfigcontroller import RobotConfigurationController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -41,9 +41,11 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
     # Mapping from SAP EWM bin to MiR map position
     bin_to_position = {}
 
-    def __init__(self, robot_api: RobCoRobotAPI) -> None:
+    def __init__(self, robot_config: RobotConfigurationController,
+                 robot_api: RobCoRobotAPI) -> None:
         """Constructor."""
-        self.init_robco_fromenv()
+        # Robot Configuration Controller
+        self.robot_config = robot_config
         # Mission status dictionary
         self.mission_status = OrderedDict()
         self.mission_status_lock = threading.RLock()
@@ -51,7 +53,7 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
         template_cr = get_sample_cr('robco_mission')
 
         self.labels = {}
-        self.labels['cloudrobotics.com/robot-name'] = self.robco_robot_name
+        self.labels['cloudrobotics.com/robot-name'] = self.robot_config.robco_robot_name
         super().__init__(
             'mission.cloudrobotics.com',
             'v1alpha1',
@@ -68,7 +70,10 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
         self.trolley_attached = None
 
         # Set active charger
-        self.charger = next(self._chargers_generator)
+        self._chargers = self.robot_config.chargers.copy()
+        self._chargers_generator = self._iterate_chargers()
+        self.charger = next(self._chargers_generator, '')
+        _LOGGER.info('Using chargers: %s', self._chargers)
 
         # Register robot status update callback
         self.robot_api.register_callback(
@@ -82,31 +87,6 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
 
         # Thread to check for deleted mission CRs
         self.deleted_missions_thread = threading.Thread(target=self._deleted_missions_checker)
-
-    def init_robco_fromenv(self) -> None:
-        """Initialize RobCo interface from environment variables."""
-        # Read environment variables
-        envvar = {}
-        envvar['CHARGER_LIST'] = os.environ.get('CHARGER_LIST', 'Charger')
-        envvar['ROBCO_ROBOT_NAME'] = os.environ.get('ROBCO_ROBOT_NAME')
-        # Check if complete
-        for var, val in envvar.items():
-            if val is None:
-                raise ValueError('Environment variable "{}" is not set'.format(var))
-
-        # Optional parameters
-        envvar['EWM_BATTERY_MIN'] = os.environ.get('EWM_BATTERY_MIN')
-        envvar['EWM_BATTERY_OK'] = os.environ.get('EWM_BATTERY_OK')
-
-        # Cloud Robotics robot name
-        self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
-        # List of chargers
-        self._chargers = [x.strip() for x in envvar['CHARGER_LIST'].split(',')]
-        self._chargers_generator = self._iterate_chargers()
-        _LOGGER.info('Using chargers: %s', self._chargers)
-        # Battery levels in %
-        self.battery_min = float(envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10
-        self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 70
 
     def update_mission_status_cb(self, name: str, custom_res: Dict) -> None:
         """Update self.mission_status."""
@@ -281,8 +261,8 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
         mission = RobotMission()
         # Get relevant parameters
         action = {'charge': {'chargerName': self.charger,
-                             'thresholdBatteryPercent': self.battery_min,
-                             'targetBatteryPercent': self.battery_ok}}
+                             'thresholdBatteryPercent': self.robot_config.battery_min,
+                             'targetBatteryPercent': self.robot_config.battery_ok}}
         spec = {'actions': [action]}
         mission_name = str(time.time())
 
@@ -339,7 +319,13 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
 
         # If charging failed, try the next charger in list at the next try
         if mission.status == RobotMission.STATE_FAILED:
-            self.charger = next(self._chargers_generator)
+            # Check if chargers changed in the meantime
+            if self._chargers != self.robot_config.chargers:
+                self._chargers = self.robot_config.chargers.copy()
+                self._chargers_generator = self._iterate_chargers()
+                _LOGGER.info('Available chargers changed to: %s', self._chargers)
+            # Get next charger from generator
+            self.charger = next(self._chargers_generator, '')
 
         return mission
 

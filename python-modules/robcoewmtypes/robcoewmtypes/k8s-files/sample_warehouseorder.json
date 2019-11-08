@@ -3,6 +3,7 @@
   "kind": "WarehouseOrder",
   "metadata": {
     "name": "1710.12345678",
+    "namespace": "default",
     "labels": {
       "cloudrobotics.com/robot-name": "my-robot"
     }

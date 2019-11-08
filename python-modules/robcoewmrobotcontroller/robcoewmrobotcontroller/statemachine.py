@@ -12,7 +12,6 @@
 
 """Robot state machines for robcoewm robots."""
 
-import os
 import logging
 import time
 from collections import OrderedDict, defaultdict, namedtuple
@@ -23,11 +22,12 @@ from transitions.core import EventData
 
 from prometheus_client import Counter, Histogram
 
-from robcoewmtypes.robot import RobotMission
+from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus
 from robcoewmtypes.warehouseorder import WarehouseOrder
 from robcoewmtypes.warehouse import StorageBin
 
 from .robot_api import RobotMissionAPI
+from .robotconfigcontroller import RobotConfigurationController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -182,9 +182,9 @@ class RobotEWMMachine(Machine):
         ['robot', 'state'], buckets=BUCKETS)
 
     def __init__(
-            self, robot_mission_api: RobotMissionAPI, confirm_api: Callable,
-            request_ewm_work_api: Callable, send_wht_error_api: Callable,
-            notify_who_completion_api: Callable, save_wht_progress_api: Callable,
+            self, robot_config: RobotConfigurationController, robot_mission_api: RobotMissionAPI,
+            confirm_api: Callable, request_ewm_work_api: Callable, send_wht_error_api: Callable,
+            notify_who_completion_api: Callable, save_state_api: Callable,
             initial: str = 'noWarehouseorder') -> None:
         """Constructor."""
         cls = self.__class__
@@ -196,8 +196,8 @@ class RobotEWMMachine(Machine):
                          after_state_change=self._run_after_state_change,
                          finalize_event=self._unset_in_transition,
                          initial=initial)
-        # Init robot identifier
-        self.init_robot_fromenv()
+        # Configuration of the robot
+        self.robot_config = robot_config
         # List of warehouse order assigned to this robot
         self.warehouseorders = OrderedDict()
         # List of sub warehouse orders of robot's warehouse orders for Pick, Pack and Pass
@@ -218,7 +218,7 @@ class RobotEWMMachine(Machine):
         self.mission_api = robot_mission_api
         self._mission = RobotMission()
         self.confirm_api = confirm_api
-        self.save_wht_progress_api = save_wht_progress_api
+        self.save_state_api = save_state_api
 
         # APIs for EWM Ordermanager
         self.request_ewm_work = request_ewm_work_api
@@ -250,34 +250,6 @@ class RobotEWMMachine(Machine):
             mission.target_name = self._mission.target_name
         self._mission = mission
 
-    def init_robot_fromenv(self) -> None:
-        """Initialize EWM Robot from environment variables."""
-        # Read environment variables
-        envvar = {}
-        envvar['EWM_LGNUM'] = os.environ.get('EWM_LGNUM')
-        envvar['ROBCO_ROBOT_NAME'] = os.environ.get('ROBCO_ROBOT_NAME')
-        # Check if complete
-        for var, val in envvar.items():
-            if val is None:
-                raise ValueError(
-                    'Environment variable "{}" is not set'.format(var))
-
-        # Optional parameters
-        envvar['EWM_BATTERY_MIN'] = os.environ.get('EWM_BATTERY_MIN')
-        envvar['EWM_BATTERY_OK'] = os.environ.get('EWM_BATTERY_OK')
-        envvar['EWM_BATTERY_IDLE'] = os.environ.get('EWM_BATTERY_IDLE')
-
-        # Robot identifier
-        self.lgnum = envvar['EWM_LGNUM']
-        # EWM rsrc must be upper case
-        self.rsrc = envvar['ROBCO_ROBOT_NAME'].upper()
-        # Cloud Robotics robot name
-        self.robot_name = envvar['ROBCO_ROBOT_NAME']
-        # Battery levels in %
-        self.battery_min = float(envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10
-        self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 80
-        self.battery_idle = float(envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 40
-
     def get_battery_level(self) -> float:
         """Get robot's battery level in percent."""
         # Try 3 times at maximum
@@ -304,6 +276,14 @@ class RobotEWMMachine(Machine):
         """Run these methods after state changed."""
         # Set enter timestmap
         self._set_state_enter_ts(event)
+        # Save current state
+        lgnum = self.active_who.lgnum if self.active_who else ''
+        who = self.active_who.who if self.active_who else ''
+        tanum = self.active_wht.tanum if self.active_wht else ''
+        subwho = self.active_sub_who if self.active_sub_who else ''
+        state = RobotConfigurationStatus(
+            self.state, self._mission.name, self._mission.target_name, lgnum, who, tanum, subwho)
+        self.save_state_api(state)
 
     def _set_in_transition(self, event: EventData) -> None:
         """Set the in_transition flag of the state machine."""
@@ -326,7 +306,7 @@ class RobotEWMMachine(Machine):
         """Log the retention time of this state."""
         retention_time = time.time() - self.state_enter_ts
         self.state_rentention_times.labels(  # pylint: disable=no-member
-            robot=self.robot_name, state=self.state).observe(retention_time)
+            robot=self.robot_config.robco_robot_name, state=self.state).observe(retention_time)
 
     def _check_target_arg(self, event: EventData) -> bool:
         """Check if target is an argument of the transition."""
@@ -387,7 +367,8 @@ class RobotEWMMachine(Machine):
         """Update a warehouse order of this state machine."""
         warehouseorder = event.kwargs.get('warehouseorder')
 
-        if warehouseorder.lgnum == self.lgnum and warehouseorder.rsrc == self.rsrc:
+        if (warehouseorder.lgnum == self.robot_config.lgnum
+                and warehouseorder.rsrc == self.robot_config.rsrc):
             _LOGGER.debug(
                 'Start updating warehouse order "%s" directly assigned to the robot',
                 warehouseorder.who)
@@ -418,7 +399,7 @@ class RobotEWMMachine(Machine):
                 self.process_warehouseorder(warehouseorder=warehouseorder)
                 # Cancel move mission
                 self.mission_api.api_cancel_mission(mission_name)
-            elif self.state == 'charging' and battery >= self.battery_ok:
+            elif self.state == 'charging' and battery >= self.robot_config.battery_ok:
                 _LOGGER.info(
                     'New warehouse order %s received while robot is charging. Battery percentage '
                     'OK, cancel charging and start processing', warehouseorder.who)
@@ -660,18 +641,18 @@ class RobotEWMMachine(Machine):
         # Log warehouse order completion
         self.who_ts['finish'] = time.time()
         self.who_times.labels(  # pylint: disable=no-member
-            robot=self.robot_name, order_type=self.who_type,
+            robot=self.robot_config.robco_robot_name, order_type=self.who_type,
             activity='completed').observe(
                 self.who_ts['finish']-self.who_ts['start'])
 
         if event.event.name == 'cancel_warehouseorder':
             self.who_counter.labels(  # pylint: disable=no-member
-                robot=self.robot_name,
+                robot=self.robot_config.robco_robot_name,
                 order_type=self.who_type,
                 result=STATE_FAILED).inc()
         else:
             self.who_counter.labels(  # pylint: disable=no-member
-                robot=self.robot_name,
+                robot=self.robot_config.robco_robot_name,
                 order_type=self.who_type,
                 result=STATE_SUCCEEDED).inc()
 
@@ -694,10 +675,10 @@ class RobotEWMMachine(Machine):
             self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
         else:
             _LOGGER.info('No more warehouse orders in queue')
-            if battery < self.battery_min:
+            if battery < self.robot_config.battery_min:
                 _LOGGER.info(
                     'Battery level is "%s". It is below minimum of "%s". Charging robot.', battery,
-                    self.battery_min)
+                    self.robot_config.battery_min)
                 self.charge_battery()
             else:
                 _LOGGER.info(
@@ -759,9 +740,7 @@ class RobotEWMMachine(Machine):
             'Started moving to "%s" with mission name "%s"', self.active_wht.vlpla, mission.name)
         self._mission.name = mission.name
         self._mission.status = mission.status
-        self._mission.target_name = ''
-        # Save state for recovery on startup
-        self.save_wht_progress_api(self.active_wht, self._mission.name, self.state)
+        self._mission.target_name = self.active_wht.vlpla
 
     def on_enter_MoveHU_movingToTargetBin(self, event: EventData) -> None:
         """Start moving to the target bin of a warehouse task."""
@@ -770,9 +749,7 @@ class RobotEWMMachine(Machine):
             'Started moving to "%s" with mission name "%s"', self.active_wht.nlpla, mission.name)
         self._mission.name = mission.name
         self._mission.status = mission.status
-        self._mission.target_name = ''
-        # Save state for recovery on startup
-        self.save_wht_progress_api(self.active_wht, self._mission.name, self.state)
+        self._mission.target_name = self.active_wht.nlpla
 
     def on_enter_MoveHU_loading(self, event: EventData) -> None:
         """Load handling unit of a warehouse task on a robot."""
@@ -787,7 +764,7 @@ class RobotEWMMachine(Machine):
             # Log elapsed time from order start to HU load
             self.who_ts['load'] = time.time()
             self.who_times.labels(  # pylint: disable=no-member
-                robot=self.robot_name, order_type=self.who_type,
+                robot=self.robot_config.robco_robot_name, order_type=self.who_type,
                 activity='load_hu').observe(self.who_ts['load']-self.who_ts['start'])
 
             for i, task in enumerate(self.active_who.warehousetasks):
@@ -802,6 +779,7 @@ class RobotEWMMachine(Machine):
 
         self._mission.name = ''
         self._mission.status = ''
+        self._mission.target_name = ''
 
     def on_enter_MoveHU_unloading(self, event: EventData) -> None:
         """Unload handling unit of a warehouse task on a robot."""
@@ -816,7 +794,7 @@ class RobotEWMMachine(Machine):
             # Log elapsed time from HU load to HU unload
             self.who_ts['unload'] = time.time()
             self.who_times.labels(  # pylint: disable=no-member
-                robot=self.robot_name, order_type=self.who_type,
+                robot=self.robot_config.robco_robot_name, order_type=self.who_type,
                 activity='unload_hu').observe(self.who_ts['unload']-self.who_ts['load'])
 
             for i, task in enumerate(self.active_who.warehousetasks):
@@ -831,6 +809,7 @@ class RobotEWMMachine(Machine):
 
         self._mission.name = ''
         self._mission.status = ''
+        self._mission.target_name = ''
 
     def on_enter_MoveHU_waitingForErrorRecovery(self, event: EventData) -> None:
         """
@@ -903,8 +882,6 @@ class RobotEWMMachine(Machine):
         self._mission.name = mission.name
         self._mission.status = mission.status
         self._mission.target_name = storagebin
-        # Save state for recovery on startup
-        self.save_wht_progress_api(self.active_wht, self._mission.name, self.state)
 
     def on_exit_PickPackPass_moving(self, event: EventData) -> None:
         """Delete goal ids when stop moving."""
@@ -927,9 +904,6 @@ class RobotEWMMachine(Machine):
                 # Update queue of sub warehouse orders
                 sub_who = WhoIdentifier(self.active_sub_who.lgnum, self.active_sub_who.who)
                 self.sub_warehouseorders[sub_who] = self.active_sub_who
-
-        # Save state for recovery on startup
-        self.save_wht_progress_api(self.active_wht, '', '')
 
     def on_exit_PickPackPass_waitingAtTarget(
             self, event: EventData) -> None:

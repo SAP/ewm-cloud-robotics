@@ -1,0 +1,7 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/robot-controller"
+  tag: "latest"
+
+robots: []

@@ -42,6 +42,10 @@ build:
       context: .
       docker:
         dockerfile: docker/robot-controller/Dockerfile
+    - image: robot-configurator
+      context: .
+      docker:
+        dockerfile: docker/robot-configurator/Dockerfile
   local: 
     push: false
 test:
@@ -63,6 +67,9 @@ test:
   - image: robot-controller
     structureTests:
       - docker/robot-controller/test/container-structure-test/prod.yaml
+  - image: robot-configurator
+    structureTests:
+      - docker/robot-configurator/test/container-structure-test/prod.yaml
 deploy:
   kubectl:
     manifests:
@@ -116,6 +123,12 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: robot-configurator
+          custom:
+            buildCommand: ./scripts/gcr-build.sh robot-configurator docker/robot-configurator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
   ## Tests are executed to verify that correct Dockerfiles were used
   ## Deploy is left blank since this profile is for updating the container registry.
@@ -162,6 +175,12 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: robot-configurator
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh robot-configurator docker/robot-configurator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Profiles to build and push application specific images via deploy.sh to
   ## custom container registry
   ##
@@ -195,10 +214,19 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: robot-configurator
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh robot-configurator docker/robot-configurator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
     test:
       - image: robot-controller
         structureTests:
           - docker/robot-controller/test/container-structure-test/prod.yaml
+      - image: robot-configurator
+        structureTests:
+          - docker/robot-configurator/test/container-structure-test/prod.yaml
   ## ewm-sim        
   - name: ewm-sim
     build:

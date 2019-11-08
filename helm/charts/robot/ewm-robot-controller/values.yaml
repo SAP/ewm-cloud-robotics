@@ -1,0 +1,11 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/robot-controller"
+  tag: "latest"
+
+robot:
+  name: ""
+
+ewmcrds:
+  enabled: true

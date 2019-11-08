@@ -21,9 +21,20 @@ spec:
       image:
         repository: "ewmcloudrobotics/robot-controller"
         tag: "latest"
+  cloud:
+    values:
+      image:
+        repository: "ewmcloudrobotics/robot-configurator"
+        tag: "latest"
       envs:
-        ewmlgnum: "" # Warehouse Number in SAP EWM the robot is operating
-        chargerlist: "" # Names of chargers available for the robots separated by commas
+        ewmhost: "" # Host for the OData API endpoint
+        ewmuser: "" # Technical user for all warehouseorder related API calls
+        ewmpassword: "" # Matching password
+        ewmlgnum: "" # Default Warehouse Number in SAP EWM the robot is operating
+        ewmbasepath: "" # Basepath for the OData API matching the service definition
+        ewmrsrctype: "" # Resource type within EWM
+        ewmrsrcgrp: "" # Resource group within EWM
         batterymin: 10 # If battery is below this level, a charging mission will be created next
         batteryok: 80 # Battery level to which a robot will be charged during charging mission
         batteryidle: 40 # If battery is below this level, a charging mission will be created if robot is idling
+        maxidletime: 30 # Maximum time the robot is waiting for a new warehouse order before it moves to staging

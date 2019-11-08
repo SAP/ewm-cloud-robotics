@@ -1,0 +1,23 @@
+{
+    "apiVersion": "sap.com/v1",
+    "kind": "RobotConfiguration",
+    "metadata": {
+        "labels": {
+            "cloudrobotics.com/robot-name": "my-robot"
+        },
+        "name": "my-robot",
+        "namespace": "default"
+    },
+    "spec": {
+        "batteryIdle": 0,
+        "batteryMin": 0,
+        "batteryOk": 0,
+        "lgnum": "1710",
+        "rsrcgrp": "",
+        "rsrctype": "",
+        "maxIdleTime": 0,
+        "chargers":
+            [ "Charger" ]
+    },
+    "status": {}
+}

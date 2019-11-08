@@ -1,6 +1,0 @@
-dependencies:
-- name: ewm-crds
-  repository: file://../../dependency-charts/ewm-crds
-  version: 0.0.1
-digest: sha256:e4fec86ff1cf310c8b7641260e41ab190c90e83a50aefec6fe18c2d5dcf6f1ed
-generated: "2019-10-08T17:21:05.153001+02:00"
