@@ -1,0 +1,5 @@
+# Robot Master container
+k8scrhandler
+robcoewmtypes
+robcoewminterface
+robcoewmrobotconfigurator

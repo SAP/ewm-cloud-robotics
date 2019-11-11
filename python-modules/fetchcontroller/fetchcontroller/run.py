@@ -54,9 +54,9 @@ def run_missioncontroller():
     _LOGGER.info('FetchCore mission controller started')
 
     try:
-        # Looping while Pub/Sub subscriber is running
+        # Looping while K8S watchers are running
         while loop_control.shutdown is False:
-            # Check if K8S CRD handler exception occured
+            # Check if K8S CR handler exception occured
             for k, exc in k8s_mc.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of mission controller. Raising it in main '

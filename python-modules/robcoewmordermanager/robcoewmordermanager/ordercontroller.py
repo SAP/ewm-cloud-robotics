@@ -10,7 +10,7 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""K8s custom resource handler for new warehouse orders."""
+"""K8s custom resource handler for EWM warehouse orders."""
 
 import sys
 import traceback
@@ -241,8 +241,7 @@ class OrderController(K8sCRHandler):
         labels['cloudrobotics.com/robot-name'] = robotident.rsrc.lower()
         name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
         spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
-        cr_exists = self.check_cr_exists(name)
-        if cr_exists:
+        if self.check_cr_exists(name):
             _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)
             success = self.update_cr_spec(name, spec, labels)
         else:

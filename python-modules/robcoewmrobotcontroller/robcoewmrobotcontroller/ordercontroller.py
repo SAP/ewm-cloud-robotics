@@ -19,13 +19,13 @@ import logging
 
 from typing import Dict, Optional
 
+from cattr import structure
+
 from robcoewmtypes.helper import create_robcoewmtype_str, get_sample_cr
 from robcoewmtypes.warehouseorder import (
     WarehouseOrder, ConfirmWarehouseTask, WarehouseOrderCRDSpec)
 
 from k8scrhandler.k8scrhandler import K8sCRHandler, k8s_cr_callback
-
-from .robot import WarehouseOrderStateRestore
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -161,71 +161,16 @@ class OrderController(K8sCRHandler):
 
         return success
 
-    def send_wht_progress_update(self, wht: Dict, mission: str, statemachine: str) -> bool:
-        """Save the progress the robot made on processing the warehouse task."""
-        name = '{lgnum}.{who}'.format(lgnum=wht['lgnum'], who=wht['who'])
-        tanum = wht['tanum']
+    def get_warehouseorder(
+            self, lgnum: str, who: str) -> Optional[WarehouseOrder]:
+        """Get a warehouse order from CR."""
+        name = '{}.{}'.format(lgnum, who)
 
-        # Create robot subtree in status
-        status = {'robot': {'mission': mission, 'statemachine': statemachine, 'tanum': tanum}}
-
-        success = self.update_cr_status(name, status)
-
-        return success
-
-    def get_who_in_process(self) -> Optional[WarehouseOrderStateRestore]:
-        """
-        Get the warehouse order which is process plus active mission and statemachine state.
-
-        Assume that there is only one warehouse order in process.
-        If there are multiple, get the first one.
-        """
-        # Get all warehouse order CRs
-        cr_resp = self.list_all_cr()
-
-        # Return the first warehouse order in process
-        for custom_res in cr_resp['items']:
-            warehouseorder = custom_res.get('spec', {}).get('data', {})
-            tanum = custom_res.get('status', {}).get('robot', {}).get('tanum')
-            mission = custom_res.get('status', {}).get('robot', {}).get('mission')
-            statemachine = custom_res.get('status', {}).get('robot', {}).get('statemachine')
-
-            if warehouseorder and mission and statemachine and tanum:
-
-                # Determine type of warehouse order
-                who_type = statemachine[:statemachine.rfind('_')]
-
-                # MoveHU warehouse orders are always assigned to the robot and do not have sub
-                # warehouse orders
-                if who_type == 'MoveHU':
-                    # Only warehouse orders assigned to the robot
-                    if warehouseorder.get('rsrc') != str(self.robco_robot_name).upper():
-                        continue
-                    who_restore = WarehouseOrderStateRestore(
-                        warehouseorder=warehouseorder, mission=mission, statemachine=statemachine,
-                        tanum=tanum, subwarehouseorder=None)
-                # In PickPackPass scenario there might be a sub warehouse order
-                elif who_type == 'PickPackPass':
-                    # If robot is working on a sub warehouse order, there is a topwhoid
-                    if warehouseorder.get('topwhoid') != '0000000000':
-                        topwarehouseorder = None
-                        # Find top warehouse order
-                        for cr_top in cr_resp['items']:
-                            who_top = cr_top.get('spec', {}).get('data', {})
-                            if (who_top.get('who') == warehouseorder.get('topwhoid')
-                                    and who_top.get('lgnum') == warehouseorder.get('lgnum')
-                                    and who_top.get('rsrc') == str(self.robco_robot_name).upper()):
-                                topwarehouseorder = who_top
-                        # Continue only if top warehouse order found
-                        if topwarehouseorder:
-                            who_restore = WarehouseOrderStateRestore(
-                                warehouseorder=topwarehouseorder, mission=mission, tanum=tanum,
-                                statemachine=statemachine, subwarehouseorder=warehouseorder)
-                        else:
-                            return
-                    else:
-                        who_restore = WarehouseOrderStateRestore(
-                            warehouseorder=warehouseorder, mission=mission, tanum=tanum,
-                            statemachine=statemachine, subwarehouseorder=None)
-
-                return who_restore
+        if self.check_cr_exists(name):
+            custom_res = self.get_cr(name)
+            if self._warehouse_order_precheck(name, custom_res):
+                return structure(custom_res['spec']['data'], WarehouseOrder)
+            else:
+                return None
+        else:
+            return None

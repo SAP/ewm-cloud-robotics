@@ -22,6 +22,4 @@ spec:
         ewmpassword: "" # Matching password
         ewmlgnum: "" # Warehouse specification within EWM
         ewmbasepath: "" # Basepath for the OData API matching the service definition
-        ewmrsrctype: "" # Resource type within EWM
-        ewmrsrcgrp: "" # Resource group within EWM
 ---

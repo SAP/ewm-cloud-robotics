@@ -37,13 +37,14 @@ verify_kubectl_context() {
 
 package_chart() {
     chart_path=$1
+    type=$2
     loc=$(pwd)
     printf "\nPackaging: "$chart_path"\n"
 
-    mkdir tmp/packages
+    mkdir -p tmp/packages/$type
     cd "$chart_path"
     helm lint --strict .
-    helm package . --destination "$loc/tmp/packages"
+    helm package . --destination "$loc/tmp/packages/$type"
 
     cd "$loc"
     printf "\n"
@@ -103,41 +104,64 @@ build() {
     unset CR
 }
 
+create_package() {
+    chart=$1
+    type=$2
+
+    if [ -d "helm/charts/$type/$chart" ]; then
+
+        ## Create a temporary directory to avoid touching originals
+        mkdir -p tmp/$type/$chart
+
+        cp -R helm/charts/$type/$chart ./tmp/$type
+        cp -R helm/charts/dependency-charts ./tmp/$type
+
+        ## Update Helm dependencies for the chart
+        cd tmp/$type/$chart
+        helm dependency update
+        cd ../../..
+
+        ## Package Helm charts
+        package_chart tmp/$type/$chart $type
+    
+    else
+        # Create empty file that cat command in push function does not fail
+        mkdir -p tmp/packages/$type
+        touch tmp/packages/$type/$chart-0.0.1.tgz
+    fi
+
+}
+
 push() {
+    chart=$1
+
     verify_kubectl_context
     if [[ "$file" = '' ]]; then
-        file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$1/app.yaml    
+        file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$chart/app.yaml    
     fi
-    printf 'Using: '$file' to register the App '$1'\n'
+    printf 'Using: '$file' to register the App '$chart'\n'
 
-    ## Update Helm dependencies for the chart
-    cd helm/charts/$1/
-    helm dependency update
-    cd ../../../
-
-    ## Create a temporary directory to avoid touching originals
-    mkdir tmp
-
-    cp -R helm/charts/$1 ./tmp
-
-    ## Package Helm charts
-    package_chart tmp/$1/
+    ### Create cloud and robot helm packages
+    create_package $chart cloud
+    create_package $chart robot
 
     ## Copy the app.yaml file prior modification
     cp $file tmp/app.yaml
     
     if [[ $(uname -s) = "Darwin" ]]; then
-        inlinechart=$(cat tmp/packages/$1-0.0.1.tgz | base64 -b 0)
+        cloudchart=$(cat tmp/packages/cloud/$chart-0.0.1.tgz | base64 -b 0)
+        robotchart=$(cat tmp/packages/robot/$chart-0.0.1.tgz | base64 -b 0)
     
         sed -i '' -e 's#\$APP_VERSION#'$version'#' tmp/app.yaml
-        sed -i '' -e 's#\$INLINE_CLOUD_CHART#'"$inlinechart"'#' tmp/app.yaml
-        sed -i '' -e 's#\$INLINE_ROBOT_CHART#'"$inlinechart"'#' tmp/app.yaml
+        sed -i '' -e 's#\$INLINE_CLOUD_CHART#'"$cloudchart"'#' tmp/app.yaml
+        sed -i '' -e 's#\$INLINE_ROBOT_CHART#'"$robotchart"'#' tmp/app.yaml
     else
-        inlinechart=$(cat tmp/packages/$1-0.0.1.tgz | base64 -w 0)
+        cloudchart=$(cat tmp/packages/cloud/$chart-0.0.1.tgz | base64 -w 0)
+        robotchart=$(cat tmp/packages/robot/$chart-0.0.1.tgz | base64 -w 0)
         
         sed -i -e 's#\$APP_VERSION#'$version'#' tmp/app.yaml
-        sed -i -e 's#\$INLINE_CLOUD_CHART#'"$inlinechart"'#' tmp/app.yaml
-        sed -i -e 's#\$INLINE_ROBOT_CHART#'"$inlinechart"'#' tmp/app.yaml
+        sed -i -e 's#\$INLINE_CLOUD_CHART#'"$cloudchart"'#' tmp/app.yaml
+        sed -i -e 's#\$INLINE_ROBOT_CHART#'"$robotchart"'#' tmp/app.yaml
     fi
 
     ## Apply changes to the App at apps.cloudrobotics.com/v1alpha1
@@ -148,11 +172,13 @@ push() {
 }
 
 rollout() {
+    chart=$1
+
     verify_kubectl_context
     if [[ "$file" = '' ]]; then
-        file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$1/approllout.yaml
+        file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$chart/approllout.yaml
     fi
-    printf 'Using: '$file' to create an AppRollout of '$1'\n'
+    printf 'Using: '$file' to create an AppRollout of '$chart'\n'
 
     # create a temporary copy prior modification
     mkdir tmp

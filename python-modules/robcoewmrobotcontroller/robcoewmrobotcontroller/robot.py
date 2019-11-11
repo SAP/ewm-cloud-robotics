@@ -12,22 +12,22 @@
 
 """Robot representation."""
 
-import os
 import logging
 import time
 
 from typing import Any, Callable, Dict, Optional
 
-import attr
-
 from cattr import structure, unstructure
 from retrying import retry
 
-from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str, strstrip
-from robcoewmtypes.robot import RequestFromRobot, RobotMission
+from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
+from robcoewmtypes.robot import RequestFromRobot, RobotMission, RobotConfigurationStatus
 from robcoewmtypes.warehouseorder import WarehouseOrder, WarehouseTask, ConfirmWarehouseTask
 
+from .ordercontroller import OrderController
 from .robot_api import RobotMissionAPI
+from .robotconfigcontroller import RobotConfigurationController
+from .robotrequestcontroller import RobotRequestController
 from .statemachine import RobotEWMMachine, WhoIdentifier
 
 _LOGGER = logging.getLogger(__name__)
@@ -41,82 +41,77 @@ def convert_warehouseorder(data: Any) -> WarehouseOrder:
         return structure(data, WarehouseOrder)
 
 
-@attr.s
-class WarehouseOrderStateRestore:
-    """Data to restore a current progress of a warehouse order at a robot."""
-
-    warehouseorder: WarehouseOrder = attr.ib(
-        validator=attr.validators.instance_of(WarehouseOrder), converter=convert_warehouseorder)
-    mission: str = attr.ib(
-        validator=attr.validators.instance_of(str))
-    statemachine: str = attr.ib(
-        validator=attr.validators.instance_of(str))
-    tanum: str = attr.ib(
-        validator=attr.validators.instance_of(str), converter=strstrip)
-    subwarehouseorder: WarehouseOrder = attr.ib(
-        validator=attr.validators.optional(attr.validators.instance_of(WarehouseOrder)),
-        converter=convert_warehouseorder)
-
-
 class EWMRobot:
     """The EWM robot representation."""
 
     VALID_QUEUE_MSG_TYPES = (WarehouseOrder,)
 
-    def __init__(self, mission_api: RobotMissionAPI, confirm_pick: Optional[Callable] = None,
-                 confirm_target: Optional[Callable] = None,
-                 state_restore: Optional[WarehouseOrderStateRestore] = None) -> None:
+    def __init__(self, mission_api: RobotMissionAPI, robot_config: RobotConfigurationController,
+                 order_controller: OrderController, robot_request: RobotRequestController,
+                 confirm_pick: Optional[Callable] = None,
+                 confirm_target: Optional[Callable] = None) -> None:
         """Constructor."""
-        self.init_robot_fromenv()
         # Robot Mission API
         self.mission_api = mission_api
+        # Robot Configuration
+        self.robot_config = robot_config
+        # Order Controller
+        self.order_controller = order_controller
+        # Robot Request controller
+        self.robot_request_controller = robot_request
+
         # Robot state machine
+        state_restore = self.get_validated_state_restore()
         if state_restore:
             # Restore a previous state machine state
-            who_type = state_restore.statemachine[:state_restore.statemachine.rfind('_')]
-            _LOGGER.info(
-                'Restore state machine: WarehouseOrderType %s, WarehouseOrder %s, WarehouseTask %s'
-                ', State %s, Mission %s', who_type, state_restore.warehouseorder.who,
-                state_restore.tanum, state_restore.statemachine, state_restore.mission)
             # Init state machine in specific state
             self.state_machine = RobotEWMMachine(
-                self.mission_api, self.confirm_warehousetask, self.request_work,
-                self.send_warehousetask_error, self.notify_who_completion, self.save_wht_progress,
-                initial=state_restore.statemachine)
+                self.robot_config, self.mission_api, self.confirm_warehousetask, self.request_work,
+                self.send_warehousetask_error, self.notify_who_completion,
+                self.robot_config.save_robot_state, initial=state_restore.statemachine)
             # Restore state machine attributes
-            self.state_machine.who_type = who_type
-            who_ident = WhoIdentifier(
-                state_restore.warehouseorder.lgnum, state_restore.warehouseorder.who)
-            self.state_machine.warehouseorders[who_ident] = state_restore.warehouseorder
-            self.state_machine.active_who = state_restore.warehouseorder
-            if state_restore.subwarehouseorder:
-                sub_who_ident = WhoIdentifier(
-                    state_restore.subwarehouseorder.lgnum, state_restore.subwarehouseorder.who)
-                self.state_machine.sub_warehouseorders[
-                    sub_who_ident] = state_restore.subwarehouseorder
-                self.state_machine.active_sub_who = state_restore.subwarehouseorder
-                for wht in state_restore.subwarehouseorder.warehousetasks:
-                    if wht.tanum == state_restore.tanum:
-                        self.state_machine.active_wht = wht
-                        break
+            self.state_machine.mission = RobotMission(
+                name=state_restore.mission, target_name=state_restore.missiontarget)
+            if state_restore.who:
+                who_type = state_restore.statemachine[:state_restore.statemachine.rfind('_')]
+                _LOGGER.info(
+                    'Restore state machine: WarehouseOrderType %s, WarehouseOrder %s, '
+                    'WarehouseTask %s, State %s, Mission %s', who_type, state_restore.who,
+                    state_restore.tanum, state_restore.statemachine, state_restore.mission)
+                warehouseorder = self.order_controller.get_warehouseorder(
+                    state_restore.lgnum, state_restore.who)
+                self.state_machine.who_type = who_type
+                who_ident = WhoIdentifier(state_restore.lgnum, state_restore.who)
+                self.state_machine.warehouseorders[who_ident] = warehouseorder
+                self.state_machine.active_who = warehouseorder
+                if state_restore.subwho:
+                    sub_warehouseorder = self.order_controller.get_warehouseorder(
+                        state_restore.lgnum, state_restore.subwho)
+                    sub_who_ident = WhoIdentifier(
+                        state_restore.lgnum, state_restore.subwho)
+                    self.state_machine.sub_warehouseorders[
+                        sub_who_ident] = sub_warehouseorder
+                    self.state_machine.active_sub_who = sub_warehouseorder
+                    for wht in sub_warehouseorder.warehousetasks:
+                        if wht.tanum == state_restore.tanum:
+                            self.state_machine.active_wht = wht
+                            break
+                else:
+                    for wht in warehouseorder.warehousetasks:
+                        if wht.tanum == state_restore.tanum:
+                            self.state_machine.active_wht = wht
+                            break
             else:
-                for wht in state_restore.warehouseorder.warehousetasks:
-                    if wht.tanum == state_restore.tanum:
-                        self.state_machine.active_wht = wht
-                        break
-            self.state_machine.mission = RobotMission(name=state_restore.mission)
+                _LOGGER.info(
+                    'Restore state machine: State %s, Mission %s', state_restore.statemachine,
+                    state_restore.mission)
         else:
             # Initialize a fresh state machine
             _LOGGER.info('Initialize fresh state machine')
             self.state_machine = RobotEWMMachine(
-                self.mission_api, self.confirm_warehousetask, self.request_work,
-                self.send_warehousetask_error, self.notify_who_completion, self.save_wht_progress)
-        # Callable to confirm a warehouse task
-        self.send_wht_confirmation = self.send_wht_confirmation_default
-        # Callable to update the progress the robot made when processing a warehouse task
-        self.send_wht_progress_update = self.send_wht_progress_update_default
-        # Callable to request work from order manager
-        self.send_robot_request = self.send_robot_request_default
+                self.robot_config, self.mission_api, self.confirm_warehousetask, self.request_work,
+                self.send_warehousetask_error, self.notify_who_completion,
+                self.robot_config.save_robot_state)
         # Confirmation callables for Pick, Pack and Pass
         if confirm_pick:
             self.confirm_pick = confirm_pick
@@ -136,26 +131,35 @@ class EWMRobot:
         # Robot is at staging position
         self.at_staging_position = False
 
-    def init_robot_fromenv(self) -> None:
-        """Initialize EWM Robot from environment variables."""
-        # Read environment variables
-        envvar = {}
-        envvar['EWM_LGNUM'] = os.environ.get('EWM_LGNUM')
-        envvar['ROBCO_ROBOT_NAME'] = os.environ.get('ROBCO_ROBOT_NAME')
-        # Check if complete
-        for var, val in envvar.items():
-            if val is None:
-                raise ValueError(
-                    'Environment variable "{}" is not set'.format(var))
+    def get_validated_state_restore(self) -> Optional[RobotConfigurationStatus]:
+        """Return robot state if it is valid."""
+        state_restore = self.robot_config.get_robot_state()
 
-        # Optional parameters
-        envvar['MAX_IDLE_TIME'] = os.environ.get('MAX_IDLE_TIME')
+        valid_state = True
+        if state_restore:
+            # If there are no CRs for warehouse order and sub warehouse order, state is invalid
+            if state_restore.who:
+                warehouseorder = self.order_controller.get_warehouseorder(
+                    state_restore.lgnum, state_restore.who)
+                if not warehouseorder:
+                    _LOGGER.error(
+                        'No CR for warehouse order %s in warehouse %s', state_restore.who,
+                        state_restore.lgnum)
+                    valid_state = False
+            if state_restore.subwho:
+                sub_warehouseorder = self.order_controller.get_warehouseorder(
+                    state_restore.lgnum, state_restore.subwho)
+                if not sub_warehouseorder:
+                    _LOGGER.error(
+                        'No CR for sub warehouse order %s in warehouse %s', state_restore.subwho,
+                        state_restore.lgnum)
+                    valid_state = False
 
-        # Robot identifier
-        self.lgnum = envvar['EWM_LGNUM']
-        # EWM rsrc must be upper case
-        self.rsrc = os.environ.get('ROBCO_ROBOT_NAME').upper()
-        self.no_order_idle_time = float(envvar['MAX_IDLE_TIME']) if envvar['MAX_IDLE_TIME'] else 30
+        if valid_state:
+            return state_restore
+        else:
+            _LOGGER.error('State from CR is not valid - ignoring it')
+            return None
 
     def queue_callback(self, dtype: str, data: Dict) -> None:
         """Process robot order queue messages."""
@@ -224,7 +228,7 @@ class EWMRobot:
         clear_progress = False
         if wht.vlpla or enforce_first_conf:
             confirmation = ConfirmWarehouseTask(
-                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.rsrc, who=wht.who,
+                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.robot_config.rsrc, who=wht.who,
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
             if enforce_first_conf:
@@ -234,7 +238,7 @@ class EWMRobot:
             confirmations.append(confirmation)
         elif wht.nlpla:
             confirmation = ConfirmWarehouseTask(
-                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.rsrc, who=wht.who,
+                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.robot_config.rsrc, who=wht.who,
                 confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
             _LOGGER.info('Target bin reached - confirming')
@@ -243,7 +247,8 @@ class EWMRobot:
 
         for confirmation in confirmations:
             dtype = create_robcoewmtype_str(confirmation)
-            success = self.send_wht_confirmation(dtype, unstructure(confirmation), clear_progress)
+            success = self.order_controller.confirm_wht(
+                dtype, unstructure(confirmation), clear_progress)
 
             if success is True:
                 _LOGGER.info(
@@ -256,25 +261,19 @@ class EWMRobot:
                 raise ConnectionError
 
     @retry(wait_fixed=100)
-    def save_wht_progress(
-            self, wht: WarehouseTask, mission: str, statemachine: str) -> None:
-        """Save the current progress of the robot processing the warehouse task."""
-        self.send_wht_progress_update(unstructure(wht), mission, statemachine)
-
-    @retry(wait_fixed=100)
     def send_warehousetask_error(self, wht: WarehouseTask) -> None:
         """Send warehouse task error."""
         errors = []
         if wht.vlpla:
             error = ConfirmWarehouseTask(
-                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.rsrc, who=wht.who,
+                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.robot_config.rsrc, who=wht.who,
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
             _LOGGER.info('Error before first confirmation - sending to EWM')
             errors.append(error)
         elif wht.nlpla:
             error = ConfirmWarehouseTask(
-                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.rsrc, who=wht.who,
+                lgnum=wht.lgnum, tanum=wht.tanum, rsrc=self.robot_config.rsrc, who=wht.who,
                 confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
             _LOGGER.info('Error before second confirmation - sending to EWM')
@@ -282,7 +281,7 @@ class EWMRobot:
 
         for error in errors:
             dtype = create_robcoewmtype_str(error)
-            success = self.send_wht_confirmation(dtype, unstructure(error), True)
+            success = self.order_controller.confirm_wht(dtype, unstructure(error), True)
 
             if success is True:
                 _LOGGER.info(
@@ -306,14 +305,16 @@ class EWMRobot:
         self._requested_work_time = time.time()
 
         if onlynewwho:
-            request = RequestFromRobot(self.lgnum, self.rsrc, requestnewwho=True)
+            request = RequestFromRobot(
+                self.robot_config.lgnum, self.robot_config.rsrc, requestnewwho=True)
         else:
-            request = RequestFromRobot(self.lgnum, self.rsrc, requestwork=True)
+            request = RequestFromRobot(
+                self.robot_config.lgnum, self.robot_config.rsrc, requestwork=True)
 
         _LOGGER.info('Requesting work from order manager')
 
         dtype = create_robcoewmtype_str(request)
-        success = self.send_robot_request(dtype, unstructure(request))
+        success = self.robot_request_controller.send_robot_request(dtype, unstructure(request))
 
         if success is True:
             _LOGGER.info('Requested work from order manager')
@@ -328,13 +329,14 @@ class EWMRobot:
 
         It notifies the robot when the warehouse order was completed.
         """
-        request = RequestFromRobot(self.lgnum, self.rsrc, notifywhocompletion=who)
+        request = RequestFromRobot(
+            self.robot_config.lgnum, self.robot_config.rsrc, notifywhocompletion=who)
 
         _LOGGER.info(
             'Requesting warehouse order completion notification for %s from order manager', who)
 
         dtype = create_robcoewmtype_str(request)
-        success = self.send_robot_request(dtype, unstructure(request))
+        success = self.robot_request_controller.send_robot_request(dtype, unstructure(request))
 
         if success is True:
             _LOGGER.info('Requested warehouse order completion notification from order manager')
@@ -394,10 +396,10 @@ class EWMRobot:
     def _run_state_nowarehouseorder(self) -> None:
         """Run functions for robot state 'noWarehouseorder'."""
         no_work_elapsed = time.time() - self.last_time_working
-        if no_work_elapsed > self.no_order_idle_time:
+        if no_work_elapsed > self.robot_config.max_idle_time:
             _LOGGER.info(
                 'Robot without warehouse order for more than %s seconds, going to staging area.',
-                self.no_order_idle_time)
+                self.robot_config.max_idle_time)
             self.state_machine.goto_target(target=self.state_machine.TARGET_STAGING)
 
     def _run_state_moving(self, state: str) -> None:
@@ -531,7 +533,7 @@ class EWMRobot:
                     and before_error != 'charging'):
                 # Go to charger if battery is low
                 battery = self.state_machine.get_battery_level()
-                if battery < self.state_machine.battery_min:
+                if battery < self.state_machine.robot_config.battery_min:
                     _LOGGER.info(
                         'Battery level %s percent is too low, start charging instead', battery)
                     self.state_machine.charge_battery()
@@ -589,7 +591,8 @@ class EWMRobot:
             else:
                 _LOGGER.warning('Robot is not "AVAILABLE", not requesting work')
         # If there are warehouse order start when battery is above OK level
-        elif self.state_machine.warehouseorders and battery >= self.state_machine.battery_ok:
+        elif (self.state_machine.warehouseorders
+              and battery >= self.state_machine.robot_config.battery_ok):
             # Start with the first order from queue
             self.state_machine.process_warehouseorder(
                 warehouseorder=next(iter(self.state_machine.warehouseorders.values())))
@@ -607,7 +610,7 @@ class EWMRobot:
         """Run functions for robot state 'idling'."""
         battery = self.state_machine.get_battery_level()
         # Go to charger if battery is below idle level
-        if battery < self.state_machine.battery_idle:
+        if battery < self.state_machine.robot_config.battery_idle:
             self.state_machine.charge_battery()
         # Warn when robot is idle for too long
         elif time.time() - self.idle_time_start > 600:
@@ -635,34 +638,3 @@ class EWMRobot:
         if self._failed_status_updates > 10:
             _LOGGER.error('More that 10 failed robot status updates. Entering error state')
             self.state_machine.robot_error_occurred()
-
-    def send_wht_confirmation_default(
-            self, dtype: str, wht: Dict, clear_progress: bool = False) -> bool:
-        """Send warehouse task confirmation to order manager."""
-        cls = self.__class__
-        raise AttributeError(
-            'Please register valid function to confirm a warehouse task - instance of class "{}" -'
-            ' attribute "send_wht_confirmation"'.format(cls.__name__))
-
-        # Return to avoid pylint errors
-        return False    # pylint: disable=unreachable
-
-    def send_robot_request_default(self, dtype: str, request: Dict) -> bool:
-        """Send robot request to order manager."""
-        cls = self.__class__
-        raise AttributeError(
-            'Please register valid function to send robot requests - instance of class "{}" - '
-            'attribute "send_robot_request"'.format(cls.__name__))
-
-        # Return to avoid pylint errors
-        return False    # pylint: disable=unreachable
-
-    def send_wht_progress_update_default(self, wht: Dict, mission: str, statemachine: str) -> bool:
-        """Update the progress the robot made on processing the warehouse task."""
-        cls = self.__class__
-        raise AttributeError(
-            'Please register valid function to update progress processing the warehouse task - '
-            'instance of class "{}" - attribute "send_wht_progress_update"'.format(cls.__name__))
-
-        # Return to avoid pylint errors
-        return False    # pylint: disable=unreachable

@@ -1,6 +1,0 @@
-dependencies:
-- name: mission-crd
-  repository: file://../../dependency-charts/mission-crd
-  version: 0.0.1
-digest: sha256:4a60c25e7cad9a50961d0678e5d1a19675b0ef3c19f8720318582425536f8380
-generated: "2019-09-23T18:38:00.542684+02:00"

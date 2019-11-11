@@ -105,3 +105,16 @@ class RobotMission:
     active_action: str = attr.ib(
         default=ACTION_UNKNOWN, validator=attr.validators.instance_of(str))
     target_name: str = attr.ib(default='', validator=attr.validators.instance_of(str))
+
+
+@attr.s
+class RobotConfigurationStatus:
+    """Current status of warehouse robots state machine."""
+
+    statemachine: str = attr.ib(validator=validate_annotation)
+    mission: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    missiontarget: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    lgnum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    who: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    tanum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    subwho: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)

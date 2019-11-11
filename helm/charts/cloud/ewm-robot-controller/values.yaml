@@ -1,0 +1,20 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/robot-configurator"
+  tag: "latest"
+
+envs:
+  ewmuser: ""
+  ewmhost: ""
+  ewmauth: "Basic"
+  ewmpassword: ""
+  ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmlgnum: "1710"
+  chargerlist: "Charger"
+  batterymin: 10
+  batteryok: 80
+  batteryidle: 40
+  ewmrsrctype: "RB01"
+  ewmrsrcgrp: "RB02"
+  maxidletime: 30
