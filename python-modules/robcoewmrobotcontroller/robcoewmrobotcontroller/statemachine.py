@@ -208,7 +208,7 @@ class RobotEWMMachine(Machine):
         self.active_wht = None
         self.active_sub_who = None
         # State before robot error occurred
-        self.state_before_error = None
+        self.state_before_error = ''
         self.error_count = defaultdict(int)
 
         # Marks if the state machine is currently in a transition
@@ -282,7 +282,8 @@ class RobotEWMMachine(Machine):
         tanum = self.active_wht.tanum if self.active_wht else ''
         subwho = self.active_sub_who if self.active_sub_who else ''
         state = RobotConfigurationStatus(
-            self.state, self._mission.name, self._mission.target_name, lgnum, who, tanum, subwho)
+            self.state, self.state_before_error, self._mission.name, self._mission.target_name,
+            lgnum, who, tanum, subwho)
         self.save_state_api(state)
 
     def _set_in_transition(self, event: EventData) -> None:
@@ -361,7 +362,7 @@ class RobotEWMMachine(Machine):
 
         Use as transition.after callback.
         """
-        self.state_before_error = None
+        self.state_before_error = ''
 
     def _update_who(self, event: EventData) -> None:
         """Update a warehouse order of this state machine."""

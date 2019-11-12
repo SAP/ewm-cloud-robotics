@@ -70,6 +70,7 @@ class EWMRobot:
                 self.send_warehousetask_error, self.notify_who_completion,
                 self.robot_config.save_robot_state, initial=state_restore.statemachine)
             # Restore state machine attributes
+            self.state_machine.state_before_error = state_restore.statebeforeerror
             self.state_machine.mission = RobotMission(
                 name=state_restore.mission, target_name=state_restore.missiontarget)
             if state_restore.who:
