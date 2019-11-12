@@ -154,9 +154,6 @@ class OrderController(K8sCRHandler):
                 _LOGGER.error('Confirmation already sent. Not doing anything.')
                 return True
         status['data'].append(wht)
-        # Clear robot progress
-        if clear_progress is True:
-            status['robot'] = {'mission': '', 'statemachine': '', 'tanum': ''}
         success = self.update_cr_status(name, status)
 
         return success

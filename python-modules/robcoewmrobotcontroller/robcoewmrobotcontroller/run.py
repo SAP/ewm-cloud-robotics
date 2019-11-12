@@ -120,15 +120,17 @@ def robot_main_loop(robot_config: RobotConfigurationController, robot_mission_ap
     k8s_rc.run(reprocess=True)
     _LOGGER.info('SAP EWM Robot "%s" started - K8S CR mode', robot.robot_config.rsrc)
 
-    # Wait 1 seconds for initial messages being processed
-    time.sleep(1.0)
-
-    # If still no warehouse order - request work
-    stateok = robot.mission_api.api_check_state_ok()
-    if robot.state_machine.is_noWarehouseorder and stateok:
-        robot.request_work()
-
     try:
+        # Wait 1 seconds for initial messages being processed
+        time.sleep(1.0)
+
+        # Run state machine update
+        robot.runner()
+        # If still no warehouse order - request work
+        stateok = robot.mission_api.api_check_state_ok()
+        if robot.state_machine.is_noWarehouseorder and stateok:
+            robot.request_work()
+
         # Looping while K8S stream watchers are running
         while loop_control.shutdown is False:
             # Run state machine update
