@@ -161,9 +161,8 @@ class RobotEWMMachine(Machine):
          'dest': 'finishedWarehouseorder'},
         ]
 
-    TARGET_CHARGING = 'charging'
     TARGET_STAGING = 'staging'
-    VALID_TARGETS = [TARGET_CHARGING, TARGET_STAGING]
+    VALID_TARGETS = [TARGET_STAGING]
 
     BUCKETS = (
         1.0, 5.0, 10.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0, 420.0, 480.0, 540.0,
@@ -562,9 +561,7 @@ class RobotEWMMachine(Machine):
         # Get target target
         target = event.kwargs.get('target')
         # Start move mission
-        if target == cls.TARGET_CHARGING:
-            mission = self.mission_api.api_moveto_charging_position()
-        elif target == cls.TARGET_STAGING:
+        if target == cls.TARGET_STAGING:
             mission = self.mission_api.api_moveto_staging_position()
         else:
             _LOGGER.error(
@@ -593,9 +590,7 @@ class RobotEWMMachine(Machine):
         target = self._mission.target_name
         self._mission.target_name = ''
         # Determine next state
-        if target == cls.TARGET_CHARGING:
-            self.charge_battery()
-        elif target == cls.TARGET_STAGING:
+        if target == cls.TARGET_STAGING:
             self.idle()
         else:
             _LOGGER.error('Unknown target "%s", unable to set new state', target)
@@ -669,7 +664,6 @@ class RobotEWMMachine(Machine):
         # If still warehouse orders in queue, start the next one
         if self.warehouseorders:
             _LOGGER.info('More warehouse orders in queue, start processing')
-            # TODO: Unassign warehouse orders if below min battery level
             # Get robots battery level
             _LOGGER.info(
                 'Battery level after finishing order: "%s" percent', battery)

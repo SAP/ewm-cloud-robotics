@@ -62,10 +62,11 @@ class EWMOrderManager:
         # SAP EWM OData APIs
         self.ewmwarehouse = WarehouseOData(self.odatahandler)
         self.ewmwho = WarehouseOrderOData(self.odatahandler)
-        # Callable to send a warehouse order to a robot
+        # Callable to send a warehouse order to a robot - replace default function to run
         self.send_who_to_robot = self.send_who_to_robot_default
-        # Callable to cleanup a warehouse order after second confirmation
+        # Callable to cleanup a processed warehouse order - replace default function to run
         self.cleanup_who = self.cleanup_default
+        # Callable to update status of robotrequest - replace default function to run
         self.update_robotrequest_status = self.update_default
 
         # Memory of processed messages for order manager
@@ -124,38 +125,6 @@ class EWMOrderManager:
                     'SKIPPED: %s', type(dataset), dataset)
 
         return valid_robcoewmdata
-
-    def send_who_update_callback(self, dtype: str, data: Dict) -> None:
-        """
-        Send updated warehouse orders directly to the robot.
-
-        Used for K8S CR handler.
-        """
-        cls = self.__class__
-
-        # Structure the input data
-        robcoewmdata = self._structure_callback_data(dtype, data, cls.CONFIRMATION_MSG_TYPES)
-
-        # Process the datasets
-        for dataset in robcoewmdata:
-            # Check if confirmation was processed before
-            if self.msg_mem.check_who_conf_processed(dataset):
-                _LOGGER.info(
-                    'Confirmation of warehouse task "%s" from warehouse order "%s" already '
-                    'processed - skip', dataset.tanum, dataset.who)
-                continue
-            robotident = RobotIdentifier(dataset.lgnum, dataset.rsrc)
-            # Request work after successfull first confirmations do not request work after second
-            # confirmation, but wait for the robot to request more work
-            if (robotident.rsrc is not None
-                    and dataset.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF
-                    and dataset.confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
-                success = self.get_and_send_robot_whos(
-                    robotident, firstrequest=True, newwho=True, onlynewwho=False)
-                if success is False:
-                    raise NoOrderFoundError
-            # Memorize the dataset in the end
-            self.msg_mem.memorize_who_conf(dataset)
 
     def robotrequest_callback(self, dtype: str, name: str, data: Dict, statusdata: Dict) -> None:
         """

@@ -39,10 +39,6 @@ class RobotMissionAPI:
         """Charge robot at the charging position."""
         raise NotImplementedError
 
-    def api_moveto_charging_position(self) -> RobotMission:
-        """Move robot to a charging position of the map."""
-        raise NotImplementedError
-
     def api_moveto_staging_position(self) -> RobotMission:
         """Move robot to a staging position of the map."""
         raise NotImplementedError

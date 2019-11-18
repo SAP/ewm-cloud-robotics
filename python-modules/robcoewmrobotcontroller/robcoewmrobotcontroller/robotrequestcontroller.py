@@ -158,11 +158,11 @@ class RobotRequestController(K8sCRHandler):
 
     def send_robot_request(self, dtype: str, request: Dict) -> None:
         """Send robot request to order manager."""
-        # Don't create the same request twice when it is in state RUNNING
+        # Don't create the same request twice when it is not processed yet
         existing_requests = self.list_all_cr()
         for existing_request in existing_requests['items']:
             if existing_request.get('status', {}).get(
-                    'status') == RequestFromRobotStatus.STATE_RUNNING:
+                    'status') != RequestFromRobotStatus.STATE_PROCESSED:
                 if request == existing_request.get('spec', {}):
                     _LOGGER.info(
                         'There is already a robotrequest with the same content running - skip')

@@ -275,31 +275,12 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
 
         return mission
 
-    def api_moveto_charging_position(self) -> RobotMission:
-        """Move robot to a charging position of the map."""
-        # Default mission
-        mission = RobotMission()
-        # Get relevant parameters
-        # TODO implement real move to charger method
-        action = {'moveToNamedPosition': {'targetName': 'Staging'}}
-        spec = {'actions': [action]}
-        mission_name = str(time.time())
-
-        # Create CR
-        success = self.create_cr(mission_name, self.labels, spec)
-        # On success, set ID and STATE
-        if success:
-            mission.name = mission_name
-            mission.status = RobotMission.STATE_ACCEPTED
-
-        return mission
-
     def api_moveto_staging_position(self) -> RobotMission:
         """Move robot to a staging position of the map."""
         # Default mission
         mission = RobotMission()
         # Get relevant parameters
-        # TODO implement real move to staging method
+        # TODO support multiple staging areas
         action = {'moveToNamedPosition': {'targetName': 'Staging'}}
         spec = {'actions': [action]}
         mission_name = str(time.time())
