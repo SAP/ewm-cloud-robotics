@@ -1,7 +1,7 @@
 # Simulated EWM OData API server that produces a never ending stream of warehouse orders/tasks
 
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: ewm-sim

@@ -10,7 +10,7 @@ stringData:
   miruser: "{{ .Values.envs.miruser }}"
   mirpswd: "{{ .Values.envs.mirpassword }}"
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: mir-mission-controller-{{ .Values.robot.name }}

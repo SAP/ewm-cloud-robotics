@@ -12,7 +12,7 @@ stringData:
   host: "{{ .Values.envs.host }}"
   clientid: "{{ .Values.envs.clientid }}"
 ---
-apiVersion: extensions/v1beta1
+apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: fetch-mission-controller
