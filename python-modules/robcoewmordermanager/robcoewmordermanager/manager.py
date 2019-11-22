@@ -258,7 +258,7 @@ class EWMOrderManager:
             # Perform second confirmation
             elif whtask.confirmationnumber == ConfirmWarehouseTask.SECOND_CONF:
                 try:
-                    self.ewmwho.confirm_warehousetask(whtask.lgnum, whtask.tanum)
+                    self.ewmwho.confirm_warehousetask(whtask.lgnum, whtask.tanum, whtask.rsrc)
                 except (TimeoutError, ConnectionError) as err:
                     # If not successfull. Raise to put message back in queue
                     _LOGGER.error(

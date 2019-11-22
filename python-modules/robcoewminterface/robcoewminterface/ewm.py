@@ -696,7 +696,8 @@ class WarehouseOrderOData:
                     endpoint=endpoint, result=error_code).inc()
                 raise ODataAPIException(error_code=error_code)
 
-    def confirm_warehousetask(self, lgnum: str, tanum: str) -> WarehouseTaskConfirmation:
+    def confirm_warehousetask(
+            self, lgnum: str, tanum: str, rsrc: str) -> WarehouseTaskConfirmation:
         """
         Confirm a warehouse task - putaway.
 
@@ -706,7 +707,8 @@ class WarehouseOrderOData:
         endpoint = '/ConfirmWarehouseTask'
 
         # create URL parameter
-        params = {'Lgnum': "'{}'".format(lgnum), 'Tanum': "'{}'".format(tanum)}
+        params = {'Lgnum': "'{}'".format(lgnum), 'Tanum': "'{}'".format(tanum),
+                  'Rsrc': "'{}'".format(rsrc)}
 
         # HTTP OData POST request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
