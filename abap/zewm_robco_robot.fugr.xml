@@ -50,43 +50,36 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Lagernummer/Lagerkomplex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Ressource (Transportmittel oder Benutzer)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_EXCCODE</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Ausnahme-Code</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_SET_BY</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Objekt, welches den Ausnahme Code setzt</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_CHANGED_BY</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Geändert von</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IS_TELETOTAL</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Mappingstruktur für Standard Aktion</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>/SCWM/CX_MFS</PARAMETER>
        <KIND>X</KIND>
        <STEXT>MFS allgemeine Fehlerklasse</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
      </DOCUMENTATION>
      <EXCEPTION_CLASSES>X</EXCEPTION_CLASSES>

@@ -60,61 +60,51 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order Number</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ES_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order was not found</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_ASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is already assigned</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_ASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Task is already assigned</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 010</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -158,6 +148,11 @@
        <TYP>/SCWM/LTAP_CONF_PARTI</TYP>
       </RSIMP>
       <RSIMP>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC</TYP>
+      </RSIMP>
+      <RSIMP>
        <PARAMETER>IV_CONF_EXC</PARAMETER>
        <REFERENCE>X</REFERENCE>
        <TYP>CHAR4</TYP>
@@ -177,73 +172,75 @@
       <RSEXC>
        <EXCEPTION>WHT_ALREADY_CONFIRMED</EXCEPTION>
       </RSEXC>
+      <RSEXC>
+       <EXCEPTION>INTERNAL_ERROR</EXCEPTION>
+      </RSEXC>
      </EXCEPTION>
      <DOCUMENTATION>
       <RSFDO>
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_TANUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Task</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_NISTA</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Actual Quantity in Alternative Unit of Measure</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_ALTME</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Alternative Unit of Measure for Stockkeeping Unit</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_NLPLA</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Destination Storage Bin</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_NLENR</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Destination Handling Unit</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_PARTI</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Flag: Confirm Partial Quantity for Warehouse Task</STEXT>
-       <INDEX> 007</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource (Means of Transportation or User)</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_CONF_EXC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Not More Closely Defined Area, Possibly Used for Patchlevels</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_LTAP_VB</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Table Type: Warehouse Tasks Internal</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_NOT_CONFIRMED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Task was not confirmed.</STEXT>
-       <INDEX> 010</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_ALREADY_CONFIRMED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Task is confirmed already.</STEXT>
-       <INDEX> 011</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>INTERNAL_ERROR</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Internal error</STEXT>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -281,43 +278,45 @@
       <RSEXC>
        <EXCEPTION>WHT_ALREADY_CONFIRMED</EXCEPTION>
       </RSEXC>
+      <RSEXC>
+       <EXCEPTION>INTERNAL_ERROR</EXCEPTION>
+      </RSEXC>
      </EXCEPTION>
      <DOCUMENTATION>
       <RSFDO>
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_TANUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Task</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resources</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_LTAP_VB</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Table Type: Warehouse Tasks Internal</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_NOT_CONFIRMED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Task was not confirmed.</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_ALREADY_CONFIRMED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Task is confirmed already.</STEXT>
-       <INDEX> 006</INDEX>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>INTERNAL_ERROR</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Internal error</STEXT>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -369,49 +368,41 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC_TYPE</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource Type</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC_GROUP</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource Group</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_NO_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Number of Warehouse Orders</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ORDER_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>No Warehouse Order was found for the robot</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ROBOT_RESOURCE_TYPE</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Resource Type is not a Robot Resource Type</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -456,43 +447,36 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ES_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ORDER_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>No Warehouse Order was found for the robot</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_HAS_ORDER</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot has already an order assigned</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -541,43 +525,36 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_ENQUEUE</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Enqueue Resource Assignment</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ORDER_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>No Warehouse Order was found for the robot</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -644,79 +621,66 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order Number</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_TANUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Task</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ES_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order was not found</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_IN_PROCESS</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order in process by resource</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_UNASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order could not be unassigned</STEXT>
-       <INDEX> 010</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ERROR_QUEUE</PARAMETER>
        <KIND>X</KIND>
        <STEXT>No error queue for robot type defined</STEXT>
-       <INDEX> 011</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>QUEUE_NOT_CHANGED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Queue could not be changed</STEXT>
-       <INDEX> 012</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 013</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -777,67 +741,56 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order Number</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_TANUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Task</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ES_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order was not found</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ERROR_QUEUE</PARAMETER>
        <KIND>X</KIND>
        <STEXT>No error queue for robot type defined</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>QUEUE_NOT_CHANGED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Queue could not be changed</STEXT>
-       <INDEX> 010</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 011</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -878,31 +831,26 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_EXCCODE</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Exception Code</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ES_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resources</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>STATUS_NOT_SET</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource status could not be set</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -958,61 +906,51 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order Number</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ES_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order was not found</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_IN_PROCESS</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order in process by resource</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_UNASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order could not be unassigned</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Internal error</STEXT>
-       <INDEX> 010</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>

@@ -18,6 +18,7 @@ function zconfirm_warehouse_task_step_1.
 *"  EXCEPTIONS
 *"      WHT_NOT_CONFIRMED
 *"      WHT_ALREADY_CONFIRMED
+*"      INTERNAL_ERROR
 *"----------------------------------------------------------------------
 
   data: lv_severity type bapi_mtype,
@@ -25,6 +26,23 @@ function zconfirm_warehouse_task_step_1.
         lt_bapiret  type bapirettab,
         lt_ltap_vb  type /scwm/tt_ltap_vb,
         lt_to_conf  type /scwm/to_conf_tt.
+
+* Enqueue resource unassignment from warehouse order
+  call function 'ENQUEUE_EZEWM_ASSIGNROBO'
+    exporting
+      mode_/scwm/rsrc = 'X'
+      mandt           = sy-mandt
+      lgnum           = iv_lgnum
+      rsrc            = iv_rsrc
+      _scope          = '3'
+      _wait           = abap_true
+    exceptions
+      foreign_lock    = 1
+      system_failure  = 2
+      others          = 3.
+  if sy-subrc <> 0.
+    raise internal_error.
+  endif.
 
 * Prepare input parameter for Warehouse Task confirmation
   ls_to_conf-tanum = iv_tanum.

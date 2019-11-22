@@ -58,7 +58,7 @@ function zget_robot_who .
         mandt           = sy-mandt
         lgnum           = iv_lgnum
         rsrc            = iv_rsrc
-        _scope          = '2'
+        _scope          = '3'
         _wait           = abap_true
       exceptions
         foreign_lock    = 1

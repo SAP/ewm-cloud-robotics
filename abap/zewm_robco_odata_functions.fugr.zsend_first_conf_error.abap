@@ -63,7 +63,7 @@ function zsend_first_conf_error .
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc
-      _scope          = '2'
+      _scope          = '3'
       _wait           = abap_true
     exceptions
       foreign_lock    = 1
@@ -84,30 +84,6 @@ function zsend_first_conf_error .
   endif.
 
   append ls_who-who to lt_whoid.
-
-* Unassign warehouse order from resource
-  call function 'ZUNASSIGN_WHO_FROM_RSRC'
-    exporting
-      iv_lgnum           = iv_lgnum
-      it_whoid           = lt_whoid
-    exceptions
-      who_locked         = 1
-      who_in_process     = 2
-      who_not_unassigned = 3
-      others             = 4.
-
-  case sy-subrc.
-    when 0.
-      clear ls_who-rsrc.
-    when 1.
-      raise who_locked.
-    when 2.
-      raise who_in_process.
-    when 3.
-      raise who_not_unassigned.
-    when others.
-      raise internal_error.
-  endcase.
 
 * Move warehouse order to error queue
   call function 'ZMOVE_WHO_TO_ERROR_QUEUE'
@@ -142,6 +118,30 @@ function zsend_first_conf_error .
       raise internal_error.
   endcase.
 
+* Unassign warehouse order from resource
+  call function 'ZUNASSIGN_WHO_FROM_RSRC'
+    exporting
+      iv_lgnum           = iv_lgnum
+      it_whoid           = lt_whoid
+    exceptions
+      who_locked         = 1
+      who_in_process     = 2
+      who_not_unassigned = 3
+      others             = 4.
+
+  case sy-subrc.
+    when 0.
+      clear: ls_who-rsrc, es_who-rsrc.
+    when 1.
+      raise who_locked.
+    when 2.
+      raise who_in_process.
+    when 3.
+      raise who_not_unassigned.
+    when others.
+      raise internal_error.
+  endcase.
+
 * Write alert
   call function 'ZWHT_ROBOT_CONF_ERROR_ALERT'
     exporting
@@ -149,5 +149,8 @@ function zsend_first_conf_error .
       iv_tanum      = iv_tanum
       iv_rsrc       = iv_rsrc
       iv_final_conf = abap_false.
+
+* commit work and wait to ensure next OData calls is getting actual data
+  commit work and wait.
 
 endfunction.

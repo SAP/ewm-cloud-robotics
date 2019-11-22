@@ -38,25 +38,21 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_TANUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Task</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_FINAL_CONF</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Checkbox</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>

@@ -67,67 +67,56 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IT_WHOID</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Table of Warehouse Order Numbers</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_SET_IP_ONLY</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Set orders to status in process without ressource assignment</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_ASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Tasks already assigned</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_ASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order already assigned</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_OPERATING_ENV</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Unable to get Operation Environment</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>RSRC_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Ressource not found</STEXT>
-       <INDEX> 010</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_STATUS_NOT_SET</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order Status could not be set</STEXT>
-       <INDEX> 011</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -158,19 +147,16 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Optional Resource Types for Warehouse Order Execution</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -206,25 +192,21 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC_TYPE</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource Type</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_RSRC_GROUP</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource Group</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Optional Resource Types for Warehouse Order Execution</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -277,55 +259,46 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IS_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resources</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IV_WHO</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Order Number</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>EV_QUEUE</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Queue</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Robot ressource was not found</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order was not found</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 007</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ERROR_QUEUE</PARAMETER>
        <KIND>X</KIND>
        <STEXT>No error queue for robot type defined</STEXT>
-       <INDEX> 008</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>QUEUE_NOT_CHANGED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Queue could not be changed</STEXT>
-       <INDEX> 009</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -363,37 +336,31 @@
        <PARAMETER>IV_LGNUM</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Warehouse Number/Warehouse Complex</STEXT>
-       <INDEX> 001</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>IT_WHOID</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Table of Warehouse Order Numbers</STEXT>
-       <INDEX> 002</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_LOCKED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order is locked</STEXT>
-       <INDEX> 003</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_IN_PROCESS</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order in process by resource</STEXT>
-       <INDEX> 004</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_UNASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order could not be unassigned</STEXT>
-       <INDEX> 005</INDEX>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order was not found</STEXT>
-       <INDEX> 006</INDEX>
       </RSFDO>
      </DOCUMENTATION>
     </item>

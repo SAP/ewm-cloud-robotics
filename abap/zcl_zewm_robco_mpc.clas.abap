@@ -71,6 +71,7 @@ public section.
         PARTI type FLAG,
         NLPLA type C length 18,
         CONF_EXC type C length 4,
+        RSRC type C length 18,
     end of TS_CONFIRMWAREHOUSETASK .
   types:
         begin of TS_ASSIGNROBOTTOWAREHOUSEORDER,
@@ -464,6 +465,10 @@ lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'ConfExc' 
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '033' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '048' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_CONFIRMWAREHOUSETASK' ). "#EC NOTEXT
 ***********************************************************************************************************************************
 *   ACTION - AssignRobotToWarehouseOrder
@@ -1817,7 +1822,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20190416085233'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20191122125429'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.
@@ -2049,6 +2054,13 @@ ls_text_element-artifact_type          = 'FIPA'.                                
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'ConfirmWarehouseTask'.                                      "#EC NOTEXT
 ls_text_element-text_symbol            = '033'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'ConfirmWarehouseTask'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '048'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 
 clear ls_text_element.

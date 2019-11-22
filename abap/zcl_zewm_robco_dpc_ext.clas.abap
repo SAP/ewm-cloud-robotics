@@ -157,6 +157,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           exporting
             iv_lgnum        = lv_lgnum
             iv_rsrc         = lv_rsrc
+            iv_enqueue      = abap_true
           importing
             et_who          = lt_who
           exceptions
@@ -377,13 +378,15 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
             iv_nlpla              = lv_nlpla
             iv_nlenr              = lv_nlenr
             iv_parti              = lv_parti
+            iv_rsrc               = lv_rsrc
             iv_conf_exc           = lv_conf_exc_str
           importing
             et_ltap_vb            = lt_ltap_vb
           exceptions
             wht_not_confirmed     = 1
             wht_already_confirmed = 2
-            others                = 3.
+            internal_error        = 3
+            others                = 4.
         case sy-subrc.
           when 0.
             move-corresponding lt_ltap_vb to lt_warehousetaskconf.
@@ -421,7 +424,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           exceptions
             wht_not_confirmed     = 1
             wht_already_confirmed = 2
-            others                = 2.
+            internal_error        = 3
+            others                = 4.
         case sy-subrc.
           when 0.
             move-corresponding lt_ltap_vb to lt_warehousetaskconf.

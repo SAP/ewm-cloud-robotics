@@ -60,7 +60,7 @@ function zsend_second_conf_error .
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc
-      _scope          = '2'
+      _scope          = '3'
       _wait           = abap_true
     exceptions
       foreign_lock    = 1
@@ -120,5 +120,8 @@ function zsend_second_conf_error .
       iv_tanum      = iv_tanum
       iv_rsrc       = iv_rsrc
       iv_final_conf = abap_true.
+
+* commit work and wait to ensure next OData calls is getting actual data
+  commit work and wait.
 
 endfunction.
