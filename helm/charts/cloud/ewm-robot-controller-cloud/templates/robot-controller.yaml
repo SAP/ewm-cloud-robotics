@@ -48,4 +48,5 @@ spec:
   selector:
     matchLabels:
       app: robot-controller-{{ .name }}
+---
 {{ end }}
