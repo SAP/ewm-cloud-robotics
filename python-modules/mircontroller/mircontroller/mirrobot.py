@@ -100,6 +100,9 @@ class MiRRobot:
         'sap_robot_battery_percentage', 'Robot\'s battery percentage (%)', ['robot'])
     p_state = Histogram(
         'sap_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
+    p_position_x = Gauge('sap_robot_position_x', 'Robot\'s X position', ['robot'])
+    p_position_y = Gauge('sap_robot_position_y', 'Robot\'s Y position', ['robot'])
+    p_orientation = Gauge('sap_robot_orientation', 'Robot\'s orientation', ['robot'])
 
     def __init__(self, mir_api: MiRInterface) -> None:
         """Construct."""
@@ -112,6 +115,9 @@ class MiRRobot:
         self.active_map = None
         self.angular_speed = 0.0
         self.linear_speed = 0.0
+        self.position_x = 0.0
+        self.position_y = 0.0
+        self.orientation = 0.0
         # Init attributes from environment variables
         self.init_robot_fromenv()
 
@@ -323,6 +329,16 @@ class MiRRobot:
             self.linear_speed = json_resp['velocity']['linear']
             self.p_linear_speed.labels(  # pylint: disable=no-member
                 robot=self.robco_robot_name).set(self.linear_speed)
+
+            self.position_x = json_resp['position']['x']
+            self.p_position_x.labels(  # pylint: disable=no-member
+                robot=self.robco_robot_name).set(self.position_x)
+            self.position_y = json_resp['position']['y']
+            self.p_position_y.labels(  # pylint: disable=no-member
+                robot=self.robco_robot_name).set(self.position_y)
+            self.orientation = json_resp['position']['orientation']
+            self.p_orientation.labels(  # pylint: disable=no-member
+                robot=self.robco_robot_name).set(self.orientation)
 
             if self.state != json_resp['state_id']:
                 self.p_state.labels(  # pylint: disable=no-member
