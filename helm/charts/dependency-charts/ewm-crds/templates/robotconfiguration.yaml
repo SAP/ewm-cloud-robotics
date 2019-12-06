@@ -34,9 +34,12 @@ spec:
     - robcon
   validation:
     openAPIV3Schema:
+      type: object
+      required:
+        - spec
       properties:
-        # status: {}
         spec:
+          type: object
           required:
             - lgnum
             - rsrctype
@@ -65,6 +68,25 @@ spec:
               type: number
             maxIdleTime:
               type: number
+        status:
+          type: object
+          properties:
+            lgnum:
+              type: string
+            mission:
+              type: string
+            missiontarget:
+              type: string
+            statebeforeerror:
+              type: string
+            statemachine:
+              type: string
+            subwho:
+              type: string
+            tanum:
+              type: string
+            who:
+              type: string
   additionalPrinterColumns:
   - JSONPath: .spec.lgnum
     name: EWM Warehouse

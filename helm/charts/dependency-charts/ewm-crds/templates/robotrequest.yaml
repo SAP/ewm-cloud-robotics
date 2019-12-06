@@ -34,9 +34,12 @@ spec:
     - robreq
   validation:
     openAPIV3Schema:
+      type: object
+      required:
+        - spec
       properties:
-        # status: {}
         spec:
+          type: object
           required:
             - lgnum
             - rsrc
@@ -51,6 +54,24 @@ spec:
               type: boolean
             requestnewwho:
               type: boolean
+        status:
+          type: object
+          properties:
+            data:
+              type: object
+              properties:
+                lgnum:
+                  type: string
+                notifywhocompletion:
+                  type: string
+                requestnewwho:
+                  type: boolean
+                requestwork:
+                  type: boolean
+                rsrc:
+                  type: string
+            status:
+              type: string
   additionalPrinterColumns:
   - JSONPath: .status.status
     name: Status

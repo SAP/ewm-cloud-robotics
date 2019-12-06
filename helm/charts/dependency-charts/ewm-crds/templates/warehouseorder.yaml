@@ -34,14 +34,18 @@ spec:
     - ord
   validation:
     openAPIV3Schema:
+      type: object
+      required:
+        - spec
       properties:
-        # status: {}
         spec:
+          type: object
           required:
             - data
             - order_status
           properties:
             data:
+              type: object
               required:
                 - lgnum
                 - who
@@ -86,10 +90,129 @@ spec:
                   type: boolean
                 warehousetasks:
                   type: array
+                  items:
+                    type: object
+                    required: 
+                      - flghuto
+                      - lgnum
+                      - meins
+                      - nlber
+                      - nlenr
+                      - nlpla
+                      - nltyp
+                      - priority
+                      - tanum
+                      - tostat
+                      - unitv
+                      - unitw
+                      - vlber
+                      - vlenr
+                      - vlpla
+                      - vltyp
+                      - volum
+                      - vsolm
+                      - weight
+                      - who
+                    properties:
+                      flghuto:
+                        type: boolean
+                      lgnum:
+                        type: string
+                      meins:
+                        type: string
+                      nlber:
+                        type: string
+                      nlenr:
+                        type: string
+                      nlpla:
+                        type: string
+                      nltyp:
+                        type: string
+                      priority:
+                        type: integer
+                      tanum:
+                        type: string
+                      tostat:
+                        type: string
+                      unitv:
+                        type: string
+                      unitw:
+                        type: string
+                      vlber:
+                        type: string
+                      vlenr:
+                        type: string
+                      vlpla:
+                        type: string
+                      vltyp:
+                        type: string
+                      volum:
+                        type: integer
+                      vsolm:
+                        type: integer
+                      weight:
+                        type: integer
+                      who:
+                        type: string
             process_status:
               type: array
+              items:
+                type: object
+                required:
+                  - confirmationdate
+                  - confirmationnumber
+                  - confirmationtype
+                  - lgnum
+                  - rsrc
+                  - tanum
+                  - who
+                properties:
+                  confirmationdate:
+                    type: string
+                  confirmationnumber:
+                    type: string
+                  confirmationtype:
+                    type: string
+                  lgnum:
+                    type: string
+                  rsrc:
+                    type: string
+                  tanum:
+                    type: string
+                  who:
+                    type: string
             order_status:
               type: string
+        status:
+          type: object
+          properties:
+            data:
+              type: array
+              items:
+                type: object
+                required:
+                  - confirmationdate
+                  - confirmationnumber
+                  - confirmationtype
+                  - lgnum
+                  - rsrc
+                  - tanum
+                  - who
+                properties:
+                  confirmationdate:
+                    type: string
+                  confirmationnumber:
+                    type: string
+                  confirmationtype:
+                    type: string
+                  lgnum:
+                    type: string
+                  rsrc:
+                    type: string
+                  tanum:
+                    type: string
+                  who:
+                    type: string
   additionalPrinterColumns:
   - JSONPath: .spec.data.lgnum
     name: EWM Warehouse
