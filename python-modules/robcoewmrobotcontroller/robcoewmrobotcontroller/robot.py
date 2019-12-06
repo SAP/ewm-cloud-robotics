@@ -624,12 +624,13 @@ class EWMRobot:
                 self.request_work()
                 self.idle_time_start = time.time()
 
-    def _update_mission_state(self, mission_updater: Callable[[Dict], None]) -> None:
+    def _update_mission_state(
+            self, mission_updater: Callable[[RobotMission], RobotMission]) -> None:
         """Update the state of a mission."""
         # Update mission state explicitly if neccessary
         mission = mission_updater(self.state_machine.mission)
         # Update mission status
-        if mission.status:
+        if mission.status and mission.status != mission.STATE_UNKNOWN:
             self.state_machine.mission = mission
             self._failed_status_updates = 0
         # Count failed mission state updates
