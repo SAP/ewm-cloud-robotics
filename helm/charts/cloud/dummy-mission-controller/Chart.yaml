@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 description: Basic mission controller confirming every mission CRD
 name: dummy-mission-controller
 version: 0.0.1

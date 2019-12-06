@@ -1,4 +1,4 @@
-apiVersion: v1
+apiVersion: v2
 description: SAP EWM OData endpoint simulation
 name: ewm-sim
 version: 0.0.1
