@@ -16,6 +16,7 @@ import logging
 import datetime
 import time
 import os
+import math
 
 from typing import Optional, Tuple
 from requests import RequestException
@@ -102,7 +103,9 @@ class MiRRobot:
         'sap_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
     p_position_x = Gauge('sap_robot_position_x', 'Robot\'s X position', ['robot'])
     p_position_y = Gauge('sap_robot_position_y', 'Robot\'s Y position', ['robot'])
-    p_orientation = Gauge('sap_robot_orientation', 'Robot\'s orientation', ['robot'])
+    p_orientation = Gauge(
+        'sap_robot_position_orientation', 'Robot\'s orientation in degree', ['robot'])
+    p_theta = Gauge('sap_robot_position_theta', 'Robot\'s orientation in rad', ['robot'])
 
     def __init__(self, mir_api: MiRInterface) -> None:
         """Construct."""
@@ -115,9 +118,10 @@ class MiRRobot:
         self.active_map = None
         self.angular_speed = 0.0
         self.linear_speed = 0.0
-        self.position_x = 0.0
-        self.position_y = 0.0
-        self.orientation = 0.0
+        self.pos_x = 0.0
+        self.pos_y = 0.0
+        self.pos_orientation = 0.0
+        self.pos_theta = 0.0
         # Init attributes from environment variables
         self.init_robot_fromenv()
 
@@ -321,25 +325,12 @@ class MiRRobot:
             json_resp = http_resp.json()
             self.active_map = '/v2.0.0/maps/{id}'.format(id=json_resp['map_id'])
             self.battery_percentage = json_resp['battery_percentage']
-            self.p_battery_percentage.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).set(self.battery_percentage)
             self.angular_speed = json_resp['velocity']['angular']
-            self.p_angular_speed.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).set(self.angular_speed)
             self.linear_speed = json_resp['velocity']['linear']
-            self.p_linear_speed.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).set(self.linear_speed)
-
-            self.position_x = json_resp['position']['x']
-            self.p_position_x.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).set(self.position_x)
-            self.position_y = json_resp['position']['y']
-            self.p_position_y.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).set(self.position_y)
-            self.orientation = json_resp['position']['orientation']
-            self.p_orientation.labels(  # pylint: disable=no-member
-                robot=self.robco_robot_name).set(self.orientation)
-
+            self.pos_x = json_resp['position']['x']
+            self.pos_y = json_resp['position']['y']
+            self.pos_orientation = json_resp['position']['orientation']
+            self.pos_theta = math.radians(self.pos_orientation)
             if self.state != json_resp['state_id']:
                 self.p_state.labels(  # pylint: disable=no-member
                     robot=self.robco_robot_name, state=self.state).observe(
@@ -350,6 +341,26 @@ class MiRRobot:
 
             self.state = RobcoRobotStates.MIR_TO_ROBCO.get(
                 json_resp['state_id'], RobcoRobotStates.STATE_UNDEFINED)
+
+            # Update prometheus metrics
+            self.update_prometheus_metrics()
+
+    def update_prometheus_metrics(self) -> None:
+        """Update prometheus metrics for the robot."""
+        self.p_battery_percentage.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.battery_percentage)
+        self.p_angular_speed.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.angular_speed)
+        self.p_linear_speed.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.linear_speed)
+        self.p_position_x.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.pos_x)
+        self.p_position_y.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.pos_y)
+        self.p_orientation.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.pos_orientation)
+        self.p_theta.labels(  # pylint: disable=no-member
+            robot=self.robco_robot_name).set(self.pos_theta)
 
     def update_trolley_attached(self) -> None:
         """Update trolley attached attribute."""

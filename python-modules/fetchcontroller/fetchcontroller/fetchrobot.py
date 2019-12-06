@@ -15,6 +15,7 @@
 import logging
 import threading
 import time
+import math
 
 from typing import Dict, List, Set, Optional
 from requests import RequestException
@@ -73,12 +74,21 @@ class FetchRobot:
         'sap_robot_battery_percentage', 'Robot\'s battery percentage (%)', ['robot'])
     p_state = Histogram(
         'sap_robot_state', 'Robot\'s state', ['robot', 'state'], buckets=BUCKETS)
+    p_position_x = Gauge('sap_robot_position_x', 'Robot\'s X position', ['robot'])
+    p_position_y = Gauge('sap_robot_position_y', 'Robot\'s Y position', ['robot'])
+    p_orientation = Gauge(
+        'sap_robot_position_orientation', 'Robot\'s orientation in degree', ['robot'])
+    p_theta = Gauge('sap_robot_position_theta', 'Robot\'s orientation in rad', ['robot'])
 
     def __init__(self, name: str, fetch_api: FetchInterface) -> None:
         """Construct."""
         self.name = name
         self._fetch_api = fetch_api
         self.battery_percentage = 1.0
+        self.pos_x = 0.0
+        self.pos_y = 0.0
+        self.pos_orientation = 0.0
+        self.pos_theta = 0.0
         self.state = RobcoRobotStates.STATE_UNDEFINED
         self.last_state_change = '1970-01-01T00:00:00.000Z'
         self.last_state_change_ts = time.time()
@@ -448,9 +458,9 @@ class FetchRobot:
 
         self.installed_actions = installed_actions
 
-    def update_battery_percentage(self, states: Dict) -> None:
+    def update_status_attributes(self, states: Dict) -> None:
         """
-        Update the robot's battery_percentage attribute.
+        Update the robot's status attributes.
 
         states: one line of "results" from /api/v1/robots/states/.
         """
@@ -459,9 +469,22 @@ class FetchRobot:
             return
 
         self.battery_percentage = states.get('battery_level', self.battery_percentage / 100) * 100
+        self.pos_x = states.get('current_pose', {}).get('x', self.pos_x)
+        self.pos_y = states.get('current_pose', {}).get('y', self.pos_y)
+        self.pos_theta = states.get('current_pose', {}).get('theta', self.pos_theta)
+        self.pos_orientation = math.degrees(self.pos_theta)
 
+        # Update prometheus metrics
         self.p_battery_percentage.labels(  # pylint: disable=no-member
             robot=self.name).set(self.battery_percentage)
+        self.p_position_x.labels(  # pylint: disable=no-member
+            robot=self.name).set(self.pos_x)
+        self.p_position_y.labels(  # pylint: disable=no-member
+            robot=self.name).set(self.pos_y)
+        self.p_orientation.labels(  # pylint: disable=no-member
+            robot=self.name).set(self.pos_orientation)
+        self.p_theta.labels(  # pylint: disable=no-member
+            robot=self.name).set(self.pos_theta)
 
 
 class FetchRobots:
@@ -557,7 +580,7 @@ class FetchRobots:
             for result in results:
                 robot = self._robots.get(result.get('robot'))
                 if robot:
-                    robot.update_battery_percentage(result)
+                    robot.update_status_attributes(result)
 
     def update_active_maps(self) -> None:
         """Update maps and their poses."""

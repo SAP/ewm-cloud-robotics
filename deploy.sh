@@ -100,7 +100,7 @@ build() {
     fi
     printf "Building images for "$1" and pushing to "$registry"\n"
     export CR=$registry
-    skaffold run -p $1
+    skaffold run --cache-artifacts=false -p $1
     unset CR
 }
 
