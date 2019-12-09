@@ -62,30 +62,16 @@ def run_ordermanager():
     # Start prometheus client
     start_http_server(8000)
 
-    # Create order manager instance
-    manager = EWMOrderManager()
-
-    # Register callback functions
     # Create K8S handler instances
     k8s_oc = OrderController()
     k8s_rc = RobotRequestController()
-    # K8S custom resource callbacks
-    # Warehouse order status callback
-    k8s_oc.register_callback(
-        'KubernetesWhoCR', ['MODIFIED', 'REPROCESS'], manager.process_who_cr_cb)
-    # Robot request controller
-    k8s_rc.register_callback(
-        'RobotRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], manager.robotrequest_callback)
-    # Warehouse order publisher
-    manager.send_who_to_robot = k8s_oc.send_who_to_robot
-    # Warehouse order cleanup
-    manager.cleanup_who = k8s_oc.cleanup_who
-    # Robot request cleanup
-    manager.update_robotrequest_status = k8s_rc.update_request
+
+    # Create order manager instance
+    manager = EWMOrderManager(k8s_oc, k8s_rc)
 
     # Start
-    k8s_oc.run(reprocess=True, multiple_executor_threads=True)
-    k8s_rc.run(reprocess=True, multiple_executor_threads=True)
+    manager.ordercontroller.run(reprocess=True, multiple_executor_threads=True)
+    manager.robotrequestcontroller.run(reprocess=True, multiple_executor_threads=True)
 
     _LOGGER.info('SAP EWM Order Manager started - K8S CR mode')
 
@@ -93,12 +79,12 @@ def run_ordermanager():
         # Looping while K8S watchers are running
         while loop_control.shutdown is False:
             # Check if K8S CR handler exception occured
-            for k, exc in k8s_oc.thread_exceptions.items():
+            for k, exc in manager.ordercontroller.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of ordercontroller. Raising it in main '
                     'thread', k)
                 raise exc
-            for k, exc in k8s_rc.thread_exceptions.items():
+            for k, exc in manager.robotrequestcontroller.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robotrequestcontroller. Raising it in '
                     'main thread', k)
@@ -112,8 +98,8 @@ def run_ordermanager():
     finally:
         # Stop K8S CR watchers
         _LOGGER.info('Stopping K8S CR watchers')
-        k8s_oc.stop_watcher()
-        k8s_rc.stop_watcher()
+        manager.ordercontroller.stop_watcher()
+        manager.robotrequestcontroller.stop_watcher()
 
 
 if __name__ == '__main__':

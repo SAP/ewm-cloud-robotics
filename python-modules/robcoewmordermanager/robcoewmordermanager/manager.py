@@ -15,7 +15,6 @@
 import os
 import logging
 
-from collections import namedtuple
 from typing import Dict, Tuple, List
 
 import attr
@@ -24,7 +23,7 @@ from cattr import structure, unstructure
 from prometheus_client import Counter
 
 from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
-from robcoewmtypes.robot import RequestFromRobot
+from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus
 from robcoewmtypes.warehouseorder import ConfirmWarehouseTask, WarehouseOrder
 
 from robcoewminterface.types import ODataConfig
@@ -33,14 +32,18 @@ from robcoewminterface.ewm import (WarehouseOData, WarehouseOrderOData)
 from robcoewminterface.exceptions import (
     ODataAPIException, NoOrderFoundError, RobotHasOrderError, WarehouseTaskAlreadyConfirmedError)
 
-from .helper import ProcessedMessageMemory
+from .helper import ProcessedMessageMemory, RobotIdentifier
+from .ordercontroller import OrderController
+from .robotrequestcontroller import RobotRequestController
 
 _LOGGER = logging.getLogger(__name__)
 
-RobotIdentifier = namedtuple('RobotIdentifier', ['lgnum', 'rsrc'])
-
 STATE_SUCCEEDED = 'SUCCEEDED'
 STATE_FAILED = 'FAILED'
+
+ROBOTREQUEST_TYPE = create_robcoewmtype_str(RequestFromRobot('lgnum', 'rsrc'))
+WAREHOUSETASKCONF_TYPE = create_robcoewmtype_str([ConfirmWarehouseTask(
+    'lgnum', 'who', ConfirmWarehouseTask.FIRST_CONF, ConfirmWarehouseTask.CONF_SUCCESS)])
 
 
 class EWMOrderManager:
@@ -53,24 +56,30 @@ class EWMOrderManager:
     who_counter = Counter(
         'sap_ewm_warehouse_orders', 'Completed EWM Warehouse orders', ['robot', 'result'])
 
-    def __init__(self) -> None:
+    def __init__(self, oc: OrderController, rc: RobotRequestController) -> None:
         """Constructor."""
         self.init_odata_fromenv()
+
+        # Memory of processed messages for order manager
+        self.msg_mem = ProcessedMessageMemory()
 
         # SAP EWM OData handler
         self.odatahandler = ODataHandler(self.odataconfig)
         # SAP EWM OData APIs
         self.ewmwarehouse = WarehouseOData(self.odatahandler)
         self.ewmwho = WarehouseOrderOData(self.odatahandler)
-        # Callable to send a warehouse order to a robot - replace default function to run
-        self.send_who_to_robot = self.send_who_to_robot_default
-        # Callable to cleanup a processed warehouse order - replace default function to run
-        self.cleanup_who = self.cleanup_default
-        # Callable to update status of robotrequest - replace default function to run
-        self.update_robotrequest_status = self.update_default
 
-        # Memory of processed messages for order manager
-        self.msg_mem = ProcessedMessageMemory()
+        # K8s Custom Resource Controller
+        self.ordercontroller = oc
+        self.robotrequestcontroller = rc
+
+        # Register callback functions
+        # Warehouse order status callback
+        self.ordercontroller.register_callback(
+            'KubernetesWhoCR', ['MODIFIED', 'REPROCESS'], self.process_who_cr_cb)
+        # Robot request controller
+        self.robotrequestcontroller.register_callback(
+            'RobotRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotrequest_callback)
 
     def init_odata_fromenv(self) -> None:
         """Initialize OData interface from environment variables."""
@@ -126,22 +135,41 @@ class EWMOrderManager:
 
         return valid_robcoewmdata
 
-    def robotrequest_callback(self, dtype: str, name: str, data: Dict, statusdata: Dict) -> None:
+    def robotrequest_callback(self, name: str, custom_res: Dict) -> None:
         """
-        Handle robotrequest messages.
+        Handle exceptions of robotrequest CR processing.
+
+        Used for K8S CR handler.
+        """
+        try:
+            self.process_robotrequest_cr(name, custom_res)
+        except NoOrderFoundError:
+            _LOGGER.debug(
+                'No warehouse order was found for robot "%s" - try again later', name)
+        except RobotHasOrderError:
+            _LOGGER.debug(
+                'Warehouse order still assigned to robot "%s" - try again later', name)
+
+    def process_robotrequest_cr(self, name: str, custom_res: Dict) -> None:
+        """
+        Process a robotrequest custom resource.
 
         Used for K8S CR handler.
         """
         cls = self.__class__
 
+        if custom_res.get('status', {}).get('status') == RequestFromRobotStatus.STATE_PROCESSED:
+            return
+
         # Structure the request data
-        robcoewmdata = self._structure_callback_data(dtype, data, cls.ROBOTREQUEST_MSG_TYPES)
+        robcoewmdata = self._structure_callback_data(
+            ROBOTREQUEST_TYPE, custom_res['spec'], cls.ROBOTREQUEST_MSG_TYPES)
         if not robcoewmdata:
             return
         # Get statusdata if available
-        if statusdata:
+        if custom_res.get('status', {}).get('data'):
             robcoewmstatusdata = self._structure_callback_data(
-                dtype, statusdata, cls.ROBOTREQUEST_MSG_TYPES)
+                ROBOTREQUEST_TYPE, custom_res['status']['data'], cls.ROBOTREQUEST_MSG_TYPES)
         else:
             robcoewmstatusdata = [RequestFromRobot(robcoewmdata[0].lgnum, robcoewmdata[0].rsrc), ]
 
@@ -188,13 +216,13 @@ class EWMOrderManager:
 
         # Raise exception if request was not complete
         if request == status:
-            self.update_robotrequest_status(
+            self.robotrequestcontroller.update_status(
                 name, create_robcoewmtype_str(status), unstructure(status),
                 process_complete=True)
             self.msg_mem.memorize_robotrequest(name, status)
             self.msg_mem.delete_robotrequest_from_memory(name, status)
         else:
-            self.update_robotrequest_status(
+            self.robotrequestcontroller.update_status(
                 name, create_robcoewmtype_str(status), unstructure(status),
                 process_complete=False)
             self.msg_mem.memorize_robotrequest(name, status)
@@ -280,7 +308,7 @@ class EWMOrderManager:
 
                 # Cleanup warehouse order if there are no warehouse tasks
                 if not who.warehousetasks:
-                    self.cleanup_who(unstructure(who))
+                    self.ordercontroller.cleanup_who(unstructure(who))
                     self.msg_mem.delete_who_from_memory(whtask)
                 _LOGGER.info(
                     'Warehouse task Lgnum "%s", Tanum "%s" of warehouse order "%s" got successfull'
@@ -314,7 +342,7 @@ class EWMOrderManager:
             else:
                 # In case of an error in warehouse order processing always clean up because the
                 # order is moved to a different queue
-                self.cleanup_who(unstructure(who))
+                self.ordercontroller.cleanup_who(unstructure(who))
                 self.msg_mem.delete_who_from_memory(whtask)
                 _LOGGER.info(
                     'Process error on robot "%s" before %s confirmation of Lgnum "%s", Tanum "%s" '
@@ -424,7 +452,7 @@ class EWMOrderManager:
         # Send orders to robot
         for who in whos:
             dtype = create_robcoewmtype_str(who)
-            success = self.send_who_to_robot(robotident, dtype, unstructure(who))
+            success = self.ordercontroller.send_who_to_robot(robotident, dtype, unstructure(who))
 
         if success is False:
             raise ConnectionError
@@ -437,16 +465,34 @@ class EWMOrderManager:
 
         return True
 
-    def process_who_cr_cb(self, name: str, dtype: str, data: Dict) -> None:
+    def process_who_cr_cb(self, name: str, custom_res: Dict) -> None:
         """
-        Process all callbacks for warehouse order CRs in sequence.
+        Handle exceptions of warehouse order CR processing.
+
+        Used for K8S CR handler.
+        """
+        try:
+            self.process_who_cr(name, custom_res)
+        except (ConnectionError, TimeoutError, IOError) as err:
+            _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
+        else:
+            # Save processed confirmations in custom resource
+            self.ordercontroller.save_processed_status(name, custom_res)
+
+    def process_who_cr(self, name: str, custom_res: Dict) -> None:
+        """
+        Process confirmations in warehouse order CR in sequence.
 
         Used for K8S CR handler.
         """
         cls = self.__class__
 
+        # Get confirmations to be processed
+        data = self._get_who_confirmations(custom_res)
+
         # Structure the input data
-        robcoewmdata = self._structure_callback_data(dtype, data, cls.CONFIRMATION_MSG_TYPES)
+        robcoewmdata = self._structure_callback_data(
+            WAREHOUSETASKCONF_TYPE, data, cls.CONFIRMATION_MSG_TYPES)
 
         # Process the datasets
         for dataset in robcoewmdata:
@@ -475,22 +521,15 @@ class EWMOrderManager:
             # Memorize the dataset in the end
             self.msg_mem.memorize_who_conf(dataset)
 
-    def send_who_to_robot_default(
-            self, robotident: RobotIdentifier, dtype: str, who: Dict) -> bool:
-        """Send the warehouse order to a robot."""
-        cls = self.__class__
-        raise AttributeError(
-            'Please register valid function to send warehouse orders to a robot - instance of '
-            'class "{}" - attribute "send_who_to_robot"'.format(cls.__name__))
+    def _get_who_confirmations(self, custom_res: Dict) -> List:
+        """Get Warehouse Order confirmations to be processed."""
+        # Only new confirmations are processed
+        confs = custom_res.get('status', {}).get('data', [])
+        processed_confs = custom_res.get('spec', {}).get('process_status', [])
 
-        # Return to avoid pylint errors
-        return False    # pylint: disable=unreachable
+        new_confs = []
+        for conf in confs:
+            if conf not in processed_confs:
+                new_confs.append(conf)
 
-    def cleanup_default(self, who: Dict) -> bool:
-        """Cleanup when an warehouse order or request was finished."""
-        return True
-
-    def update_default(
-            self, name: str, dtype: str, status: Dict, process_complete: bool = False) -> bool:
-        """Update a request."""
-        return True
+        return new_confs

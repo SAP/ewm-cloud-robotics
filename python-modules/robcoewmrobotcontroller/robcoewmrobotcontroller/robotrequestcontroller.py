@@ -23,14 +23,12 @@ from typing import Dict
 from collections import OrderedDict
 from cattr import structure
 
-from robcoewmtypes.helper import create_robcoewmtype_str, get_sample_cr
-from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus
+from robcoewmtypes.helper import get_sample_cr
+from robcoewmtypes.robot import RequestFromRobotStatus
 
-from k8scrhandler.k8scrhandler import K8sCRHandler, k8s_cr_callback
+from k8scrhandler.k8scrhandler import K8sCRHandler
 
 _LOGGER = logging.getLogger(__name__)
-
-ROBOTREQUEST_TYPE = create_robcoewmtype_str(RequestFromRobot('lgnum', 'rsrc'))
 
 
 class RobotRequestController(K8sCRHandler):
@@ -64,26 +62,6 @@ class RobotRequestController(K8sCRHandler):
         # Thread to check for deleted robotrequest CRs
         self.deleted_robotrequests_thread = threading.Thread(
             target=self._deleted_robotrequests_checker)
-
-    @k8s_cr_callback
-    def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
-        """Process custom resource operation."""
-        _LOGGER.debug('Handling %s on %s', operation, name)
-        # Run all registered callback functions
-        try:
-            # If status is set iterate over all registered callbacks
-            if custom_res.get('status'):
-                for callback in self.callbacks[operation].values():
-                    callback(ROBOTREQUEST_TYPE, name, custom_res)
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.error(
-                'Error while processing custom resource %s', name)
-            exc_info = sys.exc_info()
-            _LOGGER.error(
-                '%s/%s: Error in callback - Exception: "%s" / "%s" - TRACEBACK: %s', self.group,
-                self.plural, exc_info[0], exc_info[1], traceback.format_exception(*exc_info))
-        else:
-            _LOGGER.debug('Successfully processed custom resource %s', name)
 
     def init_robot_fromenv(self) -> None:
         """Initialize EWM Robot from environment variables."""
@@ -178,14 +156,14 @@ class RobotRequestController(K8sCRHandler):
 
         return success
 
-    def robotrequest_deleted_cb(self, dtype: str, name: str, custom_res: Dict) -> None:
+    def robotrequest_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Update self.robotrequest_status."""
         with self.robotrequest_status_lock:
             # If robotrequest was deleted remove it from dictionary
             if name in self.robotrequest_status:
                 self.robotrequest_status[name].status = RequestFromRobotStatus.STATE_DELETED
 
-    def update_robotrequest_status_cb(self, dtype: str, name: str, custom_res: Dict) -> None:
+    def update_robotrequest_status_cb(self, name: str, custom_res: Dict) -> None:
         """Update self.robotrequest_status."""
         # No status means nothing to update yet
         if not custom_res.get('status'):

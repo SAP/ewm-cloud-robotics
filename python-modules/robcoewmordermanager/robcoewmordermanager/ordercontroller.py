@@ -22,19 +22,14 @@ from collections import OrderedDict
 from typing import Dict
 from cattr import structure
 
-from robcoewmtypes.helper import create_robcoewmtype_str, get_sample_cr
-from robcoewmtypes.warehouseorder import (
-    WarehouseOrder, ConfirmWarehouseTask, WarehouseOrderCRDSpec)
+from robcoewmtypes.helper import get_sample_cr
+from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
 
-from k8scrhandler.k8scrhandler import K8sCRHandler, k8s_cr_callback
+from k8scrhandler.k8scrhandler import K8sCRHandler
 
-from .manager import RobotIdentifier
+from .helper import RobotIdentifier
 
 _LOGGER = logging.getLogger(__name__)
-
-WAREHOUSEORDER_TYPE = create_robcoewmtype_str(WarehouseOrder('lgnum', 'who'))
-WAREHOUSETASKCONF_TYPE = create_robcoewmtype_str(ConfirmWarehouseTask(
-    'lgnum', 'who', ConfirmWarehouseTask.FIRST_CONF, ConfirmWarehouseTask.CONF_SUCCESS))
 
 
 class OrderController(K8sCRHandler):
@@ -62,70 +57,22 @@ class OrderController(K8sCRHandler):
         self.deleted_warehouse_orders_thread = threading.Thread(
             target=self._deleted_warehouse_orders_checker)
 
-    @k8s_cr_callback
-    def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
-        """Process custom resource operation."""
-        _LOGGER.debug('Handling %s on %s', operation, name)
-        # Run all registered callback functions
-        processed = False
-        try:
-            # Check if warehouse order has to be processed in callback.
-            process_cr = self._warehouse_order_precheck(name, labels, operation, custom_res)
-            # If pre check was successfull set iterate over all callbacks
-            if process_cr:
-                for callback in self.callbacks[operation].values():
-                    process_status = custom_res['spec'].get('process_status', [])
-                    for status in custom_res['status']['data']:
-                        # Process not yet processed status
-                        if status not in process_status:
-                            callback(name, WAREHOUSETASKCONF_TYPE, status)
-                            processed = True
-            # Always check for DELETED warehouse orders
-            if operation == 'DELETED':
-                self.warehouse_order_deleted_cb(name)
-        except (ConnectionError, TimeoutError, IOError) as err:
-            _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
-        except Exception:  # pylint: disable=broad-except
-            _LOGGER.error('Error while processing custom resource %s', name)
-            exc_info = sys.exc_info()
-            _LOGGER.error(
-                '%s/%s: Error in callback - Exception: "%s" / "%s" - TRACEBACK: %s', self.group,
-                self.plural, exc_info[0], exc_info[1], traceback.format_exception(*exc_info))
-        else:
-            # If processed
-            if processed:
-                # When callback was processed successfully, save the status
-                if self.check_cr_exists(name):
-                    # Only if changed
-                    if custom_res['spec'].get('process_status') != custom_res[
-                            'status'].get('data'):
-                        data_processed = {'process_status': custom_res['status']['data']}
-                        self.update_cr_spec(name, data_processed)
-                # Cleanup warehouse order CRs
-                self._cleanup_who_crs_cb(name, custom_res['spec'])
-            # CR with spec, which was not processed and is not in warehouse order spec dictionary
-            elif (operation != 'DELETED'
-                  and custom_res.get('spec')
-                  and name not in self.warehouse_order_spec):
-                self._cleanup_who_crs_cb(name, custom_res['spec'])
-            _LOGGER.debug(
-                'Successfully processed custom resource %s', name)
+        # Register callbacks
+        self.register_callback(
+            'CleanupWarehouseorders', ['ADDED', 'MODIFIED', 'REPROCESS'], self._cleanup_who_crs_cb)
+        self.register_callback(
+            'DeletedWwarehouseorders', ['DELETED'], self._warehouse_order_deleted_cb)
 
-    def _cleanup_who_crs_cb(self, name: str, cr_spec: Dict):
+    def _cleanup_who_crs_cb(self, name: str, custom_res: Dict) -> None:
         """Cleanup processed warehouse order CRs."""
-        # No spec means nothing to update yet
-        if not cr_spec:
-            return
         # Warehouse order is not running and marked as deleted before. Nothing to do here.
-        try:
-            if (cr_spec.get('order_status') != WarehouseOrderCRDSpec.STATE_RUNNING
+        if self.warehouse_order_spec.get(name):
+            if (custom_res['spec'].get('order_status') != WarehouseOrderCRDSpec.STATE_RUNNING
                     and self.warehouse_order_spec[
                         name].order_status == WarehouseOrderCRDSpec.STATE_DELETED):
                 return
-        except KeyError:
-            pass
         # Save current warehouse order spec
-        who_spec = structure(cr_spec, WarehouseOrderCRDSpec)
+        who_spec = structure(custom_res['spec'], WarehouseOrderCRDSpec)
         with self.warehouse_order_spec_lock:
             self.warehouse_order_spec[name] = who_spec
             # Delete warehouse orders with status PROCESSED
@@ -167,7 +114,7 @@ class OrderController(K8sCRHandler):
             for warehouse_order in clean_warehouse_orders:
                 self.warehouse_order_spec.pop(warehouse_order, None)
 
-    def _deleted_warehouse_orders_checker(self):
+    def _deleted_warehouse_orders_checker(self) -> None:
         """Continously check for deleted warehouse_order CR and remove them from ordered dict."""
         _LOGGER.info(
             'Start continiously checking for deleted warehouse_order CRs')
@@ -189,16 +136,7 @@ class OrderController(K8sCRHandler):
                 if self.thread_run:
                     time.sleep(10)
 
-    def _warehouse_order_precheck(
-            self, name: str, labels: Dict, operation: str, custom_res: Dict) -> bool:
-        """Check if warehouse order has to be processed in callback."""
-        # Only warehouse orders with a status should be processed
-        if not custom_res.get('status', {}).get('data'):
-            return False
-
-        return True
-
-    def check_deleted_warehouse_orders(self):
+    def check_deleted_warehouse_orders(self) -> None:
         """Remove self.warehouse_order_spec entries with no CR from ordered dictionary."""
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
@@ -298,9 +236,18 @@ class OrderController(K8sCRHandler):
 
         return success
 
-    def warehouse_order_deleted_cb(self, name: str) -> None:
+    def _warehouse_order_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove entry from self.warehouse_order_spec."""
         with self.warehouse_order_spec_lock:
             # When warehouse_order_spec was deleted remove it from ordered dictionary
             if name in self.warehouse_order_spec:
                 self.warehouse_order_spec[name].order_status = WarehouseOrderCRDSpec.STATE_DELETED
+
+    def save_processed_status(self, name: str, custom_res: Dict) -> None:
+        """Save processed custom resource status in spec.process_status."""
+        if self.check_cr_exists(name):
+            # Only if changed
+            if custom_res['spec'].get('process_status') != custom_res[
+                    'status'].get('data'):
+                data_processed = {'process_status': custom_res['status']['data']}
+                self.update_cr_spec(name, data_processed)

@@ -18,7 +18,6 @@ import time
 from typing import Any, Callable, Dict, Optional
 
 from cattr import structure, unstructure
-from retrying import retry
 
 from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
 from robcoewmtypes.robot import RequestFromRobot, RobotMission, RobotConfigurationStatus
@@ -31,6 +30,9 @@ from .robotrequestcontroller import RobotRequestController
 from .statemachine import RobotEWMMachine, WhoIdentifier
 
 _LOGGER = logging.getLogger(__name__)
+
+ROBOTREQUEST_TYPE = create_robcoewmtype_str(RequestFromRobot('lgnum', 'rsrc'))
+WAREHOUSEORDER_TYPE = create_robcoewmtype_str(WarehouseOrder('lgnum', 'who'))
 
 
 def convert_warehouseorder(data: Any) -> WarehouseOrder:
@@ -56,12 +58,43 @@ class EWMRobot:
         # Robot Configuration
         self.robot_config = robot_config
         # Order Controller
-        self.order_controller = order_controller
+        self.ordercontroller = order_controller
         # Robot Request controller
-        self.robot_request_controller = robot_request
+        self.robotrequestcontroller = robot_request
+
+        # K8S custom resource callbacks
+        # Order controller
+        self.ordercontroller.register_callback(
+            'Robot', ['ADDED', 'MODIFIED', 'REPROCESS'], self.process_who_cr_cb)
+        # Robot request controller
+        self.robotrequestcontroller.register_callback(
+            'Robot', ['MODIFIED', 'REPROCESS'], self.robotrequest_callback)
 
         # Robot state machine
-        state_restore = self.get_validated_state_restore()
+        self._init_robot_state_machine()
+
+        # Confirmation callables for Pick, Pack and Pass
+        if confirm_pick:
+            self.confirm_pick = confirm_pick
+        else:
+            self.confirm_pick = self.confirm_false
+        if confirm_target:
+            self.confirm_target = confirm_target
+        else:
+            self.confirm_target = self.confirm_false
+        # Timestamp for last time a request work was sent
+        self._requested_work_time = None
+        # Timestamp when robot was working for the last time
+        self.last_time_working = time.time()
+        self.idle_time_start = 0
+        # Number of failed status updates
+        self._failed_status_updates = 0
+        # Robot is at staging position
+        self.at_staging_position = False
+
+    def _init_robot_state_machine(self) -> None:
+        """Initialize robot's state machine."""
+        state_restore = self._get_validated_state_restore()
         if state_restore:
             # Restore a previous state machine state
             # Init state machine in specific state
@@ -79,14 +112,14 @@ class EWMRobot:
                     'Restore state machine: WarehouseOrderType %s, WarehouseOrder %s, '
                     'WarehouseTask %s, State %s, Mission %s', who_type, state_restore.who,
                     state_restore.tanum, state_restore.statemachine, state_restore.mission)
-                warehouseorder = self.order_controller.get_warehouseorder(
+                warehouseorder = self.ordercontroller.get_warehouseorder(
                     state_restore.lgnum, state_restore.who)
                 self.state_machine.who_type = who_type
                 who_ident = WhoIdentifier(state_restore.lgnum, state_restore.who)
                 self.state_machine.warehouseorders[who_ident] = warehouseorder
                 self.state_machine.active_who = warehouseorder
                 if state_restore.subwho:
-                    sub_warehouseorder = self.order_controller.get_warehouseorder(
+                    sub_warehouseorder = self.ordercontroller.get_warehouseorder(
                         state_restore.lgnum, state_restore.subwho)
                     sub_who_ident = WhoIdentifier(
                         state_restore.lgnum, state_restore.subwho)
@@ -113,26 +146,8 @@ class EWMRobot:
                 self.robot_config, self.mission_api, self.confirm_warehousetask, self.request_work,
                 self.send_warehousetask_error, self.notify_who_completion,
                 self.robot_config.save_robot_state)
-        # Confirmation callables for Pick, Pack and Pass
-        if confirm_pick:
-            self.confirm_pick = confirm_pick
-        else:
-            self.confirm_pick = self.confirm_false
-        if confirm_target:
-            self.confirm_target = confirm_target
-        else:
-            self.confirm_target = self.confirm_false
-        # Timestamp for last time a request work was sent
-        self._requested_work_time = None
-        # Timestamp when robot was working for the last time
-        self.last_time_working = time.time()
-        self.idle_time_start = 0
-        # Number of failed status updates
-        self._failed_status_updates = 0
-        # Robot is at staging position
-        self.at_staging_position = False
 
-    def get_validated_state_restore(self) -> Optional[RobotConfigurationStatus]:
+    def _get_validated_state_restore(self) -> Optional[RobotConfigurationStatus]:
         """Return robot state if it is valid."""
         state_restore = self.robot_config.get_robot_state()
 
@@ -140,7 +155,7 @@ class EWMRobot:
         if state_restore:
             # If there are no CRs for warehouse order and sub warehouse order, state is invalid
             if state_restore.who:
-                warehouseorder = self.order_controller.get_warehouseorder(
+                warehouseorder = self.ordercontroller.get_warehouseorder(
                     state_restore.lgnum, state_restore.who)
                 if not warehouseorder:
                     _LOGGER.error(
@@ -148,7 +163,7 @@ class EWMRobot:
                         state_restore.lgnum)
                     valid_state = False
             if state_restore.subwho:
-                sub_warehouseorder = self.order_controller.get_warehouseorder(
+                sub_warehouseorder = self.ordercontroller.get_warehouseorder(
                     state_restore.lgnum, state_restore.subwho)
                 if not sub_warehouseorder:
                     _LOGGER.error(
@@ -162,15 +177,16 @@ class EWMRobot:
             _LOGGER.error('State from CR is not valid - ignoring it')
             return None
 
-    def queue_callback(self, dtype: str, data: Dict) -> None:
-        """Process robot order queue messages."""
+    def process_who_cr_cb(self, name: str, data: Dict) -> None:
+        """Process warehouse order CRs."""
         cls = self.__class__
         # Get robco ewm data classes
         try:
-            robcoewmtype = get_robcoewmtype(dtype)
+            robcoewmtype = get_robcoewmtype(WAREHOUSEORDER_TYPE)
         except TypeError as err:
             _LOGGER.error(
-                'Message type "%s" is invalid - %s - message SKIPPED: %s', dtype, err, data)
+                'Message type "%s" is invalid - %s - message SKIPPED: %s', WAREHOUSEORDER_TYPE,
+                err, data)
             return
         # Convert message data to robcoewmtypes data classes
         robocoewmdata = structure(data, robcoewmtype)
@@ -194,17 +210,17 @@ class EWMRobot:
             if isinstance(dataset, WarehouseOrder):
                 self.state_machine.update_warehouseorder(warehouseorder=dataset)
 
-    def robotrequest_callback(self, dtype: str, name: str, custom_res: Dict) -> None:
+    def robotrequest_callback(self, name: str, custom_res: Dict) -> None:
         """Process robotrequest messages."""
         status = custom_res.get('status', {})
         if status.get('data'):
             # Get robco ewm data classes
             try:
-                robcoewmtype = get_robcoewmtype(dtype)
+                robcoewmtype = get_robcoewmtype(ROBOTREQUEST_TYPE)
             except TypeError as err:
                 _LOGGER.error(
                     'Message type "%s" is invalid - %s - message SKIPPED: %s',
-                    dtype, err, status.get('data'))
+                    ROBOTREQUEST_TYPE, err, status.get('data'))
                 return
             # Convert message data to robcoewmtypes data classes
             robocoewmdata = structure(status['data'], robcoewmtype)
@@ -222,7 +238,6 @@ class EWMRobot:
         """Confirm Pick, Pack and Pass with False."""
         return False
 
-    @retry(wait_fixed=100)
     def confirm_warehousetask(self, wht: WarehouseTask, enforce_first_conf: bool = False) -> None:
         """Confirm warehouse task."""
         confirmations = []
@@ -248,7 +263,7 @@ class EWMRobot:
 
         for confirmation in confirmations:
             dtype = create_robcoewmtype_str(confirmation)
-            success = self.order_controller.confirm_wht(
+            success = self.ordercontroller.confirm_wht(
                 dtype, unstructure(confirmation), clear_progress)
 
             if success is True:
@@ -261,7 +276,6 @@ class EWMRobot:
                     wht.tanum)
                 raise ConnectionError
 
-    @retry(wait_fixed=100)
     def send_warehousetask_error(self, wht: WarehouseTask) -> None:
         """Send warehouse task error."""
         errors = []
@@ -282,7 +296,7 @@ class EWMRobot:
 
         for error in errors:
             dtype = create_robcoewmtype_str(error)
-            success = self.order_controller.confirm_wht(dtype, unstructure(error), True)
+            success = self.ordercontroller.confirm_wht(dtype, unstructure(error), True)
 
             if success is True:
                 _LOGGER.info(
@@ -294,7 +308,6 @@ class EWMRobot:
                     wht.tanum)
                 raise ConnectionError
 
-    @retry(wait_fixed=100)
     def request_work(self, onlynewwho: bool = False, throttle: bool = False) -> None:
         """Request work from order manager."""
         # Allow requesting work only once every 10 seconds when throttling
@@ -315,7 +328,7 @@ class EWMRobot:
         _LOGGER.info('Requesting work from order manager')
 
         dtype = create_robcoewmtype_str(request)
-        success = self.robot_request_controller.send_robot_request(dtype, unstructure(request))
+        success = self.robotrequestcontroller.send_robot_request(dtype, unstructure(request))
 
         if success is True:
             _LOGGER.info('Requested work from order manager')
@@ -323,7 +336,6 @@ class EWMRobot:
             _LOGGER.error('Error requesting work from order manager. Try again')
             raise ConnectionError
 
-    @retry(wait_fixed=100)
     def notify_who_completion(self, who: str) -> None:
         """
         Send a  warehouse order completion request to EWM Order Manager.
@@ -337,7 +349,7 @@ class EWMRobot:
             'Requesting warehouse order completion notification for %s from order manager', who)
 
         dtype = create_robcoewmtype_str(request)
-        success = self.robot_request_controller.send_robot_request(dtype, unstructure(request))
+        success = self.robotrequestcontroller.send_robot_request(dtype, unstructure(request))
 
         if success is True:
             _LOGGER.info('Requested warehouse order completion notification from order manager')

@@ -23,6 +23,7 @@ from robcoewminterface.exceptions import NoOrderFoundError
 
 _LOGGER = logging.getLogger(__name__)
 
+RobotIdentifier = namedtuple('RobotIdentifier', ['lgnum', 'rsrc'])
 WhoIdentifier = namedtuple('WhoIdentifier', ['lgnum', 'who'])
 
 

@@ -19,7 +19,6 @@ REQUIRES = [
     'requests',
     'transitions==0.7.1',
     'prometheus-client',
-    'retrying',
     'robcoewmtypes',
     'k8scrhandler',
     ]

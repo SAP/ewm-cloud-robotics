@@ -18,8 +18,6 @@ import traceback
 import logging
 import time
 
-from typing import Optional
-
 from prometheus_client import start_http_server
 
 from robcoewmtypes.warehouseorder import WarehouseTask
@@ -87,14 +85,14 @@ def run_robot():
     # Wait 1 seconds for initial messages being processed
     time.sleep(1.0)
     # Start main loop
-    robot_main_loop(robot_config, robco_mission, robco_robot)
+    robot_main_loop(robot_config, robco_mission)
     # In the end stop Mission and Config CR watchers
     robco_mission.stop_watcher()
     robot_config.stop_watcher()
 
 
-def robot_main_loop(robot_config: RobotConfigurationController, robot_mission_api: RobotMissionAPI,
-                    robot_status_api: Optional[RobCoRobotAPI] = None) -> None:
+def robot_main_loop(
+        robot_config: RobotConfigurationController, robot_mission_api: RobotMissionAPI) -> None:
     """Run one main loop of a EWM robot."""
     # Register handler to control main loop
     loop_control = MainLoopController()
@@ -108,16 +106,9 @@ def robot_main_loop(robot_config: RobotConfigurationController, robot_mission_ap
     robot = EWMRobot(
         robot_mission_api, robot_config, k8s_oc, k8s_rc, confirm_target=dummy_confirm_true)
 
-    # K8S custom resource callbacks
-    # Order controller
-    k8s_oc.register_callback(
-        'Robot', ['ADDED', 'MODIFIED', 'REPROCESS'], robot.queue_callback)
-    # Robot request controller
-    k8s_rc.register_callback(
-        'Robot', ['MODIFIED', 'REPROCESS'], robot.robotrequest_callback)
     # Start
-    k8s_oc.run(reprocess=True)
-    k8s_rc.run(reprocess=True)
+    robot.ordercontroller.run(reprocess=True)
+    robot.robotrequestcontroller.run(reprocess=True)
     _LOGGER.info('SAP EWM Robot "%s" started - K8S CR mode', robot.robot_config.rsrc)
 
     try:
@@ -137,27 +128,27 @@ def robot_main_loop(robot_config: RobotConfigurationController, robot_mission_ap
             robot.runner()
 
             # Check if K8S CR handler exception occured
-            for k, exc in k8s_oc.thread_exceptions.items():
+            for k, exc in robot.ordercontroller.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of ordercontroller. Raising it in main '
                     'thread', k)
                 raise exc
-            for k, exc in k8s_rc.thread_exceptions.items():
+            for k, exc in robot.robotrequestcontroller.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robotrequestcontroller. Raising it in '
                     'main thread', k)
                 raise exc
-            for k, exc in robot_config.thread_exceptions.items():
+            for k, exc in robot.robot_config.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robotconfigurationcontroller. Raising '
                     'it in main thread', k)
                 raise exc
-            for k, exc in robot_mission_api.thread_exceptions.items():
+            for k, exc in robot.mission_api.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robot_mission_api . Raising it in '
                     'main thread', k)
                 raise exc
-            for k, exc in robot_status_api.thread_exceptions.items():
+            for k, exc in robot.mission_api.robot_api.thread_exceptions.items():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of robot_status_api. Raising it in '
                     'main thread', k)
@@ -172,8 +163,8 @@ def robot_main_loop(robot_config: RobotConfigurationController, robot_mission_ap
     finally:
         # Stop K8S CR watcher
         _LOGGER.info('Stopping K8S CR watchers')
-        k8s_oc.stop_watcher()
-        k8s_rc.stop_watcher()
+        robot.ordercontroller.stop_watcher()
+        robot.robotrequestcontroller.stop_watcher()
 
 
 if __name__ == '__main__':

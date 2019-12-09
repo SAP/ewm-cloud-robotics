@@ -21,15 +21,13 @@ from typing import Dict, Optional
 
 from cattr import structure
 
-from robcoewmtypes.helper import create_robcoewmtype_str, get_sample_cr
+from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.warehouseorder import (
     WarehouseOrder, ConfirmWarehouseTask, WarehouseOrderCRDSpec)
 
 from k8scrhandler.k8scrhandler import K8sCRHandler, k8s_cr_callback
 
 _LOGGER = logging.getLogger(__name__)
-
-WAREHOUSEORDER_TYPE = create_robcoewmtype_str(WarehouseOrder('lgnum', 'who'))
 
 
 class OrderController(K8sCRHandler):
@@ -65,7 +63,7 @@ class OrderController(K8sCRHandler):
             # If pre check was successfull set iterate over all callbacks
             if process_cr:
                 for callback in self.callbacks[operation].values():
-                    callback(WAREHOUSEORDER_TYPE, custom_res['spec']['data'])
+                    callback(name, custom_res['spec']['data'])
         except Exception:  # pylint: disable=broad-except
             _LOGGER.error(
                 'Error while processing custom resource %s', name)
@@ -88,7 +86,7 @@ class OrderController(K8sCRHandler):
         if self.processed_order_spec.get(name) == custom_res['spec']:
             _LOGGER.debug('Spec for "%s" already processed before - skip', name)
             return False
-        cr_status = custom_res.get('status') if isinstance(custom_res.get('status'), dict) else {}
+        cr_status = custom_res.get('status', {})
         status_data = cr_status.get('data', {})
         process_status = custom_res['spec'].get('process_status', {})
         order_status = custom_res['spec'].get('order_status')
