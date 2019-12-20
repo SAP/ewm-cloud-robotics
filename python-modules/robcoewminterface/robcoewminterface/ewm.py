@@ -13,7 +13,8 @@
 """EWM OData provider for robcoewminterface."""
 
 import logging
-from typing import List, Optional
+from typing import List, Optional, Any
+from requests import Response
 
 from robcoewmtypes.warehouse import Warehouse, WarehouseDescription, StorageBin
 from robcoewmtypes.warehouseorder import (
@@ -32,12 +33,53 @@ HTTP_BUS_EXCEPTION = [400]
 STATE_SUCCEEDED = 'SUCCEEDED'
 
 
-class WarehouseOData:
-    """Interaction with EWM warehouse APIs."""
+class EWMOdata:
+    """Base class for EWM OData interface."""
 
     def __init__(self, odata: ODataHandler) -> None:
         """Constructor."""
         self._odata = odata
+
+    def handle_http_response(self, endpoint: str, http_resp: Response) -> Any:
+        """
+        Handle an OData HTTP request response.
+
+        Returns attrs data class in case of success and raises exception on error.
+        For PATCH requests the body of an OData request is empty on success. Returning True then.
+        """
+        # Return code handling
+        if http_resp.status_code in HTTP_SUCCESS:
+            self._odata.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
+            if http_resp.text:
+                return odata_to_attr(http_resp.json())
+            else:
+                return True
+
+        if http_resp.status_code == 403:
+            error_code = '403'
+        else:
+            # Get error code from HTTP response
+            try:
+                error_code = http_resp.json()['error']['code']
+            except KeyError:
+                error_code = None
+
+        # Error handling for business exceptions raised in EWM backend
+        if http_resp.status_code in HTTP_BUS_EXCEPTION:
+            exception_class = get_exception_class(error_code)
+            self._odata.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
+            raise exception_class()
+
+        # For any other error use generic exception
+        self._odata.odata_counter.labels(  # pylint: disable=no-member
+            endpoint=endpoint, result=error_code).inc()
+        raise ODataAPIException(error_code=error_code)
+
+
+class WarehouseOData(EWMOdata):
+    """Interaction with EWM warehouse APIs."""
 
     def get_warehouse(
             self, lgnum: str, descriptions: bool = False, storagebins: bool = False) -> Warehouse:
@@ -65,30 +107,7 @@ class WarehouseOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, urlparams=params, ids=ids)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_warehouses(self, descriptions: bool = False,
                        storagebins: bool = False) -> Optional[List[Warehouse]]:
@@ -113,31 +132,7 @@ class WarehouseOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint,
-                result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_whdescription(self, lgnum: str, spras: str) -> WarehouseDescription:
         """Get description from one warehouse in a language."""
@@ -150,30 +145,7 @@ class WarehouseOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_whdescriptions(self, lgnum: Optional[str] = None) -> List[WarehouseDescription]:
         """
@@ -199,30 +171,7 @@ class WarehouseOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_storagebin(self, lgnum: str, lgpla: str) -> StorageBin:
         """Get one specific storage bin."""
@@ -235,31 +184,7 @@ class WarehouseOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint,
-                    result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_storagebins(self, lgnum: Optional[str] = None) -> List[WarehouseDescription]:
         """
@@ -285,38 +210,11 @@ class WarehouseOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
 
-class WarehouseOrderOData:
+class WarehouseOrderOData(EWMOdata):
     """Interaction with EWM warehouse order APIs."""
-
-    def __init__(self, odata: ODataHandler) -> None:
-        """Constructor."""
-        self._odata = odata
 
     def get_warehouseorder(
             self, lgnum: str, who: str, openwarehousetasks: bool = False) -> WarehouseOrder:
@@ -341,30 +239,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_warehouseorders(
             self, lgnum: Optional[str] = None, topwhoid: Optional[str] = None,
@@ -420,30 +295,7 @@ class WarehouseOrderOData:
         http_resp = self._odata.http_get(
             endpoint, urlparams=params, ids=ids, navigation=nav)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_robot_warehouseorders(self, lgnum: str, rsrc: str) -> List[WarehouseOrder]:
         """Get warehouse orders assigned to the robot resource."""
@@ -456,30 +308,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def getnew_robot_warehouseorder(self, lgnum: str, rsrc: str) -> WarehouseOrder:
         """
@@ -498,30 +327,7 @@ class WarehouseOrderOData:
         http_resp = self._odata.http_patch_post('post', endpoint,
                                                 urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def getnew_rtype_warehouseorders(
             self, lgnum: str, rsrcgrp: str, rsrctype: str, nowho: int) -> List[WarehouseOrder]:
@@ -544,30 +350,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def assign_robot_warehouseorder(self, lgnum: str, rsrc: str, who: str) -> WarehouseOrder:
         """Assign a robot resource to a warehouse order."""
@@ -581,30 +364,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_openwarehousetask(self, lgnum: str, tanum: str) -> WarehouseTask:
         """Get data from one warehouse task."""
@@ -617,30 +377,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_openwarehousetasks(
             self, lgnum: Optional[str] = None, who: Optional[str] = None) -> List[WarehouseTask]:
@@ -671,30 +408,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def confirm_warehousetask(
             self, lgnum: str, tanum: str, rsrc: str) -> WarehouseTaskConfirmation:
@@ -713,30 +427,7 @@ class WarehouseOrderOData:
         # HTTP OData POST request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def confirm_warehousetask_firststep(
             self, lgnum: str, tanum: str, rsrc: str) -> WarehouseTaskConfirmation:
@@ -756,31 +447,7 @@ class WarehouseOrderOData:
         # HTTP OData POST request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint,
-                    result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def send_confirmation_error(
             self, lgnum: str, rsrc: str, who: str, tanum: str, confnumber: str) -> WarehouseOrder:
@@ -800,30 +467,7 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def unassign_robot_warehouseorder(self, lgnum: str, rsrc: str, who: str) -> WarehouseOrder:
         """Unassign a robot resource from a warehouse order."""
@@ -837,38 +481,11 @@ class WarehouseOrderOData:
         # HTTP OData GET request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
 
-class RobotOData:
+class RobotOData(EWMOdata):
     """Interaction with EWM warehouse robot APIs."""
-
-    def __init__(self, odata: ODataHandler) -> None:
-        """Constructor."""
-        self._odata = odata
 
     def get_robot(self, lgnum: str, rsrc: str) -> Robot:
         """Get data from one robot."""
@@ -881,31 +498,7 @@ class RobotOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint,
-                    result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def get_robots(self, lgnum: Optional[str] = None) -> List[Robot]:
         """
@@ -932,30 +525,7 @@ class RobotOData:
         # HTTP OData GET request
         http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def create_robot(self, lgnum: str, rsrc: str, rsrctype: str, rsrcgrp: str) -> Robot:
         """Create a new robot resource in EWM."""
@@ -968,30 +538,7 @@ class RobotOData:
         # HTTP OData POST request
         http_resp = self._odata.http_patch_post('post', endpoint, jsonbody=jsonbody)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def change_robot(
             self, lgnum: str, rsrc: str, rsrctype: Optional[str] = None,
@@ -1016,29 +563,7 @@ class RobotOData:
         # No HTTP body on successfull PATCH requests
         # Body only exists in case of exceptions
 
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return True
-        else:
-            http_respjson = http_resp.json()
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)
 
     def set_robot_status(self, lgnum: str, rsrc: str, exccode: str) -> Robot:
         """Set exception codes for robot resources in EWM."""
@@ -1052,27 +577,4 @@ class RobotOData:
         # HTTP OData POST request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
 
-        http_respjson = http_resp.json()
-
-        # Return code handling
-        if http_resp.status_code in HTTP_SUCCESS:
-            self._odata.odata_counter.labels(  # pylint: disable=no-member
-                endpoint=endpoint, result=STATE_SUCCEEDED).inc()
-            return odata_to_attr(http_respjson)
-        else:
-            # Get error code from HTTP response
-            try:
-                error_code = http_respjson['error']['code']
-            except KeyError:
-                error_code = None
-            # Error handling for business exceptions raised in EWM backend
-            if http_resp.status_code in HTTP_BUS_EXCEPTION:
-                exception_class = get_exception_class(error_code)
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=exception_class.ERROR_CODE).inc()
-                raise exception_class()
-            # For any other error use generic exception
-            else:
-                self._odata.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=error_code).inc()
-                raise ODataAPIException(error_code=error_code)
+        return self.handle_http_response(endpoint, http_resp)

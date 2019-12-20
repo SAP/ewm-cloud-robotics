@@ -16,6 +16,7 @@ import sys
 import inspect
 
 ODATA_ERROR_CODES = {
+    '403': 'Authorization Error',
     'ROBOT_NOT_FOUND': 'Robot resource not found.',
     'NO_ORDER_FOUND': 'No Warehouse Order found.',
     'ROBOT_STATUS_NOT_SET': 'Robot ressource status could not be set.',
@@ -117,6 +118,13 @@ class InternalError(ODataAPIException):
 
     # OData error code this exception class should be used to.
     ERROR_CODE = 'INTERNAL_ERROR'
+
+
+class AuthorizationError(ODataAPIException):
+    """Authorization Error."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = '403'
 
 
 def get_exception_class(error_code: str) -> ODataAPIException:
