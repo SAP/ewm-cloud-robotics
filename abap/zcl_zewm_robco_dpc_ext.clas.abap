@@ -174,21 +174,24 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnf
-                message  = text-001.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'GetNewRobotWarehouseOrder'.
@@ -214,27 +217,31 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnf
-                message  = text-001.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rho
-                message  = text-018.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rho
+                message          = text-018.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'GetNewRobotTypeWarehouseOrders'.
@@ -260,21 +267,24 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnr
-                message  = text-008.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnr
+                message          = text-008.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'SetRobotStatus'.
@@ -297,15 +307,17 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rsn
-                message  = text-004.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rsn
+                message          = text-004.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'AssignRobotToWarehouseOrder'.
@@ -332,39 +344,45 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnf
-                message  = text-001.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wol
-                message  = text-010.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wol
+                message          = text-010.
           when 4.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_woa
-                message  = text-011.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_woa
+                message          = text-011.
           when 5.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wta
-                message  = text-012.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wta
+                message          = text-012.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'ConfirmWarehouseTask'.
@@ -395,21 +413,24 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wnc
-                message  = text-017.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wnc
+                message          = text-017.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wac
-                message  = text-023.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wac
+                message          = text-023.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'ConfirmWarehouseTaskFirstStep'.
@@ -434,21 +455,24 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wnc
-                message  = text-017.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wnc
+                message          = text-017.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wac
-                message  = text-023.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wac
+                message          = text-023.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'UnassignRobotFromWarehouseorder'.
@@ -475,39 +499,45 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnf
-                message  = text-001.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wol
-                message  = text-010.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wol
+                message          = text-010.
           when 4.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wip
-                message  = text-019.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wip
+                message          = text-019.
           when 5.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wnu
-                message  = text-020.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wnu
+                message          = text-020.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
 
@@ -539,51 +569,59 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnf
-                message  = text-001.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wol
-                message  = text-010.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wol
+                message          = text-010.
           when 4.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wip
-                message  = text-019.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wip
+                message          = text-019.
           when 5.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wnu
-                message  = text-020.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wnu
+                message          = text-020.
           when 6.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_neq
-                message  = text-021.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_neq
+                message          = text-021.
           when 7.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_qnc
-                message  = text-022.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_qnc
+                message          = text-022.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
       when 'SendSecondConfirmationError'.
@@ -612,39 +650,45 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           when 1.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_rnf
-                message  = text-001.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
           when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_nof
-                message  = text-002.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
           when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_wol
-                message  = text-010.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wol
+                message          = text-010.
           when 4.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_neq
-                message  = text-021.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_neq
+                message          = text-021.
           when 5.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_qnc
-                message  = text-022.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_qnc
+                message          = text-022.
           when others.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
-                textid   = /iwbep/cx_mgw_busi_exception=>business_error
-                msg_code = gc_error_ie
-                message  = text-003.
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
         endcase.  "case sy-subrc.
 
 

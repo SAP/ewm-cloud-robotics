@@ -6,6 +6,7 @@
     <NAME>LZEWM_TRSRC_TYPT00</NAME>
     <SUBC>I</SUBC>
     <RLOAD>E</RLOAD>
+    <UCCHECK>X</UCCHECK>
    </PROGDIR>
   </asx:values>
  </asx:abap>
