@@ -31,7 +31,7 @@ class MainLoopController:
     """Control the main loop."""
 
     def __init__(self):
-        """Constructor."""
+        """Construct."""
         # Shutdown Handler
         self.shutdown = False
         signal.signal(signal.SIGINT, self.exit_gracefully)

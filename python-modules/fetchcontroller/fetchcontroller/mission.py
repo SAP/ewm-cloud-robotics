@@ -44,7 +44,7 @@ class MissionController(K8sCRHandler):
     activeaction_templ = {'status': 'DOCKING'}
 
     def __init__(self, fetch_robots: FetchRobots) -> None:
-        """Constructor."""
+        """Construct."""
         # Instance with all FetchCore robots
         self._fetch_robots = fetch_robots
 

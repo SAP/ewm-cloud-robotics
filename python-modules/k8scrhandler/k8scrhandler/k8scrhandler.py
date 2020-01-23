@@ -110,7 +110,7 @@ class K8sCRHandler:
                  namespace: str,
                  template_cr: Dict,
                  labels: Dict) -> None:
-        """Constructor."""
+        """Construct."""
         if 'KUBERNETES_PORT' in os.environ:
             _LOGGER.info('%s/%s: Handler starting "incluster_config" mode', group, plural)
             config.load_incluster_config()

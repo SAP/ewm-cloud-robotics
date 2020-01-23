@@ -30,7 +30,7 @@ class RobotConfigurationController(K8sCRHandler):
     """Handle K8s RobotConfiguration custom resources."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_robot_fromenv()
 
         # Robot configuration attributes

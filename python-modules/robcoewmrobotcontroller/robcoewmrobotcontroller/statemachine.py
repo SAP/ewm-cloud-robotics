@@ -185,7 +185,7 @@ class RobotEWMMachine(Machine):
             confirm_api: Callable, request_ewm_work_api: Callable, send_wht_error_api: Callable,
             notify_who_completion_api: Callable, save_state_api: Callable,
             initial: str = 'noWarehouseorder') -> None:
-        """Constructor."""
+        """Construct."""
         cls = self.__class__
         # Initialize state machine
         super().__init__(self, states=cls.states, transitions=cls.transitions,

@@ -52,7 +52,7 @@ class EWMRobot:
                  order_controller: OrderController, robot_request: RobotRequestController,
                  confirm_pick: Optional[Callable] = None,
                  confirm_target: Optional[Callable] = None) -> None:
-        """Constructor."""
+        """Construct."""
         # Robot Mission API
         self.mission_api = mission_api
         # Robot Configuration

@@ -45,7 +45,7 @@ class MissionController(K8sCRHandler):
     activeaction_templ = {'status': 'DOCKING'}
 
     def __init__(self, dummy_robot: DummyRobot) -> None:
-        """Constructor."""
+        """Construct."""
         # Instance of DummyRobot robot
         self._dummy_robot = dummy_robot
 
@@ -201,14 +201,16 @@ class MissionController(K8sCRHandler):
         # Update status, that mission is running now
         if self._active_mission.get('status', {}).get(
                 'status') != RobcoMissionStates.STATE_RUNNING:
-            _LOGGER.info('Starting mission %s on robot %s', name, self._dummy_robot.robco_robot_name)
+            _LOGGER.info(
+                'Starting mission %s on robot %s', name, self._dummy_robot.robco_robot_name)
             self._active_mission['status']['status'] = RobcoMissionStates.STATE_RUNNING
             self._active_mission[
                 'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
                     tzinfo=datetime.timezone.utc).isoformat()
             self.update_cr_status(name, self._active_mission['status'])
         elif not self._active_mission.get('status'):
-            _LOGGER.info('Starting mission %s on robot %s', name, self._dummy_robot.robco_robot_name)
+            _LOGGER.info(
+                'Starting mission %s on robot %s', name, self._dummy_robot.robco_robot_name)
             self._active_mission['status'] = cls.m_status_templ.copy()
             self._active_mission['status']['status'] = RobcoMissionStates.STATE_RUNNING
             self._active_mission[
@@ -216,7 +218,8 @@ class MissionController(K8sCRHandler):
                     tzinfo=datetime.timezone.utc).isoformat()
             self.update_cr_status(name, self._active_mission['status'])
         else:
-            _LOGGER.info('Resuming mission %s on robot %s', name, self._dummy_robot.robco_robot_name)
+            _LOGGER.info(
+                'Resuming mission %s on robot %s', name, self._dummy_robot.robco_robot_name)
 
         # Run all actions of mission
         try:
@@ -412,10 +415,11 @@ class MissionController(K8sCRHandler):
             message = state_resp[1]
 
             # Update status CR when status changes to RUNNING
-            if (status == RobcoMissionStates.STATE_RUNNING):
+            if status == RobcoMissionStates.STATE_RUNNING:
                 self._active_mission['status']['status'] = status
-                self._active_mission['status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
-                    tzinfo=datetime.timezone.utc).isoformat()
+                self._active_mission[
+                    'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(
+                        tzinfo=datetime.timezone.utc).isoformat()
                 self.update_cr_status(
                     self._active_mission['metadata']['name'],
                     self._active_mission['status'])

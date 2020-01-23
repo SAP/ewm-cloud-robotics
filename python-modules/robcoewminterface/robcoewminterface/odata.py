@@ -34,7 +34,7 @@ class ODataHandler:
         'sap_ewm_odata_calls', 'OData calls to SAP EWM', ['endpoint', 'result'])
 
     def __init__(self, config: ODataConfig) -> None:
-        """Constructor."""
+        """Construct."""
         self._config = config
         self._csrftoken = None
         self._cookies = None

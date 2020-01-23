@@ -36,7 +36,7 @@ class OrderController(K8sCRHandler):
     """Handle K8s custom resources."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         # Warehouse order spec dictionary
         self.warehouse_order_spec = OrderedDict()
         self.warehouse_order_spec_lock = threading.RLock()

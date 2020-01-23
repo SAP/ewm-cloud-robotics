@@ -27,7 +27,7 @@ class RobotConfigurationController(K8sCRHandler):
     """Handle K8s RobotConfiguration custom resources."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_default_values_fromenv()
 
         template_cr = get_sample_cr('robotconfiguration')

@@ -41,7 +41,7 @@ class ProcessedMessageMemory:
     """Memorize processed Order Manager messages."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         # Warehouse order confirmations
         self.who_confirmations = defaultdict(list)
         self.deleted_whos = OrderedDict()

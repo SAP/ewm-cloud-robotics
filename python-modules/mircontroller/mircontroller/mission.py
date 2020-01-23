@@ -58,7 +58,7 @@ class MissionController(K8sCRHandler):
         }
 
     def __init__(self, mir_robot: MiRRobot) -> None:
-        """Constructor."""
+        """Construct."""
         # Instance of MiR robot
         self._mir_robot = mir_robot
 

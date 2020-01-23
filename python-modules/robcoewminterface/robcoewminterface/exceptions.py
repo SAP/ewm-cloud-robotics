@@ -54,7 +54,7 @@ class ODataAPIException(Exception):
     ERROR_CODE = 'ODataAPIException'
 
     def __init__(self, *args, **kwargs) -> None:
-        """Constructor."""
+        """Construct."""
         # Allow variable error code only for base exception class
         error_code = kwargs.pop('error_code', None)
         if error_code and self.__class__.__name__ == 'ODataAPIException':

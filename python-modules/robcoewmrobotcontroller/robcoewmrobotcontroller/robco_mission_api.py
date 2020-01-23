@@ -43,7 +43,7 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
 
     def __init__(self, robot_config: RobotConfigurationController,
                  robot_api: RobCoRobotAPI) -> None:
-        """Constructor."""
+        """Construct."""
         # Robot Configuration Controller
         self.robot_config = robot_config
         # Mission status dictionary

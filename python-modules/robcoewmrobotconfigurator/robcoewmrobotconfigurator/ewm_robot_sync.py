@@ -37,7 +37,7 @@ class EWMRobotSync:
     """Sync robots with SAP EWM."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_odata_fromenv()
 
         # SAP EWM OData handler

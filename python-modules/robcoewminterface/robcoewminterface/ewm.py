@@ -28,7 +28,7 @@ from .odata import ODataHandler
 _LOGGER = logging.getLogger(__name__)
 
 HTTP_SUCCESS = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226]
-HTTP_BUS_EXCEPTION = [400]
+HTTP_BUS_EXCEPTION = [404]
 
 STATE_SUCCEEDED = 'SUCCEEDED'
 
@@ -37,7 +37,7 @@ class EWMOdata:
     """Base class for EWM OData interface."""
 
     def __init__(self, odata: ODataHandler) -> None:
-        """Constructor."""
+        """Construct."""
         self._odata = odata
 
     def handle_http_response(self, endpoint: str, http_resp: Response) -> Any:

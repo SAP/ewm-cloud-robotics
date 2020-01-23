@@ -57,7 +57,7 @@ class EWMOrderManager:
         'sap_ewm_warehouse_orders', 'Completed EWM Warehouse orders', ['robot', 'result'])
 
     def __init__(self, oc: OrderController, rc: RobotRequestController) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_odata_fromenv()
 
         # Memory of processed messages for order manager

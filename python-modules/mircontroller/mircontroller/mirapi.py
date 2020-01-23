@@ -55,7 +55,7 @@ class MiRInterface:
     """Send commands to MiR robots via REST."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_mir_fromenv()
 
     def init_mir_fromenv(self) -> None:

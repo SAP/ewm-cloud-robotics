@@ -26,7 +26,7 @@ class RobCoRobotAPI(K8sCRHandler):
     """Handle K8s custom resources."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_robot_fromenv()
         template_cr = get_sample_cr('robco_robot')
 

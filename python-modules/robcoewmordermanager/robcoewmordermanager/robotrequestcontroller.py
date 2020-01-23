@@ -28,7 +28,7 @@ class RobotRequestController(K8sCRHandler):
     """Handle K8s custom resources."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         template_cr = get_sample_cr('robotrequest')
 
         labels = {}

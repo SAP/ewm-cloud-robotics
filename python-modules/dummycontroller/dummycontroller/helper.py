@@ -40,7 +40,7 @@ class MainLoopController:
     """Control the main loop."""
 
     def __init__(self):
-        """Constructor."""
+        """Construct."""
         # Shutdown Handler
         self.shutdown = False
         # Signaling only works in main thread

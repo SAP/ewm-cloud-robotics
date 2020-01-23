@@ -35,7 +35,7 @@ class RobotRequestController(K8sCRHandler):
     """Handle K8s custom resources."""
 
     def __init__(self) -> None:
-        """Constructor."""
+        """Construct."""
         self.init_robot_fromenv()
         # Robotrequest status dictionary
         self.robotrequest_status = OrderedDict()
