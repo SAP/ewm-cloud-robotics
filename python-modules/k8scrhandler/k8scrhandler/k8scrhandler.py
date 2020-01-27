@@ -267,24 +267,22 @@ class K8sCRHandler:
                 operation = event['type']
                 # Too old resource version error handling
                 # https://github.com/kubernetes-client/python/issues/609
-                code = obj.get('code')
-                if code == 410:
+                if obj.get('code') == 410:
                     new_version = parse_too_old_failure(obj.get('message'))
                     if new_version is not None:
-                        self.resv_watcher = new_version
+                        self.resv_watcher = str(new_version)
                         _LOGGER.error(
                             'Updating resource version to %s due to "too old resource version" '
                             'error', new_version)
                         break
 
-                spec = obj.get('spec')
                 # Skip CRs without a spec or without metadata
-                if not spec:
+                if not obj.get('spec'):
                     continue
                 metadata = obj.get('metadata')
                 if not metadata:
                     continue
-                if metadata['resourceVersion'] is not None:
+                if metadata.get('resourceVersion'):
                     self.resv_watcher = metadata['resourceVersion']
                 name = metadata['name']
                 labels = metadata.get('labels', {})

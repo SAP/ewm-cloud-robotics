@@ -20,7 +20,6 @@ import time
 
 from collections import OrderedDict
 from typing import Dict
-from cattr import structure
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
@@ -37,9 +36,9 @@ class OrderController(K8sCRHandler):
 
     def __init__(self) -> None:
         """Construct."""
-        # Warehouse order spec dictionary
-        self.warehouse_order_spec = OrderedDict()
-        self.warehouse_order_spec_lock = threading.RLock()
+        # Processed warehouse orders spec dictionary
+        self._processed_orders = OrderedDict()
+        self._processed_orders_lock = threading.RLock()
 
         template_cr = get_sample_cr('warehouseorder')
 
@@ -55,72 +54,63 @@ class OrderController(K8sCRHandler):
 
         # Thread to check for deleted warehouse order CRs
         self.deleted_warehouse_orders_thread = threading.Thread(
-            target=self._deleted_warehouse_orders_checker)
+            target=self._deleted_orders_checker)
 
         # Register callbacks
         self.register_callback(
-            'CleanupWarehouseorders', ['ADDED', 'MODIFIED', 'REPROCESS'], self._cleanup_who_crs_cb)
-        self.register_callback(
-            'DeletedWwarehouseorders', ['DELETED'], self._warehouse_order_deleted_cb)
+            'CleanupOrders', ['ADDED', 'MODIFIED', 'REPROCESS'], self._cleanup_orders_cb)
+        self.register_callback('DeletedOrders', ['DELETED'], self._order_deleted_cb)
 
-    def _cleanup_who_crs_cb(self, name: str, custom_res: Dict) -> None:
+    def _cleanup_orders_cb(self, name: str, custom_res: Dict) -> None:
         """Cleanup processed warehouse order CRs."""
-        # Warehouse order is not running and marked as deleted before. Nothing to do here.
-        if self.warehouse_order_spec.get(name):
-            if (custom_res['spec'].get('order_status') != WarehouseOrderCRDSpec.STATE_RUNNING
-                    and self.warehouse_order_spec[
-                        name].order_status == WarehouseOrderCRDSpec.STATE_DELETED):
+        # Clean up warehouse orders with order_status PROCESSED
+        if custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_PROCESSED:
+            # Already in order_status PROCESSED no need for cleanup
+            if self._processed_orders.get(name) == WarehouseOrderCRDSpec.STATE_PROCESSED:
                 return
-        # Save current warehouse order spec
-        who_spec = structure(custom_res['spec'], WarehouseOrderCRDSpec)
-        with self.warehouse_order_spec_lock:
-            self.warehouse_order_spec[name] = who_spec
+        else:
+            # Not in order_status PROCESSED, no reason for cleanup
+            if self._processed_orders.get(name):
+                with self._processed_orders_lock:
+                    self._processed_orders.pop(name, None)
+            return
+
+        with self._processed_orders_lock:
+            # New in order_status PROCESSED
+            self._processed_orders[name] = WarehouseOrderCRDSpec.STATE_PROCESSED
+
             # Delete warehouse orders with status PROCESSED
             # Keep maximum of 50 warehouse_orders
             processed = 0
             delete_warehouse_orders = []
-            deleted = 0
-            clean_warehouse_orders = []
             # Start counting from the back of warehouse order OrderedDict
-            for warehouse_order, spec in reversed(self.warehouse_order_spec.items()):
-                if spec.order_status == WarehouseOrderCRDSpec.STATE_PROCESSED:
-                    processed += 1
-                    if processed > 50:
-                        # Save warehouse_order to be deleted
-                        delete_warehouse_orders.append(warehouse_order)
-                elif spec.order_status == WarehouseOrderCRDSpec.STATE_DELETED:
-                    deleted += 1
-                    if deleted > 50:
-                        # Save robotrequest to be deleted
-                        clean_warehouse_orders.append(warehouse_order)
+            for warehouse_order in reversed(self._processed_orders.keys()):
+                processed += 1
+                if processed > 50:
+                    # Save warehouse_order to be deleted
+                    delete_warehouse_orders.append(warehouse_order)
 
             # Delete warehouse order CR
             for warehouse_order in delete_warehouse_orders:
                 if self.check_cr_exists(warehouse_order):
                     success = self.delete_cr(warehouse_order)
                     if success:
-                        self.warehouse_order_spec[
-                            warehouse_order].order_status = WarehouseOrderCRDSpec.STATE_DELETED
+                        self._processed_orders.pop(warehouse_order, None)
                         _LOGGER.info(
                             'RobCo warehouse_order CR %s was cleaned up', warehouse_order)
                     else:
                         _LOGGER.error(
                             'Deleting RobCo warehouse_order CR %s failed', warehouse_order)
                 else:
-                    self.warehouse_order_spec[
-                        warehouse_order].order_status = WarehouseOrderCRDSpec.STATE_DELETED
+                    self._processed_orders.pop(warehouse_order, None)
 
-            # Clean dictionary
-            for warehouse_order in clean_warehouse_orders:
-                self.warehouse_order_spec.pop(warehouse_order, None)
-
-    def _deleted_warehouse_orders_checker(self) -> None:
+    def _deleted_orders_checker(self) -> None:
         """Continously check for deleted warehouse_order CR and remove them from ordered dict."""
         _LOGGER.info(
             'Start continiously checking for deleted warehouse_order CRs')
         while self.thread_run:
             try:
-                self.check_deleted_warehouse_orders()
+                self._check_deleted_orders()
             except Exception as exc:  # pylint: disable=broad-except
                 exc_info = sys.exc_info()
                 _LOGGER.error(
@@ -136,8 +126,8 @@ class OrderController(K8sCRHandler):
                 if self.thread_run:
                     time.sleep(10)
 
-    def check_deleted_warehouse_orders(self) -> None:
-        """Remove self.warehouse_order_spec entries with no CR from ordered dictionary."""
+    def _check_deleted_orders(self) -> None:
+        """Remove self._processed_orders entries with no CR from ordered dictionary."""
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
         if cr_resp:
@@ -150,16 +140,15 @@ class OrderController(K8sCRHandler):
                 metadata = obj.get('metadata')
                 warehouse_order_crs[metadata['name']] = True
 
-            # Compare with self.warehouse_order_spec
-            delete_warehouse_orders = []
-            with self.warehouse_order_spec_lock:
-                for warehouse_order in self.warehouse_order_spec.keys():
+            # Compare with self._processed_orders
+            deleted_warehouse_orders = []
+            with self._processed_orders_lock:
+                for warehouse_order in self._processed_orders.keys():
                     if warehouse_order not in warehouse_order_crs:
-                        delete_warehouse_orders.append(warehouse_order)
+                        deleted_warehouse_orders.append(warehouse_order)
 
-                for warehouse_order in delete_warehouse_orders:
-                    self.warehouse_order_spec[
-                        warehouse_order].order_status = WarehouseOrderCRDSpec.STATE_DELETED
+                for warehouse_order in deleted_warehouse_orders:
+                    self._processed_orders.pop(warehouse_order, None)
 
     def run(self, watcher: bool = True, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
@@ -196,19 +185,15 @@ class OrderController(K8sCRHandler):
         name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
         to_be_closed.append(name)
         spec_order_processed = {'order_status': WarehouseOrderCRDSpec.STATE_PROCESSED}
-        success = self.update_cr_spec(name, spec_order_processed)
 
+        success = self.update_cr_spec(name, spec_order_processed)
         if success:
-            # Save current warehouse order process state
-            if name in self.warehouse_order_spec:
-                self.warehouse_order_spec[
-                    name].order_status = WarehouseOrderCRDSpec.STATE_PROCESSED
             _LOGGER.info(
                 'Cleanup successfull, warehouse order CR "%s" in order_status %s', name,
                 WarehouseOrderCRDSpec.STATE_PROCESSED)
+
             # Delete sub warehouse orders if existing
             crs = self.list_all_cr()
-
             if crs:
                 for obj in crs['items']:
                     spec = obj.get('spec')
@@ -223,10 +208,6 @@ class OrderController(K8sCRHandler):
                         to_be_closed.append(name)
                         success_sub = success = self.update_cr_spec(name, spec_order_processed)
                         if success_sub is True:
-                            # Save current warehouse order process state
-                            if name in self.warehouse_order_spec:
-                                self.warehouse_order_spec[
-                                    name].order_status = WarehouseOrderCRDSpec.STATE_PROCESSED
                             _LOGGER.info(
                                 'Cleanup successfull, warehouse order CR "%s" in order_status %s',
                                 name, WarehouseOrderCRDSpec.STATE_PROCESSED)
@@ -236,12 +217,12 @@ class OrderController(K8sCRHandler):
 
         return success
 
-    def _warehouse_order_deleted_cb(self, name: str, custom_res: Dict) -> None:
-        """Remove entry from self.warehouse_order_spec."""
-        with self.warehouse_order_spec_lock:
-            # When warehouse_order_spec was deleted remove it from ordered dictionary
-            if name in self.warehouse_order_spec:
-                self.warehouse_order_spec[name].order_status = WarehouseOrderCRDSpec.STATE_DELETED
+    def _order_deleted_cb(self, name: str, custom_res: Dict) -> None:
+        """Remove entry from self._processed_orders."""
+        if self._processed_orders.get(name):
+            with self._processed_orders_lock:
+                # When warehouse order cr was deleted remove it from ordered dictionary
+                self._processed_orders.pop(name, None)
 
     def save_processed_status(self, name: str, custom_res: Dict) -> None:
         """Save processed custom resource status in spec.process_status."""

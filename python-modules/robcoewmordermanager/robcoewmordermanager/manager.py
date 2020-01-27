@@ -24,11 +24,12 @@ from prometheus_client import Counter
 
 from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
 from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus
-from robcoewmtypes.warehouseorder import ConfirmWarehouseTask, WarehouseOrder
+from robcoewmtypes.warehouseorder import (
+    ConfirmWarehouseTask, WarehouseOrder, WarehouseOrderCRDSpec)
 
 from robcoewminterface.types import ODataConfig
 from robcoewminterface.odata import ODataHandler
-from robcoewminterface.ewm import (WarehouseOData, WarehouseOrderOData)
+from robcoewminterface.ewm import WarehouseOData, WarehouseOrderOData
 from robcoewminterface.exceptions import (
     ODataAPIException, NoOrderFoundError, RobotHasOrderError, WarehouseTaskAlreadyConfirmedError)
 
@@ -471,6 +472,10 @@ class EWMOrderManager:
 
         Used for K8S CR handler.
         """
+        # Do not processed if already in order_status PROCESSED
+        if custom_res.get('spec', {}).get('order_status') == WarehouseOrderCRDSpec.STATE_PROCESSED:
+            return
+
         try:
             self.process_who_cr(name, custom_res)
         except (ConnectionError, TimeoutError, IOError) as err:

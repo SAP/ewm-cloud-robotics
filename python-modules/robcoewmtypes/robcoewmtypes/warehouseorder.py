@@ -184,7 +184,6 @@ class WarehouseOrderCRDSpec:
 
     STATE_RUNNING = 'RUNNING'
     STATE_PROCESSED = 'PROCESSED'
-    STATE_DELETED = 'DELETED'
 
     data: WarehouseOrder = attr.ib(validator=validate_annotation)
     order_status: str = attr.ib()
@@ -197,5 +196,5 @@ class WarehouseOrderCRDSpec:
     def validate_order_status(self, attribute, value) -> None:
         """Validate confirmation."""
         cls = self.__class__
-        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING, cls.STATE_DELETED]:
-            raise ValueError('Attribute "order_status" must be RUNNING, PROCESSED or DELETED')
+        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING]:
+            raise ValueError('Attribute "order_status" must be RUNNING or PROCESSED')
