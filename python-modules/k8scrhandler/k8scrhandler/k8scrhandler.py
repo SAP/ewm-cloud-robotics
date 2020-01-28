@@ -248,7 +248,7 @@ class K8sCRHandler:
 
     def _watch_on_crs(self, executor: ThreadPoolExecutor) -> None:
         """Stream events on orders and execute callbacks."""
-        _LOGGER.debug(
+        _LOGGER.info(
             '%s/%s: Starting watcher at resourceVersion "%s"',
             self.group, self.plural, self.resv_watcher)
         try:
@@ -304,6 +304,8 @@ class K8sCRHandler:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             while self.thread_run:
                 try:
+                    if self.resv_watcher == '':
+                        self.process_all_crs(executor, 'ADDED', set_resv_watcher=True)
                     self._watch_on_crs(executor)
                 except Exception as exc:  # pylint: disable=broad-except
                     exc_info = sys.exc_info()
@@ -482,55 +484,66 @@ class K8sCRHandler:
                 '%s/%s: Successfully retrieved all custom resources', self.group, self.plural)
             return api_response
 
-    def reprocess_crs(self) -> None:
+    def process_all_crs(
+            self, executor: ThreadPoolExecutor, operation: str,
+            set_resv_watcher: bool = False) -> None:
         """
         Reprocess custom resources.
 
-        This method reprocesses existing custom resources which were last
-        created or modified by a different controller.
+        This method processes all existing custom resources with the given operation.
         """
+        cls = self.__class__
+        if operation not in cls.VALID_EVENT_TYPES:
+            _LOGGER.error('Operation %s is not supported.', operation)
+            return
+
         cr_resp = self.list_all_cr()
-        _LOGGER.debug('%s/%s: CRD reprocess: Got all CRs.', self.group, self.plural)
+        _LOGGER.debug('%s/%s: CR process: Got all CRs.', self.group, self.plural)
         if cr_resp:
-            max_workers = self.number_executor_threads
-            with ThreadPoolExecutor(max_workers=max_workers) as executor:
-                for obj in cr_resp['items']:
-                    operation = 'REPROCESS'
-                    spec = obj.get('spec')
-                    if not spec:
-                        continue
-                    metadata = obj.get('metadata')
-                    if not metadata:
-                        continue
-                    name = metadata['name']
-                    labels = metadata.get('labels', {})
-                    # Submit callbacks to ThreadPoolExecutor
-                    executor.submit(
-                        self._callback, name, labels, operation, obj)
+            resource_version = ''
+            for obj in cr_resp['items']:
+                spec = obj.get('spec')
+                if not spec:
+                    continue
+                metadata = obj.get('metadata')
+                if not metadata:
+                    continue
+                resource_version = max(resource_version, metadata.get('resourceVersion', ''))
+                name = metadata['name']
+                labels = metadata.get('labels', {})
+                # Submit callbacks to ThreadPoolExecutor
+                executor.submit(
+                    self._callback, name, labels, operation, obj)
+
+            # Set resource version for watcher to highest version found here
+            if set_resv_watcher:
+                self.resv_watcher = resource_version
 
     def _reprocess_crs_loop(self) -> None:
         """Reprocess existing custom resources in a loop."""
         _LOGGER.info(
             'Start continiously reprocessing existing custom resources')
         last_run = time.time()
-        while self.thread_run:
-            try:
-                self.reprocess_crs()
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
-                _LOGGER.error(
-                    '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
-                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
-                # On uncovered exception in thread save the exception
-                self.thread_exceptions['reprocessor'] = exc
-                # Stop the watcher
-                self.stop_watcher()
-            finally:
-                # Wait up to 10 seconds
-                if self.thread_run:
-                    time.sleep(max(0, last_run - time.time() + 10))
-                    last_run = time.time()
+        max_workers = self.number_executor_threads
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            while self.thread_run:
+                try:
+                    self.process_all_crs(executor, 'REPROCESS')
+                except Exception as exc:  # pylint: disable=broad-except
+                    exc_info = sys.exc_info()
+                    _LOGGER.error(
+                        '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
+                        'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                        traceback.format_exception(*exc_info))
+                    # On uncovered exception in thread save the exception
+                    self.thread_exceptions['reprocessor'] = exc
+                    # Stop the watcher
+                    self.stop_watcher()
+                finally:
+                    # Wait up to 10 seconds
+                    if self.thread_run:
+                        time.sleep(max(0, last_run - time.time() + 10))
+                        last_run = time.time()
 
     def stop_watcher(self) -> None:
         """Stop watching CR stream."""
