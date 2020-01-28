@@ -171,31 +171,29 @@ class RobotRequestController(K8sCRHandler):
         if not custom_res.get('status'):
             return
 
-        # If CR already deleted, there is no need for a cleanup
-        if (custom_res['status'].get('status') != RequestFromRobotStatus.STATE_RUNNING
-                and name in self._deleted_robotrequests):
-            return
-        elif (custom_res['status'].get('status') == RequestFromRobotStatus.STATE_RUNNING
-              and name in self._deleted_robotrequests):
-            self._deleted_robotrequests.pop(name, None)
-
         # Clean up robotrequests with status PROCESSED
         if custom_res['status'].get('status') == RequestFromRobotStatus.STATE_PROCESSED:
+            # If CR already deleted, there is no need for a cleanup
+            if name in self._deleted_robotrequests:
+                return
             # Already in status PROCESSED no need for cleanup
             if self._processed_robotrequests.get(name) == RequestFromRobotStatus.STATE_PROCESSED:
                 return
         elif custom_res['status'].get('status') == RequestFromRobotStatus.STATE_RUNNING:
-            # status RUNNING, no reason for cleanup
             if self._processed_robotrequests.get(name):
                 with self._processed_robotrequests_lock:
                     self._processed_robotrequests.pop(name, None)
+            if name in self._deleted_robotrequests:
+                self._deleted_robotrequests.pop(name, None)
+            # status RUNNING, no reason for cleanup
             return
         else:
             _LOGGER.warning('Unknown status "%s"', custom_res['status'].get('status'))
             return
 
-        # OrderedDict must not be changed when iterating (self.robotrequest_status)
+        # OrderedDict must not be changed when iterating (self._processed_robotrequests)
         with self._processed_robotrequests_lock:
+            # New in status PROCESSED
             self._processed_robotrequests[name] = RequestFromRobotStatus.STATE_PROCESSED
             # Delete finished robotrequests with status PROCESSED
             # Keep maximum of 5 robotrequests

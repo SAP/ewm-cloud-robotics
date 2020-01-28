@@ -64,29 +64,31 @@ class OrderController(K8sCRHandler):
 
     def _cleanup_orders_cb(self, name: str, custom_res: Dict) -> None:
         """Cleanup processed warehouse order CRs."""
-        # If CR already deleted, there is no need for a cleanup
-        if (custom_res['spec'].get('order_status') != WarehouseOrderCRDSpec.STATE_RUNNING
-                and name in self._deleted_orders):
+        # No spec means nothing to update yet
+        if not custom_res.get('spec'):
             return
-        elif (custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_RUNNING
-              and name in self._deleted_orders):
-            self._deleted_orders.pop(name, None)
 
         # Clean up warehouse orders with order_status PROCESSED
         if custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_PROCESSED:
+            # If CR already deleted, there is no need for a cleanup
+            if name in self._deleted_orders:
+                return
             # Already in order_status PROCESSED no need for cleanup
             if self._processed_orders.get(name) == WarehouseOrderCRDSpec.STATE_PROCESSED:
                 return
         elif custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_RUNNING:
-            # order_status RUNNING, no reason for cleanup
             if self._processed_orders.get(name):
                 with self._processed_orders_lock:
                     self._processed_orders.pop(name, None)
+            if name in self._deleted_orders:
+                self._deleted_orders.pop(name, None)
+            # order_status RUNNING, no reason for cleanup
             return
         else:
             _LOGGER.warning('Unknown order_status "%s"', custom_res['spec'].get('order_status'))
             return
 
+        # OrderedDict must not be changed when iterating (self._processed_orders)
         with self._processed_orders_lock:
             # New in order_status PROCESSED
             self._processed_orders[name] = WarehouseOrderCRDSpec.STATE_PROCESSED
