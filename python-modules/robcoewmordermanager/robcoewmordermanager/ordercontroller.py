@@ -36,9 +36,10 @@ class OrderController(K8sCRHandler):
 
     def __init__(self) -> None:
         """Construct."""
-        # Processed warehouse orders spec dictionary
+        # Processed warehouse order CRs dictionary
         self._processed_orders = OrderedDict()
         self._processed_orders_lock = threading.RLock()
+        self._deleted_orders = OrderedDict()
 
         template_cr = get_sample_cr('warehouseorder')
 
@@ -63,16 +64,27 @@ class OrderController(K8sCRHandler):
 
     def _cleanup_orders_cb(self, name: str, custom_res: Dict) -> None:
         """Cleanup processed warehouse order CRs."""
+        # If CR already deleted, there is no need for a cleanup
+        if (custom_res['spec'].get('order_status') != WarehouseOrderCRDSpec.STATE_RUNNING
+                and name in self._deleted_orders):
+            return
+        elif (custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_RUNNING
+              and name in self._deleted_orders):
+            self._deleted_orders.pop(name, None)
+
         # Clean up warehouse orders with order_status PROCESSED
         if custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_PROCESSED:
             # Already in order_status PROCESSED no need for cleanup
             if self._processed_orders.get(name) == WarehouseOrderCRDSpec.STATE_PROCESSED:
                 return
-        else:
-            # Not in order_status PROCESSED, no reason for cleanup
+        elif custom_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_RUNNING:
+            # order_status RUNNING, no reason for cleanup
             if self._processed_orders.get(name):
                 with self._processed_orders_lock:
                     self._processed_orders.pop(name, None)
+            return
+        else:
+            _LOGGER.warning('Unknown order_status "%s"', custom_res['spec'].get('order_status'))
             return
 
         with self._processed_orders_lock:
@@ -95,6 +107,7 @@ class OrderController(K8sCRHandler):
                 if self.check_cr_exists(warehouse_order):
                     success = self.delete_cr(warehouse_order)
                     if success:
+                        self._deleted_orders[warehouse_order] = True
                         self._processed_orders.pop(warehouse_order, None)
                         _LOGGER.info(
                             'RobCo warehouse_order CR %s was cleaned up', warehouse_order)
@@ -102,7 +115,13 @@ class OrderController(K8sCRHandler):
                         _LOGGER.error(
                             'Deleting RobCo warehouse_order CR %s failed', warehouse_order)
                 else:
+                    self._deleted_orders[warehouse_order] = True
                     self._processed_orders.pop(warehouse_order, None)
+
+            # Keep a maximum of 500 entries in deleted orders OrderedDict
+            to_remove = max(0, len(self._deleted_orders) - 500)
+            for _ in range(to_remove):
+                self._deleted_orders.popitem(last=False)
 
     def _deleted_orders_checker(self) -> None:
         """Continously check for deleted warehouse_order CR and remove them from ordered dict."""
@@ -148,6 +167,7 @@ class OrderController(K8sCRHandler):
                         deleted_warehouse_orders.append(warehouse_order)
 
                 for warehouse_order in deleted_warehouse_orders:
+                    self._deleted_orders[warehouse_order] = True
                     self._processed_orders.pop(warehouse_order, None)
 
     def run(self, watcher: bool = True, reprocess: bool = False,
@@ -218,7 +238,8 @@ class OrderController(K8sCRHandler):
         return success
 
     def _order_deleted_cb(self, name: str, custom_res: Dict) -> None:
-        """Remove entry from self._processed_orders."""
+        """Remove deleted CR from self._processed_orders."""
+        self._deleted_orders[name] = True
         if self._processed_orders.get(name):
             with self._processed_orders_lock:
                 # When warehouse order cr was deleted remove it from ordered dictionary

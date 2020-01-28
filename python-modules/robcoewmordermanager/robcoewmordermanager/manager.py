@@ -307,16 +307,17 @@ class EWMOrderManager:
                         'warehouse task: %s', err, attr.asdict(whtask))
                     raise
 
-                # Cleanup warehouse order if there are no warehouse tasks
-                if not who.warehousetasks:
-                    self.ordercontroller.cleanup_who(unstructure(who))
-                    self.msg_mem.delete_who_from_memory(whtask)
                 _LOGGER.info(
                     'Warehouse task Lgnum "%s", Tanum "%s" of warehouse order "%s" got successfull'
                     ' second confirmation by robot "%s"', whtask.lgnum, whtask.tanum, whtask.who,
                     whtask.rsrc)
                 self.who_counter.labels(  # pylint: disable=no-member
                     robot=whtask.rsrc.lower(), result=STATE_SUCCEEDED).inc()
+
+                # Cleanup warehouse order if there are no warehouse tasks
+                if not who.warehousetasks:
+                    self.ordercontroller.cleanup_who(unstructure(who))
+                    self.msg_mem.delete_who_from_memory(whtask)
 
         # ERROR Messages
         elif whtask.confirmationtype == ConfirmWarehouseTask.CONF_ERROR:
@@ -341,16 +342,17 @@ class EWMOrderManager:
                     ' warehouse task: %s', err, whtask.confirmationnumber, attr.asdict(whtask))
                 raise
             else:
-                # In case of an error in warehouse order processing always clean up because the
-                # order is moved to a different queue
-                self.ordercontroller.cleanup_who(unstructure(who))
-                self.msg_mem.delete_who_from_memory(whtask)
                 _LOGGER.info(
                     'Process error on robot "%s" before %s confirmation of Lgnum "%s", Tanum "%s" '
                     'of warehouse order "%s" successfully sent', whtask.rsrc,
                     whtask.confirmationnumber, whtask.lgnum, whtask.tanum, whtask.who)
                 self.who_counter.labels(  # pylint: disable=no-member
                     robot=whtask.rsrc.lower(), result=STATE_FAILED).inc()
+
+                # In case of an error in warehouse order processing always clean up because the
+                # order is moved to a different queue
+                self.ordercontroller.cleanup_who(unstructure(who))
+                self.msg_mem.delete_who_from_memory(whtask)
 
     def get_and_send_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = True,

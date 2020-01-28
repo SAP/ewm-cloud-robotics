@@ -67,7 +67,6 @@ class RequestFromRobotStatus:
 
     STATE_PROCESSED = 'PROCESSED'
     STATE_RUNNING = 'RUNNING'
-    STATE_DELETED = 'DELETED'
 
     # Status of request
     data: RequestFromRobot = attr.ib(validator=validate_annotation)
@@ -78,8 +77,8 @@ class RequestFromRobotStatus:
     def validate_status(self, attribute, value) -> None:
         """Validate confirmation."""
         cls = self.__class__
-        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING, cls.STATE_DELETED]:
-            raise ValueError('Attribute "status" must be RUNNING, PROCESSED or DELETED')
+        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING]:
+            raise ValueError('Attribute "status" must be RUNNING or PROCESSED')
 
 
 @attr.s

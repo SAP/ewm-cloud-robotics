@@ -21,7 +21,6 @@ import time
 
 from typing import Dict
 from collections import OrderedDict
-from cattr import structure
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.robot import RequestFromRobotStatus
@@ -37,9 +36,11 @@ class RobotRequestController(K8sCRHandler):
     def __init__(self) -> None:
         """Construct."""
         self.init_robot_fromenv()
-        # Robotrequest status dictionary
-        self.robotrequest_status = OrderedDict()
-        self.robotrequest_status_lock = threading.RLock()
+        # Processed robotrequest CRs dictionary
+        self._processed_robotrequests = OrderedDict()
+        self._processed_robotrequests_lock = threading.RLock()
+        self._deleted_robotrequests = OrderedDict()
+
         template_cr = get_sample_cr('robotrequest')
 
         labels = {}
@@ -55,9 +56,9 @@ class RobotRequestController(K8sCRHandler):
 
         # Register robotrequest status update callback
         self.register_callback(
-            'update_robotrequest_status', ['ADDED', 'MODIFIED', 'REPROCESS'],
-            self.update_robotrequest_status_cb)
-        self.register_callback('robotrequest_deleted', ['DELETED'], self.robotrequest_deleted_cb)
+            'cleanup_robotrequests', ['ADDED', 'MODIFIED', 'REPROCESS'],
+            self._cleanup_robotrequests_cb)
+        self.register_callback('robotrequest_deleted', ['DELETED'], self._robotrequest_deleted_cb)
 
         # Thread to check for deleted robotrequest CRs
         self.deleted_robotrequests_thread = threading.Thread(
@@ -93,14 +94,14 @@ class RobotRequestController(K8sCRHandler):
 
             # Compare with self.robotrequests_status
             delete_robotrequests = []
-            with self.robotrequest_status_lock:
-                for robotrequest in self.robotrequest_status.keys():
+            with self._processed_robotrequests_lock:
+                for robotrequest in self._processed_robotrequests.keys():
                     if robotrequest not in robotrequest_crs:
                         delete_robotrequests.append(robotrequest)
 
                 for robotrequest in delete_robotrequests:
-                    self.robotrequest_status[
-                        robotrequest].status = RequestFromRobotStatus.STATE_DELETED
+                    self._deleted_robotrequests[robotrequest] = True
+                    self._processed_robotrequests.pop(robotrequest, None)
 
     def run(self, watcher: bool = True, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
@@ -156,64 +157,72 @@ class RobotRequestController(K8sCRHandler):
 
         return success
 
-    def robotrequest_deleted_cb(self, name: str, custom_res: Dict) -> None:
-        """Update self.robotrequest_status."""
-        with self.robotrequest_status_lock:
+    def _robotrequest_deleted_cb(self, name: str, custom_res: Dict) -> None:
+        """Remove deleted CR from self._processed_robotrequests."""
+        self._deleted_robotrequests[name] = True
+        with self._processed_robotrequests_lock:
             # If robotrequest was deleted remove it from dictionary
-            if name in self.robotrequest_status:
-                self.robotrequest_status[name].status = RequestFromRobotStatus.STATE_DELETED
+            if name in self._processed_robotrequests:
+                self._processed_robotrequests.pop(name, None)
 
-    def update_robotrequest_status_cb(self, name: str, custom_res: Dict) -> None:
-        """Update self.robotrequest_status."""
+    def _cleanup_robotrequests_cb(self, name: str, custom_res: Dict) -> None:
+        """Cleanup processed robotrequest CRs."""
         # No status means nothing to update yet
         if not custom_res.get('status'):
             return
-        # Request is not running and marked as deleted before. Nothing to do here.
-        try:
-            if (custom_res['status'].get('status') != RequestFromRobotStatus.STATE_RUNNING
-                    and self.robotrequest_status[
-                        name].status == RequestFromRobotStatus.STATE_DELETED):
+
+        # If CR already deleted, there is no need for a cleanup
+        if (custom_res['status'].get('status') != RequestFromRobotStatus.STATE_RUNNING
+                and name in self._deleted_robotrequests):
+            return
+        elif (custom_res['status'].get('status') == RequestFromRobotStatus.STATE_RUNNING
+              and name in self._deleted_robotrequests):
+            self._deleted_robotrequests.pop(name, None)
+
+        # Clean up robotrequests with status PROCESSED
+        if custom_res['status'].get('status') == RequestFromRobotStatus.STATE_PROCESSED:
+            # Already in status PROCESSED no need for cleanup
+            if self._processed_robotrequests.get(name) == RequestFromRobotStatus.STATE_PROCESSED:
                 return
-        except KeyError:
-            pass
-        # Update the robotrequest dictionary
-        request_status = structure(custom_res['status'], RequestFromRobotStatus)
+        elif custom_res['status'].get('status') == RequestFromRobotStatus.STATE_RUNNING:
+            # status RUNNING, no reason for cleanup
+            if self._processed_robotrequests.get(name):
+                with self._processed_robotrequests_lock:
+                    self._processed_robotrequests.pop(name, None)
+            return
+        else:
+            _LOGGER.warning('Unknown status "%s"', custom_res['status'].get('status'))
+            return
+
         # OrderedDict must not be changed when iterating (self.robotrequest_status)
-        with self.robotrequest_status_lock:
-            self.robotrequest_status[name] = request_status
+        with self._processed_robotrequests_lock:
+            self._processed_robotrequests[name] = RequestFromRobotStatus.STATE_PROCESSED
             # Delete finished robotrequests with status PROCESSED
             # Keep maximum of 5 robotrequests
-            finished = 0
+            processed = 0
             delete_robotrequests = []
-            deleted = 0
-            clean_robotrequests = []
             # Start counting from the back of robotrequests OrderedDict
-            for robotrequest, status in reversed(self.robotrequest_status.items()):
-                if status.status == RequestFromRobotStatus.STATE_PROCESSED:
-                    finished += 1
-                    if finished > 5:
-                        # Save robotrequest to be deleted
-                        delete_robotrequests.append(robotrequest)
-                elif status.status == RequestFromRobotStatus.STATE_DELETED:
-                    deleted += 1
-                    if deleted > 5:
-                        # Save robotrequest to be deleted
-                        clean_robotrequests.append(robotrequest)
+            for robotrequest in reversed(self._processed_robotrequests.keys()):
+                processed += 1
+                if processed > 5:
+                    # Save robotrequest to be deleted
+                    delete_robotrequests.append(robotrequest)
 
             # Delete robotrequest CR and remove it from dictionary
             for robotrequest in delete_robotrequests:
                 if self.check_cr_exists(robotrequest):
                     success = self.delete_cr(robotrequest)
                     if success:
-                        self.robotrequest_status[
-                            robotrequest].status = RequestFromRobotStatus.STATE_DELETED
+                        self._deleted_robotrequests[robotrequest] = True
+                        self._processed_robotrequests.pop(robotrequest, None)
                         _LOGGER.info('RobCo robotrequest CR %s was cleaned up', robotrequest)
                     else:
                         _LOGGER.error('Deleting RobCo robotrequest CR %s failed', robotrequest)
                 else:
-                    self.robotrequest_status[
-                        robotrequest].status = RequestFromRobotStatus.STATE_DELETED
+                    self._deleted_robotrequests[robotrequest] = True
+                    self._processed_robotrequests.pop(robotrequest, None)
 
-            # Clean dictionary
-            for robotrequest in clean_robotrequests:
-                self.robotrequest_status.pop(robotrequest, None)
+            # Keep a maximum of 50 entries in deleted robotrequests OrderedDict
+            to_remove = max(0, len(self._deleted_robotrequests) - 50)
+            for _ in range(to_remove):
+                self._deleted_robotrequests.popitem(last=False)
