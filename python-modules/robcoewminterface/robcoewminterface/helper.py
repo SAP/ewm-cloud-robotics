@@ -24,7 +24,7 @@ def validate_urlpath(urlpath: str) -> None:
         raise ValueError('Invalid endpoint "{}". It must not end with a "/"'.format(urlpath))
 
 
-def val_basepath(instance, attribute, value):
+def val_basepath(instance, attribute, value) -> None:
     """Validate base path of the endpoint - for attr library."""
     # Validate endpoint
     validate_urlpath(value)

@@ -27,12 +27,11 @@ class RobCoRobotAPI(K8sCRHandler):
         """Construct."""
         template_cr = get_sample_cr('robco_robot')
 
-        self.labels = {}
         super().__init__(
             'registry.cloudrobotics.com',
             'v1alpha1',
             'robots',
             'default',
             template_cr,
-            self.labels
+            {}
         )

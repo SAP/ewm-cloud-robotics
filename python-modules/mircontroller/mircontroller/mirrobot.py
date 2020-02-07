@@ -18,7 +18,7 @@ import time
 import os
 import math
 
-from typing import Optional, Tuple
+from typing import Tuple
 from requests import RequestException
 from prometheus_client import Gauge, Histogram
 
@@ -60,7 +60,7 @@ class RobcoMissionStates(RobotMission):
     @staticmethod
     def get_robco_state(mir_state: str, message: str) -> str:
         """Get RobCo state from MiR state and message."""
-        cls = __class__
+        cls = __class__  # type: ignore # pylint: disable=undefined-variable
         if mir_state == 'Pending':
             return cls.STATE_ACCEPTED
         elif mir_state == 'Executing':
@@ -115,7 +115,7 @@ class MiRRobot:
         self.last_state_change = '1970-01-01T00:00:00.000Z'
         self.last_state_change_ts = time.time()
         self.trolley_attached = False
-        self.active_map = None
+        self.active_map = ''
         self.angular_speed = 0.0
         self.linear_speed = 0.0
         self.pos_x = 0.0
@@ -138,7 +138,7 @@ class MiRRobot:
                     'Environment variable "{}" is not set'.format(var))
 
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
-        self.trolley_attached_plc = int(envvar['PLC_TROLLEY_ATTACHED'])
+        self.trolley_attached_plc = int(envvar['PLC_TROLLEY_ATTACHED'])  # type: ignore
 
     def cancel_mission(self, mission: str) -> bool:
         """Cancel a mission from mission queue."""
@@ -150,7 +150,7 @@ class MiRRobot:
 
         return True
 
-    def get_mission_active_action(self, mission: str) -> str:
+    def get_mission_active_action(self, mission: int) -> str:
         """Get active action of a mission."""
         # Get actions from REST interface
         http_resp_actions = self._mir_api.http_get(
@@ -174,10 +174,10 @@ class MiRRobot:
                     return RobotMission.ACTION_DOCKING
                 elif json_resp_action['action_type'] == 'move':
                     return RobotMission.ACTION_MOVING
-                else:
-                    return ''
 
-    def get_mission_state(self, mission: str) -> Tuple[str, str]:
+        return ''
+
+    def get_mission_state(self, mission: int) -> Tuple[str, str]:
         """Get the state of a mission of mission queue."""
         # Get data from REST interface
         http_resp = self._mir_api.http_get('mission_queue/{qm}'.format(qm=mission))
@@ -197,7 +197,9 @@ class MiRRobot:
             if item['name'] == mission:
                 return item['guid']
 
-    def position_guid_by_name(self, position: str, map_guid: str, pos_type: str) -> Optional[str]:
+        return ''
+
+    def position_guid_by_name(self, position: str, map_guid: str, pos_type: str) -> str:
         """Get the GUID of a position by its name."""
         cls = self.__class__
 
@@ -222,6 +224,7 @@ class MiRRobot:
 
         # Otherwise ERROR
         _LOGGER.error('Error getting "position guid" for "%s"', position)
+        return ''
 
     def get_trolley(self, dock_name: str) -> int:
         """Go to the docking position and get a trolley there."""

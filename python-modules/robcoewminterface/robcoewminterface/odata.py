@@ -12,8 +12,10 @@
 
 """OData handler for robcoewminterface."""
 
-from typing import Optional, Dict
 import logging
+
+from typing import Optional, Dict
+
 import requests
 
 from prometheus_client import Counter
@@ -36,8 +38,8 @@ class ODataHandler:
     def __init__(self, config: ODataConfig) -> None:
         """Construct."""
         self._config = config
-        self._csrftoken = None
-        self._cookies = None
+        self._csrftoken = ''
+        self._cookies: Optional[requests.cookies.RequestsCookieJar] = None
 
     def http_get(
             self, endpoint: str, urlparams: Optional[Dict] = None, ids: Optional[Dict] = None,
@@ -104,7 +106,7 @@ class ODataHandler:
             raise NotImplementedError
 
     def http_patch_post(
-            self, mode: ['patch', 'post'], endpoint: str, jsonbody: Optional[Dict] = None,
+            self, mode: str, endpoint: str, jsonbody: Optional[Dict] = None,
             urlparams: Optional[Dict] = None, ids: Optional[Dict] = None) -> requests.Response:
         """Perform a HTTP Patch request."""
         cls = self.__class__
@@ -132,7 +134,7 @@ class ODataHandler:
         # Prepare additional headers
         headers = {'Accept': 'application/json'}
         # If no CSRF token set, request one from base path of ODATA service
-        if self._csrftoken is None or self._cookies is None:
+        if self._csrftoken == '' or self._cookies is None:
             self.http_get('', fetch_csrf=True)
         headers['X-CSRF-Token'] = self._csrftoken
 
@@ -188,7 +190,7 @@ class ODataHandler:
             raise NotImplementedError
 
     def prepare_uri(
-            self, endpoint: str, ids: dict, navigation: Optional[str] = None) -> str:
+            self, endpoint: str, ids: Optional[Dict], navigation: Optional[str] = None) -> str:
         """Prepare URI for OData call."""
         # Create IDs string for endpoint
         ids_str = prepare_ids_str(ids)
@@ -208,7 +210,7 @@ class ODataHandler:
         return uri
 
 
-def prepare_ids_str(ids: dict) -> str:
+def prepare_ids_str(ids: Optional[Dict]) -> Optional[str]:
     """Prepare string with EntitySet IDs."""
     if isinstance(ids, dict):
         # Generate ID string (id1='value',id2='value')
@@ -221,7 +223,7 @@ def prepare_ids_str(ids: dict) -> str:
         raise ValueError('"ids" parameter must be of type "dict" or "None"')
 
 
-def prepare_params_dict(urlparams: dict) -> dict:
+def prepare_params_dict(urlparams: Optional[Dict]) -> Dict:
     """Prepare dictionary of URL parameter."""
     if isinstance(urlparams, dict):
         params = urlparams

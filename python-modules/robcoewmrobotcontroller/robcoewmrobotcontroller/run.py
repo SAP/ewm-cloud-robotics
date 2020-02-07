@@ -25,7 +25,6 @@ from robcoewmrobotcontroller.ordercontroller import OrderController
 from robcoewmrobotcontroller.robotrequestcontroller import (
     RobotRequestController, )
 from robcoewmrobotcontroller.robot import EWMRobot
-from robcoewmrobotcontroller.robot_api import RobotMissionAPI
 from robcoewmrobotcontroller.robco_robot_api import RobCoRobotAPI
 from robcoewmrobotcontroller.robco_mission_api import RobCoMissionAPI
 from robcoewmrobotcontroller.robotconfigcontroller import RobotConfigurationController
@@ -60,7 +59,7 @@ class MainLoopController:
         self.last_time = time.time()
 
 
-def dummy_confirm_true(wht: WarehouseTask) -> None:
+def dummy_confirm_true(wht: WarehouseTask) -> bool:
     """For testing only."""
     time.sleep(5.0)
     return True
@@ -92,7 +91,7 @@ def run_robot():
 
 
 def robot_main_loop(
-        robot_config: RobotConfigurationController, robot_mission_api: RobotMissionAPI) -> None:
+        robot_config: RobotConfigurationController, robot_mission_api: RobCoRobotAPI) -> None:
     """Run one main loop of a EWM robot."""
     # Register handler to control main loop
     loop_control = MainLoopController()

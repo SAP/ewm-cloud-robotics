@@ -15,6 +15,8 @@
 import sys
 import inspect
 
+from typing import Type
+
 ODATA_ERROR_CODES = {
     '403': 'Authorization Error',
     'ROBOT_NOT_FOUND': 'Robot resource not found.',
@@ -68,7 +70,7 @@ class ODataAPIException(Exception):
                 self.error_code, self.message)
         else:
             error_message = 'OData API error code: {}'.format(self.error_code)
-        super().__init__(error_message, *args, **kwargs)
+        super().__init__(error_message, *args, **kwargs)  # type: ignore
 
 
 class NoOrderFoundError(ODataAPIException):
@@ -127,7 +129,7 @@ class AuthorizationError(ODataAPIException):
     ERROR_CODE = '403'
 
 
-def get_exception_class(error_code: str) -> ODataAPIException:
+def get_exception_class(error_code: str) -> Type[ODataAPIException]:
     """Get and return the exception class for a OData error code."""
     for _, obj in inspect.getmembers(sys.modules[__name__]):
         if inspect.isclass(obj):

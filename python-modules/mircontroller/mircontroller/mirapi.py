@@ -35,7 +35,7 @@ class HTTPbadPostRequest(requests.RequestException):
     """HTTP Status Code indicates a bad HTTP POSTrequest."""
 
 
-def identify_conn_exception(exception: BaseException) -> None:
+def identify_conn_exception(exception: BaseException) -> bool:
     """Check if a requests exception occurred."""
     _LOGGER.error('Exception %s on HTTP request to MiR API, retrying', exception)
     return isinstance(
@@ -77,7 +77,7 @@ class MiRInterface:
             password=envvar['MIR_PASSWORD'])
 
     @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
-    def http_delete(self, endpoint: str) -> Optional[requests.Response]:
+    def http_delete(self, endpoint: str) -> None:
         """Delete data via MiR REST interface."""
         # Prepare uri
         uri = 'http://{host}/api/v2.0.0/{endpoint}'.format(
@@ -97,7 +97,7 @@ class MiRInterface:
             raise HTTPstatusCodeFailed
 
     @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
-    def http_get(self, endpoint: str) -> Optional[requests.Response]:
+    def http_get(self, endpoint: str) -> requests.Response:
         """Get data from MiR REST interface."""
         # Prepare uri
         uri = 'http://{host}/api/v2.0.0/{endpoint}'.format(
@@ -116,7 +116,7 @@ class MiRInterface:
 
     @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
     def http_post(
-            self, endpoint: str, jsonbody: Optional[Dict] = None) -> Optional[requests.Response]:
+            self, endpoint: str, jsonbody: Optional[Dict] = None) -> requests.Response:
         """Post data to MiR REST interface."""
         # Prepare uri
         uri = 'http://{host}/api/v2.0.0/{endpoint}'.format(
@@ -142,7 +142,7 @@ class MiRInterface:
 
     @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
     def http_put(
-            self, endpoint: str, jsonbody: Optional[Dict] = None) -> Optional[requests.Response]:
+            self, endpoint: str, jsonbody: Optional[Dict] = None) -> requests.Response:
         """Put data to MiR REST interface."""
         # Prepare uri
         uri = 'http://{host}/api/v2.0.0/{endpoint}'.format(

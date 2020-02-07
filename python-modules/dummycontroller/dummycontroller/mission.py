@@ -49,12 +49,12 @@ class MissionController(K8sCRHandler):
         # Instance of DummyRobot robot
         self._dummy_robot = dummy_robot
 
-        self._active_mission = {}
-        self._missions = OrderedDict()
+        self._active_mission: Dict[str, Dict] = {}
+        self._missions: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, Dict] = OrderedDict()
         self._missions_lock = threading.RLock()
 
         # Init CR superclass
-        labels = {}
         template_cr = get_sample_cr('robco_mission')
         super().__init__(
             'mission.cloudrobotics.com',
@@ -62,7 +62,7 @@ class MissionController(K8sCRHandler):
             'missions',
             'default',
             template_cr,
-            labels
+            {}
         )
 
         # Register CR callbacks
@@ -391,7 +391,7 @@ class MissionController(K8sCRHandler):
 
         return self.watch_running_mission(mission_queue_id, True)
 
-    def watch_running_mission(self, mission_queue_id: str, with_active_action: bool) -> str:
+    def watch_running_mission(self, mission_queue_id: int, with_active_action: bool) -> str:
         """Watch a running mission and return its result when finished."""
         try:
             state_resp = self._dummy_robot.get_mission_state(mission_queue_id)

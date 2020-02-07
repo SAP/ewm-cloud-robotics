@@ -37,20 +37,21 @@ class OrderController(K8sCRHandler):
     def __init__(self) -> None:
         """Construct."""
         # Processed warehouse order CRs dictionary
-        self._processed_orders = OrderedDict()
+        self._processed_orders: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, str] = OrderedDict()
         self._processed_orders_lock = threading.RLock()
-        self._deleted_orders = OrderedDict()
+        self._deleted_orders: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, bool] = OrderedDict()
 
         template_cr = get_sample_cr('warehouseorder')
 
-        labels = {}
         super().__init__(
             'sap.com',
             'v1',
             'warehouseorders',
             'default',
             template_cr,
-            labels
+            {}
         )
 
         # Thread to check for deleted warehouse order CRs
@@ -197,7 +198,7 @@ class OrderController(K8sCRHandler):
             _LOGGER.debug('Warehouse order CR "%s" not existing. Create it', name)
             success = self.create_cr(name, labels, spec)
 
-            return success
+        return success
 
     def cleanup_who(self, who: Dict) -> bool:
         """Cleanup warehouse order when it was finished."""

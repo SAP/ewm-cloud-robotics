@@ -13,7 +13,7 @@
 """EWM OData provider for robcoewminterface."""
 
 import logging
-from typing import List, Optional, Any
+from typing import Any, Dict, List, Optional
 from requests import Response
 
 from robcoewmtypes.warehouse import Warehouse, WarehouseDescription, StorageBin
@@ -63,7 +63,7 @@ class EWMOdata:
             try:
                 error_code = http_resp.json()['error']['code']
             except KeyError:
-                error_code = None
+                error_code = ''
 
         # Error handling for business exceptions raised in EWM backend
         if http_resp.status_code in HTTP_BUS_EXCEPTION:
@@ -153,6 +153,9 @@ class WarehouseOData(EWMOdata):
 
         Optionally filter by warehouse.
         """
+        ids: Optional[Dict]
+        nav: Optional[str]
+
         if lgnum:
             # define endpoint
             endpoint = '/WarehouseNumberSet'
@@ -192,6 +195,9 @@ class WarehouseOData(EWMOdata):
 
         Optionally filter by warehouse.
         """
+        ids: Optional[Dict]
+        nav: Optional[str]
+
         if lgnum:
             # define endpoint
             endpoint = '/WarehouseNumberSet'
@@ -387,6 +393,9 @@ class WarehouseOrderOData(EWMOdata):
         Optionally filter by warehouse and warehouse order.
         """
         # Define endpoint IDs and navigation based on parameter selection
+        ids: Optional[Dict]
+        nav: Optional[str]
+
         if lgnum and who:
             # define endpoint
             endpoint = '/WarehouseOrderSet'
@@ -507,6 +516,9 @@ class RobotOData(EWMOdata):
         Optionally filter by warehouse.
         """
         # Define endpoint IDs and navigation based on parameter selection
+        ids: Optional[Dict]
+        nav: Optional[str]
+
         if lgnum:
             # define endpoint
             endpoint = '/WarehouseNumberSet'

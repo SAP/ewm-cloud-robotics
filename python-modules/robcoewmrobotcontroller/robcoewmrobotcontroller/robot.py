@@ -24,7 +24,7 @@ from robcoewmtypes.robot import RequestFromRobot, RobotMission, RobotConfigurati
 from robcoewmtypes.warehouseorder import WarehouseOrder, WarehouseTask, ConfirmWarehouseTask
 
 from .ordercontroller import OrderController
-from .robot_api import RobotMissionAPI
+from .robco_mission_api import RobCoMissionAPI
 from .robotconfigcontroller import RobotConfigurationController
 from .robotrequestcontroller import RobotRequestController
 from .statemachine import RobotEWMMachine, WhoIdentifier
@@ -48,7 +48,7 @@ class EWMRobot:
 
     VALID_QUEUE_MSG_TYPES = (WarehouseOrder,)
 
-    def __init__(self, mission_api: RobotMissionAPI, robot_config: RobotConfigurationController,
+    def __init__(self, mission_api: RobCoMissionAPI, robot_config: RobotConfigurationController,
                  order_controller: OrderController, robot_request: RobotRequestController,
                  confirm_pick: Optional[Callable] = None,
                  confirm_target: Optional[Callable] = None) -> None:
@@ -83,10 +83,10 @@ class EWMRobot:
         else:
             self.confirm_target = self.confirm_false
         # Timestamp for last time a request work was sent
-        self._requested_work_time = None
+        self._requested_work_time = time.time()
         # Timestamp when robot was working for the last time
         self.last_time_working = time.time()
-        self.idle_time_start = 0
+        self.idle_time_start = 0.0
         # Number of failed status updates
         self._failed_status_updates = 0
         # Robot is at staging position
@@ -126,12 +126,14 @@ class EWMRobot:
                     self.state_machine.sub_warehouseorders[
                         sub_who_ident] = sub_warehouseorder
                     self.state_machine.active_sub_who = sub_warehouseorder
-                    for wht in sub_warehouseorder.warehousetasks:
+                    # Availability of sub_warehouse order checked before
+                    for wht in sub_warehouseorder.warehousetasks:  # type: ignore
                         if wht.tanum == state_restore.tanum:
                             self.state_machine.active_wht = wht
                             break
                 else:
-                    for wht in warehouseorder.warehousetasks:
+                    # Availability of sub_warehouse order checked before
+                    for wht in warehouseorder.warehousetasks:  # type: ignore
                         if wht.tanum == state_restore.tanum:
                             self.state_machine.active_wht = wht
                             break
@@ -226,7 +228,7 @@ class EWMRobot:
             robocoewmdata = structure(status['data'], robcoewmtype)
 
             if self.state_machine.state == 'MoveHU_waitingForErrorRecovery':
-                who = self.state_machine.active_wht.who
+                who = self.state_machine.active_wht.who  # type: ignore
                 if robocoewmdata.notifywhocompletion == who:
                     _LOGGER.info(
                         'Warehouse order %s was confirmed in EWM - cancel it on the robot to '
@@ -311,7 +313,7 @@ class EWMRobot:
     def request_work(self, onlynewwho: bool = False, throttle: bool = False) -> None:
         """Request work from order manager."""
         # Allow requesting work only once every 10 seconds when throttling
-        if self._requested_work_time and throttle is True:
+        if throttle is True:
             time_elapsed = time.time() - self._requested_work_time
             if time_elapsed < 10:
                 return
@@ -367,8 +369,8 @@ class EWMRobot:
 
         # Save idle time start timestamp
         if self.state_machine.state != 'idling':
-            self.idle_time_start = 0
-        elif self.idle_time_start == 0:
+            self.idle_time_start = 0.0
+        elif self.idle_time_start == 0.0:
             self.idle_time_start = time.time()
 
         # Don't run if the state machine is currently in a transition
@@ -437,9 +439,9 @@ class EWMRobot:
             # EWM process related moving is done
             # Start loading / unloading when target is reached
             elif self.state_machine.mission.status == RobotMission.STATE_SUCCEEDED:
-                if self.state_machine.active_wht.vlpla:
+                if self.state_machine.active_wht.vlpla:  # type: ignore
                     self.state_machine.load()
-                elif self.state_machine.active_wht.nlpla:
+                elif self.state_machine.active_wht.nlpla:  # type: ignore
                     self.state_machine.unload()
                 else:
                     _LOGGER.error('Warehouse task neither has source nor target')

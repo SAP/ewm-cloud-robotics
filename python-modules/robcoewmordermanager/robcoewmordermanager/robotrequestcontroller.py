@@ -31,14 +31,13 @@ class RobotRequestController(K8sCRHandler):
         """Construct."""
         template_cr = get_sample_cr('robotrequest')
 
-        labels = {}
         super().__init__(
             'sap.com',
             'v1',
             'robotrequests',
             'default',
             template_cr,
-            labels
+            {}
         )
 
     def update_status(

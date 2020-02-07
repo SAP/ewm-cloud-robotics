@@ -99,7 +99,7 @@ def map_single_odata_entry(odata: dict) -> Any:
             # Nested objects
             if isinstance(oval, dict):
                 if not issubclass(
-                        attributes[okey.lower()].type.__origin__, list):
+                        attributes[okey.lower()].type.__origin__, list):  # type: ignore
                     raise AttributeError(
                         'Data modelling issue. "{}" should have a "List" '
                         'annotation'.format(okey.lower()))
@@ -128,13 +128,13 @@ def map_single_odata_entry(odata: dict) -> Any:
                 # Nested objects are always stored in list attributes
                 # Try because there is no __origin__ on types like str
                 try:
-                    if issubclass(aval.type.__origin__, list):
+                    if issubclass(aval.type.__origin__, list):  # type: ignore
                         # Type of elements in "List" annotations could be
                         # found __args__[0]
-                        if (isinstance(nested_obj, aval.type.__args__[0])
+                        if (isinstance(nested_obj, aval.type.__args__[0])  # type: ignore
                                 and not isinstance(nested_obj, list)):
                             newattrs_dict[akey] = [nested_obj]
-                        elif isinstance(nested_obj[0], aval.type.__args__[0]):
+                        elif isinstance(nested_obj[0], aval.type.__args__[0]):  # type: ignore
                             newattrs_dict[akey] = nested_obj
                 except AttributeError:
                     continue

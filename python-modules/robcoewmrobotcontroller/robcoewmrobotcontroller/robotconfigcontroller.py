@@ -15,7 +15,7 @@
 import os
 import logging
 
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 from cattr import structure, unstructure
 
@@ -37,11 +37,11 @@ class RobotConfigurationController(K8sCRHandler):
         self.lgnum = ''
         self.rsrctype = ''
         self.rsrcgrp = ''
-        self.max_idle_time = 0
-        self.battery_min = 0
-        self.battery_ok = 0
-        self.battery_idle = 0
-        self.chargers = []
+        self.max_idle_time = 0.0
+        self.battery_min = 0.0
+        self.battery_ok = 0.0
+        self.battery_idle = 0.0
+        self.chargers: List[str] = []
 
         template_cr = get_sample_cr('robotconfiguration')
 
@@ -71,7 +71,7 @@ class RobotConfigurationController(K8sCRHandler):
                 raise ValueError('Environment variable "{}" is not set'.format(var))
 
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
-        self.rsrc = envvar['ROBCO_ROBOT_NAME'].upper()
+        self.rsrc = envvar['ROBCO_ROBOT_NAME'].upper()  # type: ignore
 
     def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
         """Process robot configuration CR."""

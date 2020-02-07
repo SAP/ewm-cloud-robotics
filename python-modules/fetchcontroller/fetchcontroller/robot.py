@@ -39,7 +39,7 @@ class RobotController(K8sCRHandler):
         # Instance with all FetchCore robots
         self._fetch_robots = fetch_robots
 
-        self.robottypes = {}
+        self.robottypes: Dict[str, bool] = {}
 
         # Super constructor for robot CR
         self.robot_template_cr = get_sample_cr('robco_robot')

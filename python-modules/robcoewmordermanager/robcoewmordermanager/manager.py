@@ -15,7 +15,7 @@
 import os
 import logging
 
-from typing import Dict, Tuple, List
+from typing import Dict, Tuple, List, Union
 
 import attr
 from cattr import structure, unstructure
@@ -107,7 +107,7 @@ class EWMOrderManager:
         _LOGGER.info('Connecting to OData host "%s"', self.odataconfig.host)
 
     def _structure_callback_data(
-            self, dtype: str, data: Dict, valid_types: Tuple) -> List:
+            self, dtype: str, data: Union[Dict, List], valid_types: Tuple) -> List:
         """Return structured attr data classes for robcoewm data types."""
         # Get robco ewm data classes
         try:
@@ -377,7 +377,7 @@ class EWMOrderManager:
             onlynewwho: bool = False) -> List[WarehouseOrder]:
         """Get warehouse order from SAP EWM."""
         # Init warehouse order list
-        whos = []
+        whos: List[WarehouseOrder] = []
         # First step - check it there are existing warehouse orders in SAP EWM
         if onlynewwho is False:
             try:

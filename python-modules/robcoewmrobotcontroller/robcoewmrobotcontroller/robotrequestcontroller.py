@@ -37,9 +37,11 @@ class RobotRequestController(K8sCRHandler):
         """Construct."""
         self.init_robot_fromenv()
         # Processed robotrequest CRs dictionary
-        self._processed_robotrequests = OrderedDict()
+        self._processed_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, str] = OrderedDict()
         self._processed_robotrequests_lock = threading.RLock()
-        self._deleted_robotrequests = OrderedDict()
+        self._deleted_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, bool] = OrderedDict()
 
         template_cr = get_sample_cr('robotrequest')
 
@@ -135,7 +137,7 @@ class RobotRequestController(K8sCRHandler):
                 if self.thread_run:
                     time.sleep(10)
 
-    def send_robot_request(self, dtype: str, request: Dict) -> None:
+    def send_robot_request(self, dtype: str, request: Dict) -> bool:
         """Send robot request to order manager."""
         # Don't create the same request twice when it is not processed yet
         existing_requests = self.list_all_cr()

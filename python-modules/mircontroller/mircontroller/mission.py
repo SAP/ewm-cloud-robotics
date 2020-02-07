@@ -62,12 +62,12 @@ class MissionController(K8sCRHandler):
         # Instance of MiR robot
         self._mir_robot = mir_robot
 
-        self._active_mission = {}
-        self._missions = OrderedDict()
+        self._active_mission: Dict[str, Dict] = {}
+        self._missions: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, Dict] = OrderedDict()
         self._missions_lock = threading.RLock()
 
         # Init CR superclass
-        labels = {}
         template_cr = get_sample_cr('robco_mission')
         super().__init__(
             'mission.cloudrobotics.com',
@@ -75,7 +75,7 @@ class MissionController(K8sCRHandler):
             'missions',
             'default',
             template_cr,
-            labels
+            {}
         )
 
         # Register CR callbacks
@@ -220,7 +220,7 @@ class MissionController(K8sCRHandler):
 
         _LOGGER.info('Watch robot status loop stopped')
 
-    def run_mission(self) -> RobcoMissionStates:
+    def run_mission(self) -> str:
         """Run a mission with all its actions."""
         cls = self.__class__
         if not self._active_mission:
@@ -241,7 +241,7 @@ class MissionController(K8sCRHandler):
                 self.update_cr_status(name, self._active_mission['status'])
             else:
                 _LOGGER.info('CR of mission %s deleted, canceling mission', name)
-                return
+                return RobcoMissionStates.STATES_CANCELED
         elif not self._active_mission.get('status'):
             _LOGGER.info('Starting mission %s on robot %s', name, self._mir_robot.robco_robot_name)
             self._active_mission['status'] = cls.m_status_templ.copy()
@@ -253,7 +253,7 @@ class MissionController(K8sCRHandler):
                 self.update_cr_status(name, self._active_mission['status'])
             else:
                 _LOGGER.info('CR of mission %s deleted, canceling mission', name)
-                return
+                return RobcoMissionStates.STATES_CANCELED
         else:
             _LOGGER.info('Resuming mission %s on robot %s', name, self._mir_robot.robco_robot_name)
 
@@ -460,7 +460,7 @@ class MissionController(K8sCRHandler):
 
         return self.watch_running_mission(mission_queue_id, True)
 
-    def watch_running_mission(self, mission_queue_id: str, with_active_action: bool) -> str:
+    def watch_running_mission(self, mission_queue_id: int, with_active_action: bool) -> str:
         """Watch a running mission and return its result when finished."""
         try:
             state_resp = self._mir_robot.get_mission_state(mission_queue_id)

@@ -48,12 +48,12 @@ class MissionController(K8sCRHandler):
         # Instance with all FetchCore robots
         self._fetch_robots = fetch_robots
 
-        self._active_missions = {}
-        self._missions = OrderedDict()
+        self._active_missions: Dict[str, Dict] = {}
+        self._missions: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, Dict] = OrderedDict()
         self._missions_lock = threading.RLock()
 
         # Init CR superclass
-        labels = {}
         template_cr = get_sample_cr('robco_mission')
         super().__init__(
             'mission.cloudrobotics.com',
@@ -61,7 +61,7 @@ class MissionController(K8sCRHandler):
             'missions',
             'default',
             template_cr,
-            labels
+            {}
         )
 
         # Register CR callbacks
@@ -296,7 +296,7 @@ class MissionController(K8sCRHandler):
         return
 
     def run_action_movetonamedposition(
-            self, robot: str, position: str, task_id: Optional[int] = None) -> bool:
+            self, robot: str, position: str, task_id: Optional[int] = None) -> str:
         """Run mission moveToNamedPosition on the robot."""
         if not self._active_missions[robot]:
             # No active mission for robot - action failed
@@ -308,10 +308,10 @@ class MissionController(K8sCRHandler):
             try:
                 task_id = self._fetch_robots.get_robot(robot).move_to_position(position)
             except FetchCapabilityError:
-                _LOGGER.ERROR('Robot does not have a MOVE function - mission %s failed')
+                _LOGGER.error('Robot does not have a MOVE function - mission %s failed')
                 return RobcoMissionStates.STATE_FAILED
             except ValueError:
-                _LOGGER.ERROR('Position %s is not known - mission %s failed')
+                _LOGGER.error('Position %s is not known - mission %s failed')
                 return RobcoMissionStates.STATE_FAILED
 
             if task_id:
@@ -332,12 +332,14 @@ class MissionController(K8sCRHandler):
                 self._active_missions[robot]['status']['message'] = 'Mission failed'
                 return RobcoMissionStates.STATE_FAILED
 
-        status = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+        status = RobcoMissionStates.STATE_ACCEPTED
 
         # Wait until movement was successfull or failed
         while status in (RobcoMissionStates.STATE_ACCEPTED, RobcoMissionStates.STATE_RUNNING):
             time.sleep(0.5)
-            status = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+            status_new = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+            if status_new:
+                status = status_new
             # Update status CR when status changes to RUNNING
             if (status != self._active_missions[robot]['status']['status']
                     and status == RobcoMissionStates.STATE_RUNNING):
@@ -358,7 +360,7 @@ class MissionController(K8sCRHandler):
         return status
 
     def run_action_gettrolley(
-            self, robot: str, position: str, task_id: Optional[int] = None) -> bool:
+            self, robot: str, position: str, task_id: Optional[int] = None) -> str:
         """Run mission getTrolley on the robot."""
         if not self._active_missions[robot]:
             # No active mission for robot - action failed
@@ -378,13 +380,13 @@ class MissionController(K8sCRHandler):
                     task_id = self._fetch_robots.get_robot(robot).get_return_trolley_backup(
                         position, True)
                 except FetchCapabilityError:
-                    _LOGGER.ERROR(
+                    _LOGGER.error(
                         'Robot does not have the NAVIGATE and HMI_BUTTONS functions - mission %s '
                         'failed')
                     return RobcoMissionStates.STATE_FAILED
 
             except ValueError:
-                _LOGGER.ERROR('Position %s is not known - mission %s failed')
+                _LOGGER.error('Position %s is not known - mission %s failed')
                 return RobcoMissionStates.STATE_FAILED
 
             if task_id:
@@ -405,12 +407,14 @@ class MissionController(K8sCRHandler):
                 self._active_missions[robot]['status']['message'] = 'Mission failed'
                 return RobcoMissionStates.STATE_FAILED
 
-        status = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+        status = RobcoMissionStates.STATE_ACCEPTED
 
         # Wait until movement was successfull or failed
         while status in (RobcoMissionStates.STATE_ACCEPTED, RobcoMissionStates.STATE_RUNNING):
             time.sleep(0.5)
-            status = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+            status_new = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+            if status_new:
+                status = status_new
             # Update status CR when status changes to RUNNING
             if (status != self._active_missions[robot]['status']['status']
                     and status == RobcoMissionStates.STATE_RUNNING):
@@ -431,7 +435,7 @@ class MissionController(K8sCRHandler):
         return status
 
     def run_action_returntrolley(
-            self, robot: str, position: str, task_id: Optional[int] = None) -> bool:
+            self, robot: str, position: str, task_id: Optional[int] = None) -> str:
         """Run mission returnTrolley on the robot."""
         if not self._active_missions[robot]:
             # No active mission for robot - action failed
@@ -451,13 +455,13 @@ class MissionController(K8sCRHandler):
                     task_id = self._fetch_robots.get_robot(robot).get_return_trolley_backup(
                         position, False)
                 except FetchCapabilityError:
-                    _LOGGER.ERROR(
+                    _LOGGER.error(
                         'Robot does not have the NAVIGATE and HMI_BUTTONS functions - mission %s '
                         'failed')
                     return RobcoMissionStates.STATE_FAILED
 
             except ValueError:
-                _LOGGER.ERROR('Position %s is not known - mission %s failed')
+                _LOGGER.error('Position %s is not known - mission %s failed')
                 return RobcoMissionStates.STATE_FAILED
 
             if task_id:
@@ -478,12 +482,14 @@ class MissionController(K8sCRHandler):
                 self._active_missions[robot]['status']['message'] = 'Mission failed'
                 return RobcoMissionStates.STATE_FAILED
 
-        status = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+        status = RobcoMissionStates.STATE_ACCEPTED
 
         # Wait until movement was successfull or failed
         while status in (RobcoMissionStates.STATE_ACCEPTED, RobcoMissionStates.STATE_RUNNING):
             time.sleep(0.5)
-            status = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+            status_new = self._fetch_robots.get_robot(robot).get_task_status(task_id)
+            if status_new:
+                status = status_new
             # Update status CR when status changes to RUNNING
             if (status != self._active_missions[robot]['status']['status']
                     and status == RobcoMissionStates.STATE_RUNNING):

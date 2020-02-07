@@ -32,14 +32,13 @@ class RobotConfigurationController(K8sCRHandler):
 
         template_cr = get_sample_cr('robotconfiguration')
 
-        labels = {}
         super().__init__(
             'sap.com',
             'v1',
             'robotconfigurations',
             'default',
             template_cr,
-            labels
+            {}
         )
 
     def init_default_values_fromenv(self) -> None:
@@ -67,15 +66,19 @@ class RobotConfigurationController(K8sCRHandler):
         self.rsrc_grp = envvar['EWM_RSRC_GRP']
 
         # List of chargers
-        self.chargers = [x.strip() for x in envvar['CHARGER_LIST'].split(',')]
+        self.chargers = [x.strip() for x in envvar['CHARGER_LIST'].split(',')]  # type: ignore
 
         # Battery levels in %
-        self.battery_min = float(envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10
-        self.battery_ok = float(envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 80
-        self.battery_idle = float(envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 40
+        self.battery_min = float(
+            envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10  # type: ignore
+        self.battery_ok = float(
+            envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 80  # type: ignore
+        self.battery_idle = float(
+            envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 40  # type: ignore
 
         # Max idle time until robot moves to staging area
-        self.max_idle_time = float(envvar['MAX_IDLE_TIME']) if envvar['MAX_IDLE_TIME'] else 30
+        self.max_idle_time = float(
+            envvar['MAX_IDLE_TIME']) if envvar['MAX_IDLE_TIME'] else 30  # type: ignore
 
     def robco_robot_cb(self, name: str, custom_res: Dict) -> None:
         """Process Cloud Robotics robot CR."""

@@ -37,7 +37,7 @@ class OrderController(K8sCRHandler):
         """Construct."""
         self.init_robot_fromenv()
         # Last successfully processed spec of warehouse order
-        self.processed_order_spec = {}
+        self.processed_order_spec: Dict[str, Dict] = {}
 
         template_cr = get_sample_cr('warehouseorder')
 

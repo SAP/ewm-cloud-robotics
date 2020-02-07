@@ -48,7 +48,7 @@ class FetchMap:
         self.map_id = map_id
         self.name = ''
         self._fetch_api = fetch_api
-        self._poses = {}
+        self._poses: Dict[str, FetchPose] = {}
 
     @property
     def poses(self) -> Dict:

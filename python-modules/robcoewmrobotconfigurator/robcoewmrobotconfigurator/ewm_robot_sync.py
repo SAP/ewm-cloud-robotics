@@ -45,9 +45,9 @@ class EWMRobotSync:
         # SAP EWM OData APIs
         self.ewmrobot = RobotOData(self.odatahandler)
         # Existing robots
-        self.existing_robots = {}
+        self.existing_robots: Dict[str, bool] = {}
         # Running robot checks
-        self.running_robot_checks = {}
+        self.running_robot_checks: Dict[str, threading.Thread] = {}
 
     def init_odata_fromenv(self) -> None:
         """Initialize OData interface from environment variables."""

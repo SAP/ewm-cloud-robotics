@@ -16,16 +16,13 @@ import logging
 import datetime
 import os
 
-import uuid
 import random
 
-from typing import Optional, Tuple
-from requests import RequestException
+from typing import Tuple, Dict
 
 from robcoewmtypes.robot import RobotMission
 
 _LOGGER = logging.getLogger(__name__)
-
 
 
 class RobcoMissionStates(RobotMission):
@@ -34,7 +31,7 @@ class RobcoMissionStates(RobotMission):
     @staticmethod
     def get_robco_state(state: str, message: str) -> str:
         """Get RobCo state from dummy state and message."""
-        cls = __class__
+        cls = __class__  # type: ignore  # pylint: disable=undefined-variable
         if state == 'Pending':
             return cls.STATE_ACCEPTED
         elif state == 'Executing':
@@ -43,6 +40,7 @@ class RobcoMissionStates(RobotMission):
             return cls.STATE_SUCCEEDED
         else:
             raise ValueError('State {} is unknown'.format(state))
+
 
 class DummyRobot:
     """Representation of one single dummy robot."""
@@ -65,14 +63,14 @@ class DummyRobot:
         self.last_state_change = '1970-01-01T00:00:00.000Z'
         self.trolley_attached = False
         self.active_map = None
-        self.get_mission_state_counter = {}
+        self.get_mission_state_counter: Dict[int, int] = {}
         self.next_mission_id = 0
-        
+
         # Init remaining attributes from environment variables
         envvar = self.init_robot_fromenv()
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
 
-    def init_robot_fromenv(self) -> None:
+    def init_robot_fromenv(self) -> Dict:
         """Initialize EWM Robot from environment variables."""
         # Read environment variables
         envvar = {}
@@ -85,7 +83,7 @@ class DummyRobot:
 
         return envvar
 
-    def get_mission_state(self, mission: str) -> Tuple[str, str]:
+    def get_mission_state(self, mission: int) -> Tuple[str, str]:
         """Get the state of a mission of mission queue."""
         if mission not in self.get_mission_state_counter:
             self.get_mission_state_counter[mission] = 0
@@ -98,7 +96,7 @@ class DummyRobot:
             mission_state = RobcoMissionStates.get_robco_state('Executing', 'Executing')
         else:
             mission_state = RobcoMissionStates.get_robco_state('Pending', 'Pending')
-            
+
         return (mission_state, '')
 
     def get_trolley(self, dock_name: str) -> int:

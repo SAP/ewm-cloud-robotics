@@ -93,9 +93,9 @@ class FetchRobot:
         self.last_state_change = '1970-01-01T00:00:00.000Z'
         self.last_state_change_ts = time.time()
         self.trolley_attached = False
-        self.active_map = None
-        self.fetch_map = None
-        self.installed_actions = []
+        self.active_map: Optional[str] = None
+        self.fetch_map: Optional[FetchMap] = None
+        self.installed_actions: List[str] = []
 
     def cancel_task(self, task_id: int) -> bool:
         """Cancel a task."""
@@ -146,7 +146,7 @@ class FetchRobot:
             }
 
         if isinstance(button_data, list):
-            post_body['actions'][0]['inputs']['button_data'] = button_data
+            post_body['actions'][0]['inputs']['button_data'] = button_data  # type: ignore
 
         endpoint = '/api/v1/tasks/'
 
@@ -160,6 +160,8 @@ class FetchRobot:
             _LOGGER.info(
                 'Display HMI buttons task started with ID %s on robot %s', resp['id'], self.name)
             return resp['id']
+
+        return None
 
     def get_task_status(self, task_id: int) -> Optional[str]:
         """
@@ -180,6 +182,8 @@ class FetchRobot:
             else:
                 _LOGGER.error('Task %s is not a task of robot %s', task_id, self.name)
                 raise ValueError
+
+        return None
 
     def get_trolley(self, target: str) -> Optional[int]:
         """Get trolley from a target position."""
@@ -220,6 +224,8 @@ class FetchRobot:
         else:
             _LOGGER.error('Robot is not assigned to a map')
 
+        return None
+
     def return_trolley(self, target: str) -> Optional[int]:
         """Return trolley to a target position."""
         if 'DETACH_CART' not in self.installed_actions:
@@ -251,12 +257,14 @@ class FetchRobot:
             except RequestException as err:
                 _LOGGER.error(
                     'Exception %s when connecting to FetchCore endpoint %s', err, endpoint)
+                return None
             else:
                 _LOGGER.info(
                     'Detach cart task started with ID %s on robot %s', resp['id'], self.name)
                 return resp['id']
         else:
             _LOGGER.error('Robot is not assigned to a map')
+            return None
 
     def get_return_trolley_backup(self, target: str, get_trolley: bool) -> Optional[int]:
         """
@@ -330,6 +338,8 @@ class FetchRobot:
         else:
             _LOGGER.error('Robot is not assigned to a map')
 
+        return None
+
     def move_to_position(self, target: str) -> Optional[int]:
         """Move robot to a named position."""
         if 'NAVIGATE' not in self.installed_actions:
@@ -377,6 +387,8 @@ class FetchRobot:
                     return resp['id']
         else:
             _LOGGER.error('Robot is not assigned to a map')
+
+        return None
 
     def update_robot_state(self, robots: Dict) -> None:
         """
@@ -492,8 +504,8 @@ class FetchRobots:
 
     def __init__(self, fetch_api: FetchInterface) -> None:
         """Construct."""
-        self._robots = {}
-        self._active_maps = {}
+        self._robots: Dict[str, FetchRobot] = {}
+        self._active_maps: Dict[str, FetchMap] = {}
         self._fetch_api = fetch_api
 
     @property
@@ -512,7 +524,7 @@ class FetchRobots:
 
     def get_active_maps(self) -> Set:
         """Get a set of maps where at least one robot is active."""
-        active_maps = set()
+        active_maps: Set[str] = set()
 
         for robot in self._robots.values():
             if robot.active_map:

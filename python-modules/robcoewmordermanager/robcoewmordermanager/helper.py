@@ -15,6 +15,8 @@
 import logging
 import time
 
+from typing import Dict, List, DefaultDict
+
 from collections import defaultdict, namedtuple, OrderedDict
 
 from robcoewmtypes.robot import RequestFromRobot
@@ -43,12 +45,14 @@ class ProcessedMessageMemory:
     def __init__(self) -> None:
         """Construct."""
         # Warehouse order confirmations
-        self.who_confirmations = defaultdict(list)
-        self.deleted_whos = OrderedDict()
+        self.who_confirmations: Dict[WhoIdentifier, List] = defaultdict(list)
+        self.deleted_whos: OrderedDict[  # pylint: disable=unsubscriptable-object
+            WhoIdentifier, float] = OrderedDict()
         # Robot requests
-        self.robotrequests = {}
-        self.deleted_robotrequests = OrderedDict()
-        self.request_count = defaultdict(int)
+        self.robotrequests: Dict[str, RequestFromRobot] = {}
+        self.deleted_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, float] = OrderedDict()
+        self.request_count: DefaultDict[RobotIdentifier, int] = defaultdict(int)
 
     def memorize_who_conf(self, conf: ConfirmWarehouseTask) -> None:
         """Memorize warehouse order confirmation."""

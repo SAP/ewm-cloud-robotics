@@ -19,7 +19,7 @@ import json
 from datetime import datetime, timezone
 from binascii import hexlify, unhexlify
 
-from typing import Any, List, Union, Dict
+from typing import Any, List, Union, Dict, Type
 
 import attr
 
@@ -36,7 +36,7 @@ def create_robcoewmtype_str(obj: Any) -> str:
     """
     # List of objects
     if isinstance(obj, list):
-        clslist = []
+        clslist: List[Type[object]] = []
         clsmodulelist = []
         for entry in obj:
             # If data type is not collected yet, append it to list
@@ -149,7 +149,7 @@ def get_robcoewmtype(robcoewmtype_str: str) -> Any:
                 obj = getattr(obj, line)
 
         # Check class for attr attributes
-        if not attr.has(obj):
+        if not attr.has(obj):  # type: ignore
             raise TypeError(
                 '"{}" is not a class with "attr" attributes'.format(obj))
         else:
@@ -169,7 +169,7 @@ def get_robcoewmtype(robcoewmtype_str: str) -> Any:
     # Union for a single object vanishes, thus no need to differentiate those
     # cases here.
     if islist:
-        return List[Union[tuple(objlist)]]
+        return List[Union[tuple(objlist)]]  # type: ignore
     else:
         return Union[tuple(objlist)]
 

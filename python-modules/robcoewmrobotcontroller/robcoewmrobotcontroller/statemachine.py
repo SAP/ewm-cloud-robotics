@@ -15,7 +15,7 @@
 import logging
 import time
 from collections import OrderedDict, defaultdict, namedtuple
-from typing import Callable
+from typing import Callable, DefaultDict, Optional
 
 from transitions.extensions import LockedHierarchicalMachine as Machine
 from transitions.core import EventData
@@ -23,7 +23,7 @@ from transitions.core import EventData
 from prometheus_client import Counter, Histogram
 
 from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus
-from robcoewmtypes.warehouseorder import WarehouseOrder
+from robcoewmtypes.warehouseorder import WarehouseOrder, WarehouseTask
 from robcoewmtypes.warehouse import StorageBin
 
 from .robot_api import RobotMissionAPI
@@ -198,17 +198,19 @@ class RobotEWMMachine(Machine):
         # Configuration of the robot
         self.robot_config = robot_config
         # List of warehouse order assigned to this robot
-        self.warehouseorders = OrderedDict()
+        self.warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
+            WhoIdentifier, WarehouseOrder] = OrderedDict()
         # List of sub warehouse orders of robot's warehouse orders for Pick, Pack and Pass
         # Scenario. Those are not assigned to the robot
-        self.sub_warehouseorders = OrderedDict()
+        self.sub_warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
+            WhoIdentifier, WarehouseOrder] = OrderedDict()
         # Warehouse order / warehouse task currently in process
-        self.active_who = None
-        self.active_wht = None
-        self.active_sub_who = None
+        self.active_who: Optional[WarehouseOrder] = None
+        self.active_wht: Optional[WarehouseTask] = None
+        self.active_sub_who: Optional[WarehouseOrder] = None
         # State before robot error occurred
         self.state_before_error = ''
-        self.error_count = defaultdict(int)
+        self.error_count: DefaultDict[str, int] = defaultdict(int)
 
         # Marks if the state machine is currently in a transition
         self.in_transition = False
@@ -604,26 +606,26 @@ class RobotEWMMachine(Machine):
         if warehouseorder.flgwho is True:
             _LOGGER.info(
                 'Warehouse order "%s" is of type "PickPackPass". Start finding target.',
-                self.active_who.who)
+                self.active_who.who)  # type: ignore
             self.who_type = 'PickPackPass'
             self.start_PickPackPass_warehouseorder()
         else:
             _LOGGER.info(
                 'Warehouse order "%s" is of type "MoveHU". Start finding target.',
-                self.active_who.who)
+                self.active_who.who)  # type: ignore
             self.who_type = 'MoveHU'
             self.start_MoveHU_warehouseorder()
 
     def on_enter_finishedWarehouseorder(self, event: EventData) -> None:
         """Clean up after finishing a warehouse order and start the next."""
-        who = WhoIdentifier(self.active_who.lgnum, self.active_who.who)
+        who = WhoIdentifier(self.active_who.lgnum, self.active_who.who)  # type: ignore
         # Delete finished warehouseorder
         self.warehouseorders.pop(who, None)
 
         # Collect sub warehouse order for the finished warehouse order
         sub_whos = []
         for sub_who, order in self.sub_warehouseorders.items():
-            if order.topwhoid == self.active_who.who:
+            if order.topwhoid == self.active_who.who:  # type: ignore
                 sub_whos.append(sub_who)
         # Delete collected sub warehouse orders
         for sub_who in sub_whos:
@@ -692,7 +694,7 @@ class RobotEWMMachine(Machine):
         tosourcebin = False
         # First check if there is a warehouse task where the robot did not
         # confirm the loading of the HU yet
-        for task in self.active_who.warehousetasks:
+        for task in self.active_who.warehousetasks:  # type: ignore
             if task.vlpla:
                 wht = task
                 tosourcebin = True
@@ -701,7 +703,7 @@ class RobotEWMMachine(Machine):
                 break
         # If no task was found, check for the first warehouse task to unload a HU
         if wht is None:
-            for task in self.active_who.warehousetasks:
+            for task in self.active_who.warehousetasks:  # type: ignore
                 if task.nlpla:
                     wht = task
                     tosourcebin = False
@@ -725,50 +727,52 @@ class RobotEWMMachine(Machine):
         else:
             _LOGGER.info(
                 'No more warehouse task for warehouse order "%s" found. Finish job.',
-                self.active_who.who)
+                self.active_who.who)  # type: ignore
             self.complete_warehouseorder()
 
     def on_enter_MoveHU_movingToSourceBin(self, event: EventData) -> None:
         """Start moving to the source bin of a warehouse task."""
         mission = self.mission_api.api_load_unload(self.active_wht)
         _LOGGER.info(
-            'Started moving to "%s" with mission name "%s"', self.active_wht.vlpla, mission.name)
+            'Started moving to "%s" with mission name "%s"',
+            self.active_wht.vlpla, mission.name)  # type: ignore
         self._mission.name = mission.name
         self._mission.status = mission.status
-        self._mission.target_name = self.active_wht.vlpla
+        self._mission.target_name = self.active_wht.vlpla  # type: ignore
 
     def on_enter_MoveHU_movingToTargetBin(self, event: EventData) -> None:
         """Start moving to the target bin of a warehouse task."""
         mission = self.mission_api.api_load_unload(self.active_wht)
         _LOGGER.info(
-            'Started moving to "%s" with mission name "%s"', self.active_wht.nlpla, mission.name)
+            'Started moving to "%s" with mission name "%s"',
+            self.active_wht.nlpla, mission.name)  # type: ignore
         self._mission.name = mission.name
         self._mission.status = mission.status
-        self._mission.target_name = self.active_wht.nlpla
+        self._mission.target_name = self.active_wht.nlpla  # type: ignore
 
     def on_enter_MoveHU_loading(self, event: EventData) -> None:
         """Load handling unit of a warehouse task on a robot."""
-        _LOGGER.info('Started loading HU "%s"', self.active_wht.vlenr)
+        _LOGGER.info('Started loading HU "%s"', self.active_wht.vlenr)  # type: ignore
 
     def on_exit_MoveHU_loading(self, event: EventData) -> None:
         """Confirm and delete information about source handling unit."""
         # Confirm loading only if no error occured
         if event.event.name != 'robot_error_occurred':
             self.confirm_api(self.active_wht)
-            _LOGGER.info('Loaded HU "%s"', self.active_wht.vlenr)
+            _LOGGER.info('Loaded HU "%s"', self.active_wht.vlenr)  # type: ignore
             # Log elapsed time from order start to HU load
             self.who_ts['load'] = time.time()
             self.who_times.labels(  # pylint: disable=no-member
                 robot=self.robot_config.robco_robot_name, order_type=self.who_type,
                 activity='load_hu').observe(self.who_ts['load']-self.who_ts['start'])
 
-            for i, task in enumerate(self.active_who.warehousetasks):
-                if task.tanum == self.active_wht.tanum:
-                    self.active_who.warehousetasks[i].vltyp = ''
-                    self.active_who.warehousetasks[i].vlber = ''
-                    self.active_who.warehousetasks[i].vlpla = ''
+            for i, task in enumerate(self.active_who.warehousetasks):  # type: ignore
+                if task.tanum == self.active_wht.tanum:  # type: ignore
+                    self.active_who.warehousetasks[i].vltyp = ''  # type: ignore
+                    self.active_who.warehousetasks[i].vlber = ''  # type: ignore
+                    self.active_who.warehousetasks[i].vlpla = ''  # type: ignore
 
-                    self.active_wht = self.active_who.warehousetasks[i]
+                    self.active_wht = self.active_who.warehousetasks[i]  # type: ignore
         else:
             _LOGGER.info('Error occurred not confirming HU load')
 
@@ -778,27 +782,27 @@ class RobotEWMMachine(Machine):
 
     def on_enter_MoveHU_unloading(self, event: EventData) -> None:
         """Unload handling unit of a warehouse task on a robot."""
-        _LOGGER.info('Started unloading HU "%s"', self.active_wht.nlenr)
+        _LOGGER.info('Started unloading HU "%s"', self.active_wht.nlenr)  # type: ignore
 
     def on_exit_MoveHU_unloading(self, event: EventData) -> None:
         """Confirm and delete information about target handling unit."""
         # Confirm loading only if no error occured
         if event.event.name != 'robot_error_occurred':
             self.confirm_api(self.active_wht)
-            _LOGGER.info('Unloaded HU "%s"', self.active_wht.nlenr)
+            _LOGGER.info('Unloaded HU "%s"', self.active_wht.nlenr)  # type: ignore
             # Log elapsed time from HU load to HU unload
             self.who_ts['unload'] = time.time()
             self.who_times.labels(  # pylint: disable=no-member
                 robot=self.robot_config.robco_robot_name, order_type=self.who_type,
                 activity='unload_hu').observe(self.who_ts['unload']-self.who_ts['load'])
 
-            for i, task in enumerate(self.active_who.warehousetasks):
-                if task.tanum == self.active_wht.tanum:
-                    self.active_who.warehousetasks[i].nltyp = ''
-                    self.active_who.warehousetasks[i].nlber = ''
-                    self.active_who.warehousetasks[i].nlpla = ''
+            for i, task in enumerate(self.active_who.warehousetasks):  # type: ignore
+                if task.tanum == self.active_wht.tanum:  # type: ignore
+                    self.active_who.warehousetasks[i].nltyp = ''  # type: ignore
+                    self.active_who.warehousetasks[i].nlber = ''  # type: ignore
+                    self.active_who.warehousetasks[i].nlpla = ''  # type: ignore
 
-                    self.active_wht = self.active_who.warehousetasks[i]
+                    self.active_wht = self.active_who.warehousetasks[i]  # type: ignore
         else:
             _LOGGER.error('Error occurred not confirming HU unload')
 
@@ -821,7 +825,7 @@ class RobotEWMMachine(Machine):
 
         # Try to get a sub warehouse order
         for order in self.sub_warehouseorders.values():
-            if order.topwhoid == self.active_who.who:
+            if order.topwhoid == self.active_who.who:  # type: ignore
                 sub_who = order
                 break
 
@@ -837,7 +841,7 @@ class RobotEWMMachine(Machine):
                     break
         # If no task was found, check for the first warehouse task to unload a HU
         if wht is None:
-            for task in self.active_who.warehousetasks:
+            for task in self.active_who.warehousetasks:  # type: ignore
                 if task.nlpla:
                     wht = task
                     target = StorageBin(task.lgnum, task.nlpla)
@@ -859,12 +863,13 @@ class RobotEWMMachine(Machine):
             # If there are sub warehouse order, but no more warehouse tasks, everything is done.
             _LOGGER.info(
                 'No more warehouse task for warehouse order "%s" found. Finish job.',
-                self.active_who.who)
+                self.active_who.who)  # type: ignore
             self.complete_warehouseorder()
         # If no sub warehouse order for this active order found, wait until they arrive
         else:
             _LOGGER.info(
-                'No warehouse task for warehouse order "%s" found. Wait.', self.active_who.who)
+                'No warehouse task for warehouse order "%s" found. Wait.',
+                self.active_who.who)  # type: ignore
             # Request work from EWM in case message was lost
             self.request_ewm_work()
 
@@ -888,28 +893,29 @@ class RobotEWMMachine(Machine):
         """Confirm and delete information about source handling unit."""
         _LOGGER.info('Picking finished')
 
-        for i, task in enumerate(self.active_sub_who.warehousetasks):
-            if task.tanum == self.active_wht.tanum:
-                self.active_sub_who.warehousetasks[i].vltyp = ''
-                self.active_sub_who.warehousetasks[i].vlber = ''
-                self.active_sub_who.warehousetasks[i].vlpla = ''
+        for i, task in enumerate(self.active_sub_who.warehousetasks):  # type: ignore
+            if task.tanum == self.active_wht.tanum:  # type: ignore
+                self.active_sub_who.warehousetasks[i].vltyp = ''  # type: ignore
+                self.active_sub_who.warehousetasks[i].vlber = ''  # type: ignore
+                self.active_sub_who.warehousetasks[i].vlpla = ''  # type: ignore
 
-                self.active_wht = self.active_sub_who.warehousetasks[i]
+                self.active_wht = self.active_sub_who.warehousetasks[i]  # type: ignore
 
                 # Update queue of sub warehouse orders
-                sub_who = WhoIdentifier(self.active_sub_who.lgnum, self.active_sub_who.who)
+                sub_who = WhoIdentifier(
+                    self.active_sub_who.lgnum, self.active_sub_who.who)  # type: ignore
                 self.sub_warehouseorders[sub_who] = self.active_sub_who
 
     def on_exit_PickPackPass_waitingAtTarget(
             self, event: EventData) -> None:
         """Confirm and delete information about target handling unit."""
         self.confirm_api(self.active_wht)
-        _LOGGER.info('Pick HU "%s" was unloaded', self.active_wht.nlenr)
+        _LOGGER.info('Pick HU "%s" was unloaded', self.active_wht.nlenr)  # type: ignore
 
-        for i, task in enumerate(self.active_who.warehousetasks):
-            if task.tanum == self.active_wht.tanum:
-                self.active_who.warehousetasks[i].nltyp = ''
-                self.active_who.warehousetasks[i].nlber = ''
-                self.active_who.warehousetasks[i].nlpla = ''
+        for i, task in enumerate(self.active_who.warehousetasks):  # type: ignore
+            if task.tanum == self.active_wht.tanum:  # type: ignore
+                self.active_who.warehousetasks[i].nltyp = ''  # type: ignore
+                self.active_who.warehousetasks[i].nlber = ''  # type: ignore
+                self.active_who.warehousetasks[i].nlpla = ''  # type: ignore
 
-                self.active_wht = self.active_who.warehousetasks[i]
+                self.active_wht = self.active_who.warehousetasks[i]  # type: ignore

@@ -141,7 +141,7 @@ class K8sCRHandler:
         self.resv_watcher = ''
 
         # Callback stack for watch on cr
-        self.callbacks = {
+        self.callbacks: Dict[str, OrderedDict] = {
             'ADDED': OrderedDict(),
             'MODIFIED': OrderedDict(),
             'DELETED': OrderedDict(),
@@ -152,9 +152,9 @@ class K8sCRHandler:
         self.raw_cr = template_cr
 
         # Lock objects to synchronize processing of CRs
-        self.cr_locks = defaultdict(threading.RLock)
+        self.cr_locks: Dict[str, threading.RLock] = defaultdict(threading.RLock)
         # Dict to save thread exceptions
-        self.thread_exceptions = {}
+        self.thread_exceptions: Dict[str, Exception] = {}
         # Init threads
         self.watcher_thread = threading.Thread(target=self._watch_on_crs_loop, daemon=True)
         self.reprocess_thread = threading.Thread(target=self._reprocess_crs_loop)

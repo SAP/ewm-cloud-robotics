@@ -40,7 +40,7 @@ class HTTPAuthError(HTTPstatusCodeFailed):
     """HTTP Status Code indicates authentication error."""
 
 
-def identify_requests_exception(exception: BaseException) -> None:
+def identify_requests_exception(exception: BaseException) -> bool:
     """Check if a requests exception occurred."""
     _LOGGER.error('Exception %s on HTTP request to FetchCore, retrying', exception)
     return isinstance(
@@ -96,7 +96,7 @@ class FetchInterface:
             'client_secret': self._fetchcore_clientsecret
             }
 
-        resp = requests.post(self._fetchcore_authhost, json=auth_body)
+        resp = requests.post(str(self._fetchcore_authhost), json=auth_body)
 
         if resp.status_code == 200:
             resp_dict = json.loads(resp.text)

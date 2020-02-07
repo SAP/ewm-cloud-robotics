@@ -19,7 +19,7 @@ import time
 import threading
 
 from collections import OrderedDict
-from typing import Dict, Optional
+from typing import Dict, Optional, Generator
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.robot import RobotMission
@@ -38,16 +38,14 @@ _LOGGER = logging.getLogger(__name__)
 class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
     """Send commands to RobCo robots via Kubernetes CR."""
 
-    # Mapping from SAP EWM bin to MiR map position
-    bin_to_position = {}
-
     def __init__(self, robot_config: RobotConfigurationController,
                  robot_api: RobCoRobotAPI) -> None:
         """Construct."""
         # Robot Configuration Controller
         self.robot_config = robot_config
         # Mission status dictionary
-        self.mission_status = OrderedDict()
+        self.mission_status: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, RobotMission] = OrderedDict()
         self.mission_status_lock = threading.RLock()
 
         template_cr = get_sample_cr('robco_mission')
@@ -221,7 +219,7 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
                 if self.thread_run:
                     time.sleep(10)
 
-    def _iterate_chargers(self) -> str:
+    def _iterate_chargers(self) -> Generator:
         """Iterate over self.chargers."""
         while True:
             for charger in self._chargers:
