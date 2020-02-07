@@ -9,3 +9,6 @@ robot:
 
 ewmcrds:
   enabled: true
+
+missioncrd:
+  enabled: true

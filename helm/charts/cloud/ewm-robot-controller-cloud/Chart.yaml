@@ -3,3 +3,12 @@ appVersion: "1.0"
 description: SAP EWM Robot Controller Extension for Robco Platform
 name: ewm-robot-controller-cloud
 version: 0.0.1
+dependencies:
+- name: ewm-crds
+  version: "0.0.1"
+  repository: "file://../dependency-charts/ewm-crds"
+  condition: ewmcrds.enabled
+- name: mission-crd
+  version: "0.0.1"
+  repository: "file://../dependency-charts/mission-crd"
+  condition: missioncrd.enabled

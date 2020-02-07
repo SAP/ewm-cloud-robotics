@@ -5,3 +5,9 @@ image:
   tag: "latest"
 
 robots: []
+
+ewmcrds:
+  enabled: true
+
+missioncrd:
+  enabled: true
