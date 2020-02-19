@@ -2,4 +2,3 @@ dependencies:
 - name: mission-crd
   version: "0.0.1"
   repository: "file://../dependency-charts/mission-crd"
-  condition: missioncrd.enabled

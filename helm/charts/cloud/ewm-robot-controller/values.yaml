@@ -18,6 +18,3 @@ envs:
   ewmrsrctype: "RB01"
   ewmrsrcgrp: "RB02"
   maxidletime: 30
-
-ewmcrds:
-  enabled: true

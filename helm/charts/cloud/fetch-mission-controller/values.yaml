@@ -9,6 +9,3 @@ envs:
   user: ""
   host: ""
   clientid: ""
-
-missioncrd:
-  enabled: true

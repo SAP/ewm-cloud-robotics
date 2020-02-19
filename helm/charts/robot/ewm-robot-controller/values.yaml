@@ -6,9 +6,3 @@ image:
 
 robot:
   name: ""
-
-ewmcrds:
-  enabled: true
-
-missioncrd:
-  enabled: true
