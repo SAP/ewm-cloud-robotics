@@ -11,34 +11,33 @@ Human-safe collaborative robots ("Cobots") are widely available from hundreds of
 
 
 ## Table of Contents
-- [🤖 ewm-cloud-robotics 🤖  - ![Build Status](https://travis-ci.com/SAP/ewm-cloud-robotics)](#%f0%9f%a4%96-ewm-cloud-robotics-%f0%9f%a4%96---img-src%22httpstravis-cicomsapewm-cloud-robotics%22-alt%22build-status%22)
-  - [Description](#description)
-  - [Table of Contents](#table-of-contents)
-  - [Repository outline](#repository-outline)
-  - [Sample process](#sample-process)
-  - [Instructions](#instructions)
-    - [Prerequisites](#prerequisites)
-      - [macOS](#macos)
-      - [Ubuntu Linux](#ubuntu-linux)
-    - [Cloud Robotics cluster](#cloud-robotics-cluster)
-    - [Deployment](#deployment)
-      - [Container registry](#container-registry)
-      - [Configuration](#configuration)
-      - [Installation](#installation)
-  - [SAP EWM Cloud Robotics applications](#sap-ewm-cloud-robotics-applications)
-    - [SAP EWM extension](#sap-ewm-extension)
-    - [Cloud Robotic apps](#cloud-robotic-apps)
-      - [ewm-order-manager](#ewm-order-manager)
-      - [ewm-robot-controller](#ewm-robot-controller)
-      - [ewm-sim](#ewm-sim)
-      - [Mission controllers](#mission-controllers)
-        - [mir-mission-controller](#mir-mission-controller)
-        - [fetch-mission-controller](#fetch-mission-controller)
-        - [dummy-mission-controller](#dummy-mission-controller)
-  - [Known issues & limitations](#known-issues--limitations)
-  - [Upcoming changes](#upcoming-changes)
-  - [Get involved](#get-involved)
-  - [License](#license)
+- [Description](#description)
+- [Table of Contents](#table-of-contents)
+- [Repository outline](#repository-outline)
+- [Sample process](#sample-process)
+- [Instructions](#instructions)
+  - [Prerequisites](#prerequisites)
+    - [MacOS](#macos)
+    - [Ubuntu Linux](#ubuntu-linux)
+  - [Cloud Robotics cluster](#cloud-robotics-cluster)
+  - [Deployment](#deployment)
+    - [Container registry](#container-registry)
+    - [Configuration](#configuration)
+    - [Installation](#installation)
+- [SAP EWM Cloud Robotics applications](#sap-ewm-cloud-robotics-applications)
+  - [SAP EWM extension](#sap-ewm-extension)
+  - [Cloud Robotic apps](#cloud-robotic-apps)
+    - [ewm-order-manager](#ewm-order-manager)
+    - [ewm-robot-controller](#ewm-robot-controller)
+    - [ewm-sim](#ewm-sim)
+    - [Mission controllers](#mission-controllers)
+      - [mir-mission-controller](#mir-mission-controller)
+      - [fetch-mission-controller](#fetch-mission-controller)
+      - [dummy-mission-controller](#dummy-mission-controller)
+- [Known issues & limitations](#known-issues--limitations)
+- [Upcoming changes](#upcoming-changes)
+- [Get involved](#get-involved)
+- [License](#license)
 
 
 
@@ -47,34 +46,15 @@ The `abap/` folder holds code to extend running SAP EWM systems with a custom OD
 
 ## Sample process
 If all components are installed to their target location and linked as depicted below, process automation can start:
-- [🤖 ewm-cloud-robotics 🤖  - ![Build Status](https://travis-ci.com/SAP/ewm-cloud-robotics)](#%f0%9f%a4%96-ewm-cloud-robotics-%f0%9f%a4%96---img-src%22httpstravis-cicomsapewm-cloud-robotics%22-alt%22build-status%22)
-  - [Description](#description)
-  - [Table of Contents](#table-of-contents)
-  - [Repository outline](#repository-outline)
-  - [Sample process](#sample-process)
-  - [Instructions](#instructions)
-    - [Prerequisites](#prerequisites)
-      - [macOS](#macos)
-      - [Ubuntu Linux](#ubuntu-linux)
-    - [Cloud Robotics cluster](#cloud-robotics-cluster)
-    - [Deployment](#deployment)
-      - [Container registry](#container-registry)
-      - [Configuration](#configuration)
-      - [Installation](#installation)
-  - [SAP EWM Cloud Robotics applications](#sap-ewm-cloud-robotics-applications)
-    - [SAP EWM extension](#sap-ewm-extension)
-    - [Cloud Robotic apps](#cloud-robotic-apps)
-      - [ewm-order-manager](#ewm-order-manager)
-      - [ewm-robot-controller](#ewm-robot-controller)
-      - [ewm-sim](#ewm-sim)
-      - [Mission controllers](#mission-controllers)
-        - [mir-mission-controller](#mir-mission-controller)
-        - [fetch-mission-controller](#fetch-mission-controller)
-        - [dummy-mission-controller](#dummy-mission-controller)
-  - [Known issues & limitations](#known-issues--limitations)
-  - [Upcoming changes](#upcoming-changes)
-  - [Get involved](#get-involved)
-  - [License](#license)
+1. [ewm-robot-controller](#ewm-robot-controller) recognizes that the robot is available and asks for work by creating a robotrequest in their local cluster
+2. robotrequests are [K8s Custom Resources](https://kubernetes.io/docs/concepts/extend-kubernetes/api-extension/custom-resources/), which are synced between cloud/robot cluster by [Cloud Robotics' federation system](https://googlecloudrobotics.github.io/core/concepts/federation.html)
+3. [ewm-order-manager](#ewm-order-manager) notices the new robotrequest and queries the [EWM OData interface](#SAP-EWM-extension) for a new warehouseorder
+4. EWM checks open warehouseorders and one is assigned to the given robot in the system and the order sent in the response body 
+5. [ewm-order-manager](#ewm-order-manager) creates a corresponding warehouseorder in the cloud
+6. warehouseorders are CRs, thus it is synced to the desired robot
+7. [ewm-robot-controller](#ewm-robot-controller) notices the new warehouseorder and start processing it by creating new missions for the robot
+8. [\<ROBOT\>-mission-controller](#Mission-controllers) interprets the missions, executes the required actions and reports back
+9. [etc.] Status changes and confirmations as well as errors are propagated back to SAP EWM
 <div align="center">
   <img src="./docs/img/architecture_overview.png" alt="architecture_overview.png">
 </div>
