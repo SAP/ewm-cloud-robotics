@@ -8,6 +8,3 @@ robot:
 
 robots:
   - name: ""
-
-missioncrd:
-  enabled: true

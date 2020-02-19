@@ -16,6 +16,3 @@ envs:
 
 robot:
   name: ""
-
-ewmcrds:
-  enabled: true
