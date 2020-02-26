@@ -111,7 +111,7 @@ class RobotMission:
 class RobotConfigurationStatus:
     """Current status of warehouse robots state machine."""
 
-    statemachine: str = attr.ib(validator=validate_annotation)
+    statemachine: str = attr.ib(default='', validator=validate_annotation)
     mission: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     lgnum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     who: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)

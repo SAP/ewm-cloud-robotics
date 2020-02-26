@@ -119,13 +119,17 @@ class EWMRobot:
     def _get_validated_state_restore(self) -> Optional[ValidStateRestore]:
         """Return robot state if it is valid."""
         state_restore = self.robot_config.get_robot_state()
+        if not state_restore:
+            _LOGGER.info('No state to restore')
+            return None
+        if not state_restore.statemachine:
+            _LOGGER.info('No state to restore')
+            return None
+
         valid_state = ValidStateRestore(state_restore)
 
         is_valid = True
         if state_restore:
-            # Do not restore robotError state
-            if state_restore.statemachine == 'robotError':
-                is_valid = False
             # If there are no CRs for warehouse order and sub warehouse order, state is invalid
             if state_restore.who:
                 if state_restore.statemachine in RobotEWMMachine.conf.error_states:
