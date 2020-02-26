@@ -89,6 +89,54 @@ spec:
                   required:
                   - returnTrolley
                   type: object
+                - maxProperties: 1
+                  properties:
+                    getHandlingUnits:
+                      maxProperties: 2
+                      properties:
+                        storageBin:
+                          type: string
+                        handlingUnits:
+                          items:
+                            oneOf:
+                            - maxProperties: 1
+                              properties:
+                                handlingUnit:
+                                  type: string
+                              required:
+                                - handlingUnit
+                          type: array
+                      required:
+                      - storageBin
+                      - handlingUnits
+                      type: object
+                  required:
+                  - getHandlingUnits
+                  type: object
+                - maxProperties: 1
+                  properties:
+                    returnHandlingUnits:
+                      maxProperties: 2
+                      properties:
+                        storageBin:
+                          type: string
+                        handlingUnits:
+                          items:
+                            oneOf:
+                            - maxProperties: 1
+                              properties:
+                                handlingUnit:
+                                  type: string
+                              required:
+                                - handlingUnit
+                          type: array
+                      required:
+                      - storageBin
+                      - handlingUnits
+                      type: object
+                  required:
+                  - returnHandlingUnits
+                  type: object
               type: array
             timeOutSec:
               minimum: 0
@@ -96,6 +144,30 @@ spec:
           required:
           - actions
           type: object
+        status:
+          properties:
+            activeAction:
+              maxProperties: 1
+              properties:
+                status:
+                  type: string
+            message:
+              type: string
+            status:
+              type: string
+              enum:
+                # initial state
+                - CREATED
+                # mission has been validated on
+                - ACCEPTED
+                # active state (processing)
+                - RUNNING
+                # terminal states
+                - SUCCEEDED
+                - CANCELED
+                - FAILED
+            timeOfActuation:
+              type: string
   version: v1alpha1
   versions:
   - name: v1alpha1

@@ -137,7 +137,7 @@ class RobotRequestController(K8sCRHandler):
                 if self.thread_run:
                     time.sleep(10)
 
-    def send_robot_request(self, dtype: str, request: Dict) -> bool:
+    def send_robot_request(self, dtype: str, request: Dict) -> None:
         """Send robot request to order manager."""
         # Don't create the same request twice when it is not processed yet
         existing_requests = self.list_all_cr()
@@ -147,7 +147,7 @@ class RobotRequestController(K8sCRHandler):
                 if request == existing_request.get('spec', {}):
                     _LOGGER.info(
                         'There is already a robotrequest with the same content running - skip')
-                    return True
+                    return
 
         # No robotrequest existing. Create a new one
         labels = {}
@@ -155,9 +155,7 @@ class RobotRequestController(K8sCRHandler):
         spec = request
         name = '{}.{}'.format(self.robco_robot_name, time.time())
 
-        success = self.create_cr(name, labels, spec)
-
-        return success
+        self.create_cr(name, labels, spec)
 
     def _robotrequest_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove deleted CR from self._processed_robotrequests."""
@@ -211,13 +209,10 @@ class RobotRequestController(K8sCRHandler):
             # Delete robotrequest CR and remove it from dictionary
             for robotrequest in delete_robotrequests:
                 if self.check_cr_exists(robotrequest):
-                    success = self.delete_cr(robotrequest)
-                    if success:
-                        self._deleted_robotrequests[robotrequest] = True
-                        self._processed_robotrequests.pop(robotrequest, None)
-                        _LOGGER.info('RobCo robotrequest CR %s was cleaned up', robotrequest)
-                    else:
-                        _LOGGER.error('Deleting RobCo robotrequest CR %s failed', robotrequest)
+                    self.delete_cr(robotrequest)
+                    self._deleted_robotrequests[robotrequest] = True
+                    self._processed_robotrequests.pop(robotrequest, None)
+                    _LOGGER.info('RobCo robotrequest CR %s was cleaned up', robotrequest)
                 else:
                     self._deleted_robotrequests[robotrequest] = True
                     self._processed_robotrequests.pop(robotrequest, None)

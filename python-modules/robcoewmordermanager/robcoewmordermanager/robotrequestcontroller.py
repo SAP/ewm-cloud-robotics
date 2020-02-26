@@ -51,6 +51,7 @@ class RobotRequestController(K8sCRHandler):
         else:
             status['status'] = RequestFromRobotStatus.STATE_RUNNING
         if self.check_cr_exists(name):
-            return self.update_cr_status(name, status)
+            self.update_cr_status(name, status)
+            return True
         else:
             return False

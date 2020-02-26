@@ -12,7 +12,9 @@
     "lgnum": "1710",
     "rsrc": "MY_ROBOT",
     "requestwork": false,
-    "requestnewwho": false
+    "requestnewwho": false,
+    "notifywhocompletion": "0",
+    "notifywhtcompletion": "0"
   },
   "status": {}
 }

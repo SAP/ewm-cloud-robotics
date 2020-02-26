@@ -19,23 +19,20 @@ import time
 import threading
 
 from collections import OrderedDict
-from typing import Dict, Optional, Generator
+from typing import Dict, Generator
 
 from robcoewmtypes.helper import get_sample_cr
-from robcoewmtypes.robot import RobotMission
-from robcoewmtypes.warehouse import StorageBin
-from robcoewmtypes.warehouseorder import WarehouseTask
+from robcoewmtypes.robot import RobotMission, RobcoRobotStates
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
-from .robot_api import RobotMissionAPI
 from .robco_robot_api import RobCoRobotAPI
 from .robotconfigcontroller import RobotConfigurationController
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
+class RobCoMissionAPI(K8sCRHandler):
     """Send commands to RobCo robots via Kubernetes CR."""
 
     def __init__(self, robot_config: RobotConfigurationController,
@@ -64,8 +61,8 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
         # RobCo Robot API
         self.robot_api = robot_api
         self.battery_percentage = 100.0
-        self.robot_state = None
-        self.trolley_attached = None
+        self.robot_state = RobcoRobotStates.STATE_UNDEFINED
+        self.trolley_attached = False
 
         # Set active charger
         self._chargers = self.robot_config.chargers.copy()
@@ -124,12 +121,9 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
             for mission in delete_missions:
                 deleted = False
                 if self.check_cr_exists(mission):
-                    success = self.delete_cr(mission)
-                    if success:
-                        deleted = True
-                        _LOGGER.info('RobCo mission CR %s was cleaned up', mission)
-                    else:
-                        _LOGGER.error('Deleting RobCo mission CR %s failed', mission)
+                    self.delete_cr(mission)
+                    deleted = True
+                    _LOGGER.info('RobCo mission CR %s was cleaned up', mission)
                 else:
                     deleted = True
                 if deleted:
@@ -219,6 +213,14 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
                 if self.thread_run:
                     time.sleep(10)
 
+    def _create_mission(self, spec: Dict) -> str:
+        # Use Unix timestamp as mission name
+        mission_name = str(time.time())
+        # Create CR
+        self.create_cr(mission_name, self.labels, spec)
+        # Return mission_name
+        return mission_name
+
     def _iterate_chargers(self) -> Generator:
         """Iterate over self.chargers."""
         while True:
@@ -229,133 +231,78 @@ class RobCoMissionAPI(K8sCRHandler, RobotMissionAPI):
         """Cancel a mission."""
         if self.check_cr_exists(name):
             # Mission is canceled by deleting its CR
-            return self.delete_cr(name)
+            self.delete_cr(name)
+            return True
         else:
             _LOGGER.error('Mission CR %s does not exist and cannot be deleted', name)
             return False
 
-    def api_moveto_storagebin_position(
-            self, storagebin: StorageBin) -> RobotMission:
+    def api_moveto_named_position(self, target: str) -> str:
         """Move robot to a storage bin position of the map."""
-        # Default mission
-        mission = RobotMission()
         # Get relevant parameters
-        action = {'moveToNamedPosition': {'targetName': storagebin.lgpla}}
+        action = {'moveToNamedPosition': {'targetName': target}}
         spec = {'actions': [action]}
-        mission_name = str(time.time())
+        # Create mission
+        return self._create_mission(spec)
 
-        # Create CR
-        success = self.create_cr(mission_name, self.labels, spec)
-        # On success, set ID and STATE
-        if success:
-            mission.name = mission_name
-            mission.status = RobotMission.STATE_ACCEPTED
-
-        return mission
-
-    def api_charge_robot(self) -> RobotMission:
-        """Charge robot at the charging position."""
-        # Default mission
-        mission = RobotMission()
+    def api_get_trolley(self, dock_name: str) -> str:
+        """Get a trolley from a dock."""
         # Get relevant parameters
-        action = {'charge': {'chargerName': self.charger,
-                             'thresholdBatteryPercent': self.robot_config.battery_min,
-                             'targetBatteryPercent': self.robot_config.battery_ok}}
+        action = {'getTrolley': {'dockName': dock_name}}
         spec = {'actions': [action]}
-        mission_name = str(time.time())
+        # Create mission
+        return self._create_mission(spec)
 
-        # Create CR
-        success = self.create_cr(mission_name, self.labels, spec)
-        # On success, set ID and STATE
-        if success:
-            mission.name = mission_name
-            mission.status = RobotMission.STATE_ACCEPTED
+    def api_return_trolley(self, dock_name: str) -> str:
+        """Get a trolley to a dock."""
+        # Get relevant parameters
+        action = {'returnTrolley': {'dockName': dock_name}}
+        spec = {'actions': [action]}
+        # Create mission
+        return self._create_mission(spec)
 
-        return mission
-
-    def api_moveto_staging_position(self) -> RobotMission:
+    def api_moveto_staging_position(self) -> str:
         """Move robot to a staging position of the map."""
-        # Default mission
-        mission = RobotMission()
         # Get relevant parameters
         # TODO support multiple staging areas
         action = {'moveToNamedPosition': {'targetName': 'Staging'}}
         spec = {'actions': [action]}
-        mission_name = str(time.time())
+        # Create mission
+        return self._create_mission(spec)
 
-        # Create CR
-        success = self.create_cr(mission_name, self.labels, spec)
-        # On success, set ID and STATE
-        if success:
-            mission.name = mission_name
-            mission.status = RobotMission.STATE_ACCEPTED
-
-        return mission
-
-    def api_return_charge_state(self, mission: RobotMission) -> RobotMission:
-        """Return state of a charge mission."""
-        mission = self.mission_status.get(mission.name, RobotMission(mission.name))
-
-        # If charging failed, try the next charger in list at the next try
-        if mission.status == RobotMission.STATE_FAILED:
-            # Check if chargers changed in the meantime
-            if self._chargers != self.robot_config.chargers:
-                self._chargers = self.robot_config.chargers.copy()
-                self._chargers_generator = self._iterate_chargers()
-                _LOGGER.info('Available chargers changed to: %s', self._chargers)
-            # Get next charger from generator
-            self.charger = next(self._chargers_generator, '')
-
-        return mission
-
-    def api_return_move_state(self, mission: RobotMission) -> RobotMission:
-        """Return state of a move mission."""
-        mission = self.mission_status.get(mission.name, RobotMission(mission.name))
-
-        return mission
-
-    def api_return_load_state(self, mission: RobotMission) -> RobotMission:
-        """Return state of a load mission."""
-        mission = self.mission_status.get(mission.name, RobotMission(mission.name))
-
-        return mission
-
-    def api_load_unload(self, wht: WarehouseTask) -> RobotMission:
-        """Load or unload HU of a warehouse task."""
-        # Default mission
-        mission = RobotMission()
-
+    def api_charge_robot(self) -> str:
+        """Charge robot at the charging position."""
         # Get relevant parameters
-        if wht.vlpla:
-            action = {'getTrolley': {'dockName': wht.vlpla}}
-        elif wht.nlpla:
-            action = {'returnTrolley': {'dockName': wht.nlpla}}
-        else:
-            _LOGGER.error(
-                'Neither source nor target bin in warehouse task')
-            return mission
-
+        action = {'charge': {'chargerName': self.charger,
+                             'thresholdBatteryPercent': self.robot_config.battery_idle,
+                             'targetBatteryPercent': self.robot_config.battery_ok}}
         spec = {'actions': [action]}
-        mission_name = str(time.time())
+        # Create mission
+        return self._create_mission(spec)
 
-        # Create CR
-        success = self.create_cr(mission_name, self.labels, spec)
+    def api_set_next_charger(self) -> None:
+        """Switch to next charger of configuration."""
+        # Check if chargers changed in the meantime
+        if self._chargers != self.robot_config.chargers:
+            self._chargers = self.robot_config.chargers.copy()
+            self._chargers_generator = self._iterate_chargers()
+            _LOGGER.info('Available chargers changed to: %s', self._chargers)
+        # Get next charger from generator
+        self.charger = next(self._chargers_generator, '')
+        _LOGGER.info('Set charger %s', self.charger)
 
-        # On success, set ID and STATE
-        if success:
-            mission.name = mission_name
-            mission.status = RobotMission.STATE_ACCEPTED
+    def api_return_mission_activeaction(self, mission_name: str) -> str:
+        """Return active_action of a mission."""
+        mission = self.mission_status.get(mission_name, RobotMission(mission_name))
 
-        return mission
+        return mission.active_action
+
+    def api_return_mission_state(self, mission_name: str) -> str:
+        """Return state of a mission."""
+        mission = self.mission_status.get(mission_name, RobotMission(mission_name))
+
+        return mission.status
 
     def api_check_state_ok(self) -> bool:
         """Check if robot is in state ok."""
-        return bool(self.robot_state == 'AVAILABLE')
-
-    def api_get_battery_percentage(self) -> float:
-        """Get battery level from robot."""
-        return self.battery_percentage
-
-    def api_is_trolley_attached(self) -> Optional[bool]:
-        """Get status if there is s a trolley attached to the robot."""
-        return self.trolley_attached
+        return bool(self.robot_state == RobcoRobotStates.STATE_AVAILABLE)

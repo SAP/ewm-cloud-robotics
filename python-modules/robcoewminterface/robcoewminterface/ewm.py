@@ -65,6 +65,9 @@ class EWMOdata:
             except KeyError:
                 error_code = ''
 
+        if http_resp.status_code == 404 and not error_code:
+            error_code = '404'
+
         # Error handling for business exceptions raised in EWM backend
         if http_resp.status_code in HTTP_BUS_EXCEPTION:
             exception_class = get_exception_class(error_code)

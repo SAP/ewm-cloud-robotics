@@ -108,15 +108,10 @@ class OrderController(K8sCRHandler):
             # Delete warehouse order CR
             for warehouse_order in delete_warehouse_orders:
                 if self.check_cr_exists(warehouse_order):
-                    success = self.delete_cr(warehouse_order)
-                    if success:
-                        self._deleted_orders[warehouse_order] = True
-                        self._processed_orders.pop(warehouse_order, None)
-                        _LOGGER.info(
-                            'RobCo warehouse_order CR %s was cleaned up', warehouse_order)
-                    else:
-                        _LOGGER.error(
-                            'Deleting RobCo warehouse_order CR %s failed', warehouse_order)
+                    self.delete_cr(warehouse_order)
+                    self._deleted_orders[warehouse_order] = True
+                    self._processed_orders.pop(warehouse_order, None)
+                    _LOGGER.info('RobCo warehouse_order CR %s was cleaned up', warehouse_order)
                 else:
                     self._deleted_orders[warehouse_order] = True
                     self._processed_orders.pop(warehouse_order, None)
@@ -184,7 +179,7 @@ class OrderController(K8sCRHandler):
                     multiple_executor_threads=multiple_executor_threads)
 
     def send_who_to_robot(
-            self, robotident: RobotIdentifier, dtype: str, who: Dict) -> bool:
+            self, robotident: RobotIdentifier, dtype: str, who: Dict) -> None:
         """Send the warehouse order to a robot."""
         labels = {}
         # Robot name must be lower case
@@ -193,14 +188,12 @@ class OrderController(K8sCRHandler):
         spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
         if self.check_cr_exists(name):
             _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)
-            success = self.update_cr_spec(name, spec, labels)
+            self.update_cr_spec(name, spec, labels)
         else:
             _LOGGER.debug('Warehouse order CR "%s" not existing. Create it', name)
-            success = self.create_cr(name, labels, spec)
+            self.create_cr(name, labels, spec)
 
-        return success
-
-    def cleanup_who(self, who: Dict) -> bool:
+    def cleanup_who(self, who: Dict) -> None:
         """Cleanup warehouse order when it was finished."""
         # Warehouse orders to be deleted
         to_be_closed = []
@@ -209,36 +202,29 @@ class OrderController(K8sCRHandler):
         to_be_closed.append(name)
         spec_order_processed = {'order_status': WarehouseOrderCRDSpec.STATE_PROCESSED}
 
-        success = self.update_cr_spec(name, spec_order_processed)
-        if success:
-            _LOGGER.info(
-                'Cleanup successfull, warehouse order CR "%s" in order_status %s', name,
-                WarehouseOrderCRDSpec.STATE_PROCESSED)
+        self.update_cr_spec(name, spec_order_processed)
+        _LOGGER.info(
+            'Cleanup successfull, warehouse order CR "%s" in order_status %s', name,
+            WarehouseOrderCRDSpec.STATE_PROCESSED)
 
-            # Delete sub warehouse orders if existing
-            crs = self.list_all_cr()
-            if crs:
-                for obj in crs['items']:
-                    spec = obj.get('spec')
-                    if not spec:
-                        continue
-                    # Delete warehouse order if its top warehouse order
-                    # was deleted in this step
-                    if (spec['data']['topwhoid'] == who['who']
-                            and spec['data']['lgnum'] == who['lgnum']):
-                        name = '{lgnum}.{who}'.format(
-                            lgnum=spec['data']['lgnum'], who=spec['data']['who'])
-                        to_be_closed.append(name)
-                        success_sub = success = self.update_cr_spec(name, spec_order_processed)
-                        if success_sub is True:
-                            _LOGGER.info(
-                                'Cleanup successfull, warehouse order CR "%s" in order_status %s',
-                                name, WarehouseOrderCRDSpec.STATE_PROCESSED)
-                        else:
-                            _LOGGER.error('Error updating warehouse order CR "%s"', name)
-                            success = False
-
-        return success
+        # Delete sub warehouse orders if existing
+        crs = self.list_all_cr()
+        if crs:
+            for obj in crs['items']:
+                spec = obj.get('spec')
+                if not spec:
+                    continue
+                # Delete warehouse order if its top warehouse order
+                # was deleted in this step
+                if (spec['data']['topwhoid'] == who['who']
+                        and spec['data']['lgnum'] == who['lgnum']):
+                    name = '{lgnum}.{who}'.format(
+                        lgnum=spec['data']['lgnum'], who=spec['data']['who'])
+                    to_be_closed.append(name)
+                    self.update_cr_spec(name, spec_order_processed)
+                    _LOGGER.info(
+                        'Cleanup successfull, warehouse order CR "%s" in order_status %s',
+                        name, WarehouseOrderCRDSpec.STATE_PROCESSED)
 
     def _order_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove deleted CR from self._processed_orders."""

@@ -10,26 +10,36 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""Robot state machines for robcoewm robots."""
+"""Robot state machine for robcoewm robots."""
 
 import logging
 import time
-from collections import OrderedDict, defaultdict, namedtuple
-from typing import Callable, DefaultDict, Optional
+from collections import namedtuple, OrderedDict, defaultdict
+from typing import DefaultDict, Dict, Optional
 
-from transitions.extensions import LockedHierarchicalMachine as Machine
 from transitions.core import EventData
+from transitions.extensions import LockedHierarchicalMachine as Machine
+from transitions.extensions.states import add_state_features, Timeout
 
 from prometheus_client import Counter, Histogram
 
-from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus
-from robcoewmtypes.warehouseorder import WarehouseOrder, WarehouseTask
-from robcoewmtypes.warehouse import StorageBin
+import attr
+from cattr import structure, unstructure
 
-from .robot_api import RobotMissionAPI
+from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
+from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus, RequestFromRobot
+from robcoewmtypes.warehouseorder import WarehouseOrder, WarehouseTask, ConfirmWarehouseTask
+
+from .ordercontroller import OrderController
+from .robco_mission_api import RobCoMissionAPI
 from .robotconfigcontroller import RobotConfigurationController
+from .robotrequestcontroller import RobotRequestController
+from .statemachine_config import RobotEWMConfig
 
 _LOGGER = logging.getLogger(__name__)
+
+ROBOTREQUEST_TYPE = create_robcoewmtype_str(RequestFromRobot('lgnum', 'rsrc'))
+WAREHOUSEORDER_TYPE = create_robcoewmtype_str(WarehouseOrder('lgnum', 'who'))
 
 STATE_SUCCEEDED = 'SUCCEEDED'
 STATE_FAILED = 'FAILED'
@@ -37,134 +47,27 @@ STATE_FAILED = 'FAILED'
 WhoIdentifier = namedtuple('WhoIdentifier', ['lgnum', 'who'])
 
 
+@attr.s
+class WarehouseOrderTimestamps:
+    """Warehouse order processing timestamps."""
+
+    start: float = attr.ib(factory=time.time, validator=attr.validators.instance_of(float))
+    end: float = attr.ib(default=0.0, validator=attr.validators.instance_of(float))
+    get_trolley: float = attr.ib(default=0.0, validator=attr.validators.instance_of(float))
+    return_trolley: float = attr.ib(default=0.0, validator=attr.validators.instance_of(float))
+
+
+@add_state_features(Timeout)
 class RobotEWMMachine(Machine):
     """Robot state machine to handle SAP EWM warehouse orders."""
 
     # Disable name check because generated methods are not snake case style
     # pylint: disable=invalid-name
 
-    states = [
-        'startedWarehouseorder', 'noWarehouseorder', 'finishedWarehouseorder', 'RobotError',
-        'moving', 'atTarget', 'idling', 'charging',
-        {'name': 'MoveHU', 'children': [
-            'findingTarget', 'movingToSourceBin', 'movingToTargetBin', 'waiting', 'loading',
-            'unloading', 'waitingForErrorRecovery']},
-        {'name': 'PickPackPass', 'children': [
-            'findingTarget', 'moving', 'waiting', 'waitingAtPick', 'waitingAtTarget']}
-        ]
+    # Config of the state machine
+    conf = RobotEWMConfig
 
-    transitions = [
-        # General transitions
-        {'trigger': 'process_warehouseorder',
-         'source': ['noWarehouseorder', 'finishedWarehouseorder', 'charging', 'idling', 'moving'],
-         'dest': 'startedWarehouseorder',
-         'conditions': '_check_who_arg',
-         'before': '_save_active_who'},
-        {'trigger': 'no_work',
-         'source': ['finishedWarehouseorder', 'charging'],
-         'dest': 'noWarehouseorder'},
-        {'trigger': 'goto_target',
-         'source': [
-             'noWarehouseorder', 'finishedWarehouseorder', 'charging', 'idling', 'RobotError'],
-         'dest': 'moving',
-         'conditions': '_check_target_arg'},
-        {'trigger': 'target_reached',
-         'source': ['moving', 'RobotError'],
-         'dest': 'atTarget'},
-        {'trigger': 'charge_battery',
-         'source': [
-             'noWarehouseorder', 'finishedWarehouseorder', 'charging', 'idling', 'RobotError'],
-         'dest': 'charging'},
-        {'trigger': 'idle',
-         'source': 'atTarget',
-         'dest': 'idling'},
-        {'trigger': 'update_warehouseorder',
-         'source': '*',
-         'dest': None,
-         'after': '_update_who',
-         'conditions': '_check_who_arg'},
-        # Error and recovery transitions
-        {'trigger': 'robot_error_occurred',
-         'source': '*',
-         'dest': 'RobotError',
-         'before': '_save_state_before_error'},
-        {'trigger': 'restart_PickPackPass_move',
-         'source': 'RobotError',
-         'dest': 'PickPackPass_findingTarget',
-         'after': '_unset_state_before_error'},
-        {'trigger': 'restart_load',
-         'source': 'RobotError',
-         'dest': 'MoveHU_movingToSourceBin',
-         'after': '_unset_state_before_error'},
-        {'trigger': 'restart_unload',
-         'source': 'RobotError',
-         'dest': 'MoveHU_movingToTargetBin',
-         'after': '_unset_state_before_error'},
-        {'trigger': 'cancel_warehouseorder',
-         'source': ['RobotError', 'MoveHU_waitingForErrorRecovery'],
-         'dest': 'finishedWarehouseorder',
-         'after': '_unset_state_before_error'},
-        {'trigger': 'wait_for_recovery',
-         'source': 'RobotError',
-         'dest': 'MoveHU_waitingForErrorRecovery'},
-        # Transitions for Move Handling Unit scenario
-        {'trigger': 'goto_sourcebin',
-         'source': ['MoveHU_findingTarget', 'MoveHU_waiting'],
-         'dest': 'MoveHU_movingToSourceBin'},
-        {'trigger': 'goto_targetbin',
-         'source': ['MoveHU_findingTarget', 'MoveHU_waiting'],
-         'dest': 'MoveHU_movingToTargetBin'},
-        {'trigger': 'load',
-         'source': ['MoveHU_findingTarget', 'MoveHU_movingToSourceBin'],
-         'dest': 'MoveHU_loading'},
-        {'trigger': 'unload',
-         'source': ['MoveHU_findingTarget', 'MoveHU_movingToTargetBin'],
-         'dest': 'MoveHU_unloading'},
-        {'trigger': 'confirm',
-         'source': ['MoveHU_loading', 'MoveHU_unloading'],
-         'dest': 'MoveHU_findingTarget'},
-        {'trigger': 'start_MoveHU_warehouseorder',
-         'source': 'startedWarehouseorder',
-         'dest': 'MoveHU_findingTarget'},
-        {'trigger': 'find_target_after_update',
-         'source': ['MoveHU_waiting'],
-         'dest': 'MoveHU_findingTarget'},
-        {'trigger': 'complete_warehouseorder',
-         'source': 'MoveHU_findingTarget',
-         'dest': 'finishedWarehouseorder'},
-        # Transitions for Pick Pack & Pass scenario
-        {'trigger': 'goto_storagebin',
-         'source': ['PickPackPass_findingTarget', 'PickPackPass_waiting'],
-         'dest': 'PickPackPass_moving',
-         'conditions': '_check_storagebin_arg'},
-        {'trigger': 'load',
-         'source': ['PickPackPass_findingTarget', 'PickPackPass_moving'],
-         'dest': 'PickPackPass_waitingAtPick'},
-        {'trigger': 'unload',
-         'source': ['PickPackPass_findingTarget', 'PickPackPass_moving'],
-         'dest': 'PickPackPass_waitingAtTarget'},
-        {'trigger': 'confirm',
-         'source': ['PickPackPass_waitingAtPick',
-                    'PickPackPass_waitingAtTarget'],
-         'dest': 'PickPackPass_findingTarget'},
-        {'trigger': 'start_PickPackPass_warehouseorder',
-         'source': 'startedWarehouseorder',
-         'dest': 'PickPackPass_findingTarget'},
-        {'trigger': 'find_target_after_update',
-         'source': ['PickPackPass_waiting',
-                    'PickPackPass_findingTarget',
-                    'PickPackPass_waitingAtPick',
-                    'PickPackPass_waitingAtTarget'],
-         'dest': 'PickPackPass_findingTarget'},
-        {'trigger': 'complete_warehouseorder',
-         'source': 'PickPackPass_findingTarget',
-         'dest': 'finishedWarehouseorder'},
-        ]
-
-    TARGET_STAGING = 'staging'
-    VALID_TARGETS = [TARGET_STAGING]
-
-    BUCKETS = (
+    buckets = (
         1.0, 5.0, 10.0, 30.0, 60.0, 90.0, 120.0, 180.0, 240.0, 300.0, 360.0, 420.0, 480.0, 540.0,
         600.0, '+Inf')
 
@@ -175,28 +78,39 @@ class RobotEWMMachine(Machine):
     who_times = Histogram(
         'sap_ewm_robot_warehouse_order_times',
         'Robot\'s processing time for warehouse orders (seconds)',
-        ['robot', 'order_type', 'activity'], buckets=BUCKETS)
+        ['robot', 'order_type', 'activity'], buckets=buckets)
     state_rentention_times = Histogram(
         'sap_ewm_robot_state_retention_time', 'Robot\'s retention time in a state (seconds)',
-        ['robot', 'state'], buckets=BUCKETS)
+        ['robot', 'state'], buckets=buckets)
 
     def __init__(
-            self, robot_config: RobotConfigurationController, robot_mission_api: RobotMissionAPI,
-            confirm_api: Callable, request_ewm_work_api: Callable, send_wht_error_api: Callable,
-            notify_who_completion_api: Callable, save_state_api: Callable,
-            initial: str = 'noWarehouseorder') -> None:
+            self, robot_config: RobotConfigurationController, mission_api: RobCoMissionAPI,
+            order_controller: OrderController, robotrequest_controller: RobotRequestController,
+            initial: str = 'noWork') -> None:
         """Construct."""
         cls = self.__class__
+
+        # Check if all methods for transitions are implemented
+        cls.conf.check_transitions_complete(cls)
+
         # Initialize state machine
-        super().__init__(self, states=cls.states, transitions=cls.transitions,
+        super().__init__(self, states=cls.conf.states, transitions=cls.conf.transitions,
                          send_event=True, queued=True,
-                         prepare_event=self._set_in_transition,
                          before_state_change=self._run_before_state_change,
                          after_state_change=self._run_after_state_change,
-                         finalize_event=self._unset_in_transition,
                          initial=initial)
-        # Configuration of the robot
+
+        # Controller
+        # configuration of the robot
         self.robot_config = robot_config
+        # mission API
+        self.mission_api = mission_api
+        # order controller
+        self.order_controller = order_controller
+        # robotrequest controller
+        self.robotrequest_controller = robotrequest_controller
+
+        # EWM
         # List of warehouse order assigned to this robot
         self.warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
             WhoIdentifier, WarehouseOrder] = OrderedDict()
@@ -208,162 +122,207 @@ class RobotEWMMachine(Machine):
         self.active_who: Optional[WarehouseOrder] = None
         self.active_wht: Optional[WarehouseTask] = None
         self.active_sub_who: Optional[WarehouseOrder] = None
-        # State before robot error occurred
-        self.state_before_error = ''
+
+        # Cloud Robotics mission
+        self.active_mission = ''
+
+        # Error counter for states
         self.error_count: DefaultDict[str, int] = defaultdict(int)
-
-        # Marks if the state machine is currently in a transition
-        self.in_transition = False
-
-        # APIs to control the robot
-        self.mission_api = robot_mission_api
-        self._mission = RobotMission()
-        self.confirm_api = confirm_api
-        self.save_state_api = save_state_api
-
-        # APIs for EWM Ordermanager
-        self.request_ewm_work = request_ewm_work_api
-        self.send_wht_error = send_wht_error_api
-        self.notify_who_completion = notify_who_completion_api
+        # Counter for consecutive warehouse order fails
+        self.failed_warehouseorders = 0
 
         # Timestamp when state machine entered the current state
         self.state_enter_ts = time.time()
 
-        # Warehouse order type currently in process
-        self.who_type = ''
+        # Timestamps for warehouse order processing
+        self.who_ts: Optional[WarehouseOrderTimestamps] = None
 
-        # Warehouse order timestamps
-        self.who_ts = {'start': 0.0, 'load': 0.0, 'unload': 0.0, 'finish': 0.0}
+    def connect_external_events(self) -> None:
+        """Connect state machine to external event sources of Cloud Robotics."""
+        name = 'ewm-statemachine'
+        self.mission_api.robot_api.register_callback(
+            name, ['ADDED', 'MODIFIED'], self.robot_cb)
+        self.order_controller.register_callback(
+            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.warehouseorder_cb)
+        self.order_controller.register_callback(
+            name+'_deleted', ['DELETED'], self.warehouseorder_deleted_cb)
+        self.robotrequest_controller.register_callback(
+            name, ['MODIFIED', 'REPROCESS'], self.robotrequest_cb)
+        self.mission_api.register_callback(
+            name, ['ADDED', 'MODIFIED', 'DELETED', 'REPROCESS'], self.mission_cb)
+        self.robot_config.register_callback(
+            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotconfiguration_cb)
 
-    @property
-    def mission(self) -> RobotMission:
-        """Get self._mission."""
-        return self._mission
-
-    @mission.setter
-    def mission(self, mission: RobotMission) -> None:
-        """
-        Set self._mission.
-
-        Ensure self._mission.target_name is not overwritten accidently.
-        """
-        if self._mission.target_name:
-            mission.target_name = self._mission.target_name
-        self._mission = mission
-
-    def get_battery_level(self) -> float:
-        """Get robot's battery level in percent."""
-        # Try 3 times at maximum
-        for _ in range(3):
-            # Get battery level
-            battery = self.mission_api.api_get_battery_percentage()
-            if battery:
-                break
-
-        if battery is None:
-            battery = 0.0
-            _LOGGER.error('Did not get battery level. Assuming it is empty.')
-
-        return battery
+    def disconnect_external_events(self) -> None:
+        """Disconnect state machine from external events sources of Cloud Robotics."""
+        name = 'ewm-statemachine'
+        self.mission_api.robot_api.unregister_callback(name)
+        self.order_controller.unregister_callback(name)
+        self.order_controller.unregister_callback(name+'_deleted')
+        self.robotrequest_controller.unregister_callback(name)
+        self.mission_api.unregister_callback(name)
+        self.robot_config.unregister_callback(name)
 
     def _run_before_state_change(self, event: EventData) -> None:
         """Run these methods before state changes."""
-        # Reset error state
-        self._reset_error_state(event)
         # Log retention time in a state
-        self._log_state_rentention_time(event)
-
-    def _run_after_state_change(self, event: EventData) -> None:
-        """Run these methods after state changed."""
-        # Set enter timestmap
-        self._set_state_enter_ts(event)
-        # Save current state
-        lgnum = self.active_who.lgnum if self.active_who else ''
-        who = self.active_who.who if self.active_who else ''
-        tanum = self.active_wht.tanum if self.active_wht else ''
-        subwho = self.active_sub_who if self.active_sub_who else ''
-        state = RobotConfigurationStatus(
-            self.state, self.state_before_error, self._mission.name, self._mission.target_name,
-            lgnum, who, tanum, subwho)
-        self.save_state_api(state)
-
-    def _set_in_transition(self, event: EventData) -> None:
-        """Set the in_transition flag of the state machine."""
-        self.in_transition = True
-
-    def _unset_in_transition(self, event: EventData) -> None:
-        """Unset the in_transition flag of the state machine."""
-        self.in_transition = False
-
-    def _reset_error_state(self, event: EventData) -> None:
-        """Reset error state on non error transitions."""
-        if event.event.name != 'robot_error_occurred':
-            self.error_count[self.state] = 0
-
-    def _set_state_enter_ts(self, event: EventData) -> None:
-        """Set time stamp when the state was entered."""
-        self.state_enter_ts = time.time()
-
-    def _log_state_rentention_time(self, event: EventData) -> None:
-        """Log the retention time of this state."""
         retention_time = time.time() - self.state_enter_ts
         self.state_rentention_times.labels(  # pylint: disable=no-member
             robot=self.robot_config.robco_robot_name, state=self.state).observe(retention_time)
 
-    def _check_target_arg(self, event: EventData) -> bool:
-        """Check if target is an argument of the transition."""
-        cls = self.__class__
-        if event.kwargs.get('target') in cls.VALID_TARGETS:
-            return True
-        else:
-            _LOGGER.error(
-                'Keyword argument "target" for transition has invalid value "%s"',
-                event.kwargs.get('target'))
-            return False
+        # Update timeout depending on max_idle_time
+        if self.states.get('noWork') and self.robot_config.max_idle_time > 0:
+            self.states['noWork'].timeout = self.robot_config.max_idle_time
 
-    def _check_storagebin_arg(self, event: EventData) -> bool:
-        """Check if storagebin is an argument of the transition."""
-        if isinstance(event.kwargs.get('storagebin'), StorageBin):
-            return True
-        else:
-            _LOGGER.error(
-                'An keyword argument "storagebin" of type "StorageBin" must be'
-                ' provided for the transition')
-            return False
+    def _run_after_state_change(self, event: EventData) -> None:
+        """Run these methods after state changed."""
+        # Set enter timestmap for prometheus logging
+        self.state_enter_ts = time.time()
 
-    def _check_who_arg(self, event: EventData) -> bool:
-        """Check if warehouse is an argument of the transition."""
+        # On state change reset errorcount for the state which triggered the event
+        if self.state != event.state.name:
+            self.error_count[event.state.name] = 0
+
+        # Save current state
+        lgnum = self.active_who.lgnum if self.active_who else ''
+        who = self.active_who.who if self.active_who else ''
+        tanum = self.active_wht.tanum if self.active_wht else ''
+        subwho = self.active_sub_who.who if self.active_sub_who else ''
+        state = RobotConfigurationStatus(
+            self.state, self.active_mission, lgnum, who, tanum, subwho)
+        self.robot_config.save_robot_state(state)
+
+    def mission_cb(self, name: str, custom_res: Dict) -> None:
+        """Use changes of mission CRs to trigger mission status checks."""
+        # Only if there is a mission running
+        if self.active_mission:
+            mission = self.active_mission
+            mission_state = self.mission_api.api_return_mission_state(self.active_mission)
+            active_action = self.mission_api.api_return_mission_activeaction(self.active_mission)
+
+            # Trigger state machine according to mission state
+            if mission_state == RobotMission.STATE_SUCCEEDED:
+                _LOGGER.info('Mission %s: %s', self.active_mission, mission_state)
+                self.active_mission = ''
+                self.mission_succeeded(mission=mission)
+            elif mission_state in [*RobotMission.STATES_CANCELED, RobotMission.STATE_FAILED]:
+                _LOGGER.info('Mission %s: %s', self.active_mission, mission_state)
+                self.active_mission = ''
+                self.mission_failed(mission=mission)
+            elif active_action == RobotMission.ACTION_DOCKING:
+                self.mission_docking(mission=self.active_mission)
+
+    def robot_cb(self, name: str, custom_res: Dict) -> None:
+        """Process robot messages."""
+        status = custom_res.get('status', {})
+        if status.get('robot', {}):
+            # Check if the robot is running out of battery when it is at staging area
+            if self.state == 'atStaging':
+                battery_percentage = status['robot'].get('batteryPercentage', 100.0)
+                if battery_percentage < self.robot_config.battery_idle:
+                    self.charge_battery()
+            elif self.state == 'charging':
+                battery_percentage = status['robot'].get('batteryPercentage', 0.0)
+                if self.warehouseorders and battery_percentage > self.robot_config.battery_min:
+                    _LOGGER.info(
+                        'Warehouse order in queue and battery status is over minimum (%s %%) start'
+                        ' processing', battery_percentage)
+                    # Cancel charge mission
+                    self.cancel_active_mission()
+                    # Process warehouse order
+                    self.process_warehouseorder(
+                        warehouseorder=next(iter(self.warehouseorders.values())))
+
+    def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
+        """Process robotconfiguration messages."""
+        # Check if robot should recover from robotError state
+        if self.state == 'robotError':
+            if custom_res['spec'].get('recoverFromRobotError'):
+                _LOGGER.info('Robot recovery requested from robotconfiguration CR')
+                self.recover_robot()
+
+    def robotrequest_cb(self, name: str, custom_res: Dict) -> None:
+        """Process robotrequest messages."""
+        status = custom_res.get('status', {})
+        if status.get('data'):
+            # Get robco ewm data classes
+            try:
+                robcoewmtype = get_robcoewmtype(ROBOTREQUEST_TYPE)
+            except TypeError as err:
+                _LOGGER.error(
+                    'Message type "%s" is invalid - %s - message SKIPPED: %s',
+                    ROBOTREQUEST_TYPE, err, status.get('data'))
+                return
+            # Convert message data to robcoewmtypes data classes
+            robocoewmdata = structure(status['data'], robcoewmtype)
+
+            if self.state in self.conf.awaiting_who_completion_states and self.active_who:
+                if (robocoewmdata.lgnum == self.active_who.lgnum
+                        and robocoewmdata.notifywhocompletion == self.active_who.who):
+                    _LOGGER.info(
+                        'Warehouse order %s was confirmed in EWM - robot is proceeding now',
+                        self.active_who.who)
+                    self.warehouseorder_confirmed()
+
+            if self.state in self.conf.awaiting_wht_completion_states and self.active_wht:
+                if (robocoewmdata.lgnum == self.active_wht.lgnum
+                        and robocoewmdata.notifywhtcompletion == self.active_wht.tanum):
+                    _LOGGER.info(
+                        'Warehouse task %s was confirmed in EWM - robot is proceeding now',
+                        self.active_wht.tanum)
+                    self.warehousetask_confirmed()
+
+    def warehouseorder_cb(self, name: str, data: Dict) -> None:
+        """Process warehouse order CRs."""
+        # Get robco ewm data classes
+        try:
+            robcoewmtype = get_robcoewmtype(WAREHOUSEORDER_TYPE)
+        except TypeError as err:
+            _LOGGER.error(
+                'Message type "%s" is invalid - %s - message SKIPPED: %s', WAREHOUSEORDER_TYPE,
+                err, data)
+            return
+        # Convert message data to robcoewmtypes data classes
+        robocoewmdata = structure(data, robcoewmtype)
+
+        # if data set is not a list yet, convert it for later processing
+        if not isinstance(robocoewmdata, list):
+            robocoewmdata = [robocoewmdata]
+
+        # Check if datasets have a supported type before starting to process
+        valid_robcoewmdata = []
+        for dataset in robocoewmdata:
+            if isinstance(dataset, WarehouseOrder):
+                valid_robcoewmdata.append(dataset)
+            else:
+                _LOGGER.error(
+                    'Dataset type "%s" is not type WarehouseOrder. Skipping dataset: %s',
+                    type(dataset), dataset)
+
+        # Process the datasets
+        for dataset in valid_robcoewmdata:
+            if isinstance(dataset, WarehouseOrder):
+                self.update_warehouseorder(warehouseorder=dataset)
+
+    def warehouseorder_deleted_cb(self, name: str, data: Dict) -> None:
+        """Delete warehouse order from queue."""
+        name_split = name.split('.')
+        if len(name_split) == 2:
+            who = WhoIdentifier(name_split[0], name_split[1])
+            if who in self.warehouseorders:
+                self.warehouseorders.pop(who)
+                _LOGGER.info('CR of warehouse order %s deleted. Remove it from queue', who)
+
+    def _check_who_kwarg(self, event: EventData) -> bool:
+        """Check if warehouseorder is an argument of the transition."""
         obj = event.kwargs.get('warehouseorder')
         if isinstance(obj, WarehouseOrder):
             return True
         else:
             _LOGGER.error(
-                'An keyword argument "warehouseorder" of type "WarehouseOrder"'
-                ' must be provided for the transition')
+                'An keyword argument "warehouseorder" of type "WarehouseOrder" must be provided '
+                'for the transition')
             return False
-
-    def _save_active_who(self, event: EventData) -> None:
-        """Save warehouse order which is processed in this state machine."""
-        self.active_who = event.kwargs.get('warehouseorder')
-        self.active_wht = None
-
-    def _save_state_before_error(self, event: EventData) -> None:
-        """
-        Save state before state machine went into error state.
-
-        Use as transition.before callback.
-        """
-        # Count errors
-        self.error_count[self.state] += 1
-        self.state_before_error = self.state
-
-    def _unset_state_before_error(self, event: EventData) -> None:
-        """
-        Unset state before state machine went into error state.
-
-        Use as transition.after callback.
-        """
-        self.state_before_error = ''
 
     def _update_who(self, event: EventData) -> None:
         """Update a warehouse order of this state machine."""
@@ -391,28 +350,29 @@ class RobotEWMMachine(Machine):
         # Update active warehouse order
         # No warehouse order in process and received order is assigned to robot
         if self.active_who is None:
-            # Get robots battery level
-            battery = self.get_battery_level()
-            mission_name = self._mission.name
-            if self.state == 'moving':
+            if self.state == 'movingToStaging':
                 _LOGGER.info(
-                    'New warehouse order %s received while robot is moving, cancel move mission '
-                    'and start processing', warehouseorder.who)
-                self.process_warehouseorder(warehouseorder=warehouseorder)
+                    'New warehouse order %s received while robot is on its way to staging area, '
+                    'cancel move mission and start processing', warehouseorder.who)
                 # Cancel move mission
-                self.mission_api.api_cancel_mission(mission_name)
-            elif self.state == 'charging' and battery >= self.robot_config.battery_ok:
+                self.cancel_active_mission()
+                # Process warehouse order
+                self.process_warehouseorder(warehouseorder=warehouseorder)
+            elif (self.state == 'charging'
+                  and self.mission_api.battery_percentage >= self.robot_config.battery_min):
                 _LOGGER.info(
                     'New warehouse order %s received while robot is charging. Battery percentage '
-                    'OK, cancel charging and start processing', warehouseorder.who)
-                self.process_warehouseorder(warehouseorder=warehouseorder)
+                    'over minimum, cancel charging and start processing', warehouseorder.who)
                 # Cancel charge mission
-                self.mission_api.api_cancel_mission(mission_name)
+                self.cancel_active_mission()
+                # Process warehouse order
+                self.process_warehouseorder(warehouseorder=warehouseorder)
             elif self.state == 'charging':
                 _LOGGER.info(
                     'New warehouse order %s received, but robot battery level is too low at "%s" '
-                    'percent. Continue charging', warehouseorder.who, battery)
-            elif self.state in ['noWarehouseorder', 'idling']:
+                    'percent. Continue charging', warehouseorder.who,
+                    self.mission_api.battery_percentage)
+            elif self.state in self.conf.idle_states:
                 _LOGGER.info(
                     'New warehouse order %s received, while robot is in state "%s". Start '
                     'processing', warehouseorder.who, self.state)
@@ -423,16 +383,10 @@ class RobotEWMMachine(Machine):
                     'warehouse order. This should not happen', warehouseorder.who, self.state)
         # An active warehouse order changed
         elif warehouseorder.who == self.active_who.who and warehouseorder != self.active_who:
-            # Find new target if active warehouse order was updated for sub
-            # state "waiting" of hierarchical state machine
-            if self.state[self.state.rfind('_')+1:] in ['waiting']:
-                _LOGGER.info(
-                    'Active warehouse order %s updated, find new target', warehouseorder.who)
-                self.active_who = warehouseorder
-                self.find_target_after_update()
-            else:
-                _LOGGER.info('Active warehouse order %s updated', warehouseorder.who)
-                self.active_who = warehouseorder
+            _LOGGER.info(
+                'Active warehouse order %s updated, consider change on next warehouse task '
+                'completion', warehouseorder.who)
+            self.active_who = warehouseorder
         # A warehouse order was received, but there are no changes
         elif warehouseorder == self.active_who:
             _LOGGER.debug(
@@ -442,6 +396,17 @@ class RobotEWMMachine(Machine):
             _LOGGER.info(
                 'Warehouse order %s received and enqueued. A different warehouse order is already '
                 'in process.', warehouseorder.who)
+
+        # Trigger event to find target in pickPackPass process if a pickPackPass order with
+        # warehouse tasks arrives
+        if warehouseorder == self.active_who and self.active_who.flgwho:
+            if (self.state == 'pickPackPass_waitingAtPick'
+                    and self.active_who.warehousetasks
+                    and not self.active_wht):
+                _LOGGER.info(
+                    'Active warehouse order %s in pickPackPass process includes warehouse tasks',
+                    warehouseorder.who)
+                self.pickpackpass_who_with_tasks()
 
     def _update_sub_who(self, warehouseorder: WarehouseOrder):
         """Update a sub warehouse order not directly assigned to this robot."""
@@ -454,56 +419,23 @@ class RobotEWMMachine(Machine):
         if self.active_who:
             # Sub warehouse order belongs to current active warehouse order
             if warehouseorder.topwhoid == self.active_who.who:
-                # No active sub warehouse order and finding new target
+                # No active sub warehouse order
                 if self.active_sub_who is None:
-                    if self.state == 'PickPackPass_findingTarget':
+                    if self.state == 'pickPackPass_movingtoPickLocation':
                         _LOGGER.info(
-                            'New sub warehouse order %s received, continue working on active '
-                            'warehouse order "%s"', warehouseorder.who, self.active_who.who)
-                        self.find_target_after_update()
+                            'New sub warehouse order %s for active warehouse order %s received',
+                            warehouseorder.who, self.active_who.who)
+                        self.new_active_sub_who(sub_warehouseorder=warehouseorder)
+                    else:
+                        _LOGGER.error(
+                            'Cannot start working on sub warehouse order %s while in state %s',
+                            warehouseorder.who, self.state)
                 # An active sub warehouse order changed
                 elif (warehouseorder.who == self.active_sub_who.who
                       and warehouseorder != self.active_sub_who):
-                    # Update active warehouse order
-                    self.active_sub_who = warehouseorder
-                    # Find new target if active sub warehouse order was updated for sub states
-                    # "waiting" and "waitingAtPick" of hierarchical state machine
-                    if self.state[self.state.rfind('_')+1:] in ['waiting']:
-                        _LOGGER.info(
-                            'Active sub warehouse order %s updated, find new target',
-                            warehouseorder.who)
-                        self.find_target_after_update()
-                    elif self.state[self.state.rfind('_')+1:] in [
-                            'waitingAtPick'] and self.active_wht:
-                        # Init loop variables
-                        wht_pick_confirmed = False
-                        wht_found = False
-
-                        # Check if active warehouse task is found in the updated sub warehouse
-                        # order.
-                        for task in warehouseorder.warehousetasks:
-                            if (task.lgnum == self.active_wht.lgnum
-                                    and task.tanum == self.active_wht.tanum):
-                                wht_found = True
-                                # If source bin was deleted, task is confirmed
-                                if not task.vlpla:
-                                    wht_pick_confirmed = True
-
-                        # If active warehouse task was not found, it is
-                        # confirmed
-                        if not wht_found:
-                            wht_pick_confirmed = True
-
-                        # Change state if warehouse task confirmed
-                        if wht_pick_confirmed:
-                            _LOGGER.info(
-                                'Active sub warehouse order %s updated, pick confirmed',
-                                warehouseorder.who)
-                            self.confirm()
-                    else:
-                        _LOGGER.info('Active sub warehouse order %s updated',
-                                     warehouseorder.who)
-
+                    _LOGGER.info(
+                        'Active sub warehouse order %s updated, consider change on next warehouse '
+                        'task completion', warehouseorder.who)
                 # A warehouse order was received, but there are no changes
                 elif warehouseorder == self.active_sub_who:
                     _LOGGER.debug(
@@ -512,410 +444,564 @@ class RobotEWMMachine(Machine):
             else:
                 _LOGGER.info(
                     'Sub warehouse order %s received and enqueued. A different warehouse order is '
-                    'already in process.', warehouseorder.who)
+                    'already in process', warehouseorder.who)
 
-    def on_enter_charging(self, event: EventData) -> None:
-        """Start charging the robot."""
-        # Start charge mission
-        mission = self.mission_api.api_charge_robot()
-
-        if mission.name:
-            _LOGGER.info('Started charging with mission name"%s"', mission.name)
+    def _close_active_who(self, event: EventData) -> None:
+        """Close the active warehouse order."""
+        # Remove active warehouse order from warehouse order queue
+        if isinstance(self.active_who, WarehouseOrder):
+            _LOGGER.info('Closing active warehouse order %s', self.active_who.who)
+            who = WhoIdentifier(self.active_who.lgnum, self.active_who.who)
+            self.warehouseorders.pop(who, None)
         else:
-            _LOGGER.error('Mission name of charging mission "%s" is empty')
-        self._mission.name = mission.name
-        self._mission.status = mission.status
-        self._mission.target_name = ''
+            _LOGGER.error('There is no active warehouse order')
 
-    def on_enter_idling(self, event: EventData) -> None:
-        """Start idling."""
-        # Check if a warehouse order arrived when moving to staging area
-        if self.warehouseorders:
-            # if there is a warehouse order, start processing it
-            _LOGGER.info('There is a new warehouse order in queue, start processing')
-            self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
-        # Request new work from SAP EWM Ordermanager if robot available
-        elif self.mission_api.api_check_state_ok():
-            self.request_ewm_work()
-        else:
-            _LOGGER.warning('Robot is not "AVAILABLE", not requesting work')
-
-    def on_enter_RobotError(self, event: EventData) -> None:
-        """Handle robot error."""
-        # When retrying three times did not resolv the error, it is not recoverable
-        before_error = self.state_before_error
-        if self.error_count[before_error] >= 3:
-            # if there is an active warehouse task in MoveHU process, notify SAP EWM
-            process = before_error[:before_error.rfind('_')]
-            if process == 'MoveHU' and self.active_wht:
-                self.send_wht_error(self.active_wht)
-                # Cancel warehouse order if warehouse task not confirmed yet
-                if self.active_wht.vlpla:
-                    self.cancel_warehouseorder()
-                # Request warehouse order completion notification and wait
-                elif self.active_wht.nlpla:
-                    self.notify_who_completion(self.active_wht.who)
-                    self.wait_for_recovery()
-
-    def on_enter_moving(self, event: EventData) -> None:
-        """Start moving to target staging or charging."""
-        cls = self.__class__
-        # Get target target
-        target = event.kwargs.get('target')
-        # Start move mission
-        if target == cls.TARGET_STAGING:
-            mission = self.mission_api.api_moveto_staging_position()
-        else:
-            _LOGGER.error(
-                'Unknown target "%s". Valid targets are %s', target,
-                cls.VALID_TARGETS)
-            mission = RobotMission()
-        if mission.name:
-            _LOGGER.info(
-                'Started moving to "%s" with mission name "%s"', target, mission.name)
-        else:
-            _LOGGER.error(
-                'Mission name of move to "%s" is empty', target)
-        self._mission.name = mission.name
-        self._mission.status = mission.status
-        self._mission.target_name = target
-
-    def on_exit_moving(self, event: EventData) -> None:
-        """Delete goal ids when stop moving."""
-        self._mission.name = ''
-        self._mission.status = ''
-
-    def on_enter_atTarget(self, event: EventData) -> None:
-        """Set next state when move target is reached."""
-        cls = self.__class__
-        # Get last target
-        target = self._mission.target_name
-        self._mission.target_name = ''
-        # Determine next state
-        if target == cls.TARGET_STAGING:
-            self.idle()
-        else:
-            _LOGGER.error('Unknown target "%s", unable to set new state', target)
-
-    def on_enter_startedWarehouseorder(self, event: EventData) -> None:
-        """Determine the type of warehouse order which was started."""
-        warehouseorder = event.kwargs.get('warehouseorder')
-        # Log timestamp when the order was started
-        self.who_ts['start'] = time.time()
-        # Start state machine according to the warehouse order type
-        if warehouseorder.flgwho is True:
-            _LOGGER.info(
-                'Warehouse order "%s" is of type "PickPackPass". Start finding target.',
-                self.active_who.who)  # type: ignore
-            self.who_type = 'PickPackPass'
-            self.start_PickPackPass_warehouseorder()
-        else:
-            _LOGGER.info(
-                'Warehouse order "%s" is of type "MoveHU". Start finding target.',
-                self.active_who.who)  # type: ignore
-            self.who_type = 'MoveHU'
-            self.start_MoveHU_warehouseorder()
-
-    def on_enter_finishedWarehouseorder(self, event: EventData) -> None:
-        """Clean up after finishing a warehouse order and start the next."""
-        who = WhoIdentifier(self.active_who.lgnum, self.active_who.who)  # type: ignore
-        # Delete finished warehouseorder
-        self.warehouseorders.pop(who, None)
-
-        # Collect sub warehouse order for the finished warehouse order
-        sub_whos = []
-        for sub_who, order in self.sub_warehouseorders.items():
-            if order.topwhoid == self.active_who.who:  # type: ignore
-                sub_whos.append(sub_who)
-        # Delete collected sub warehouse orders
-        for sub_who in sub_whos:
-            self.sub_warehouseorders.pop(sub_who, None)
-
-        # Unset active orders / tasks
         self.active_who = None
-        self.active_wht = None
+
+    def _close_active_subwho(self, event: EventData) -> None:
+        """Close the active sub warehouse order."""
+        # Remove active sub warehouse order from warehouse order queue
+        if isinstance(self.active_sub_who, WarehouseOrder):
+            _LOGGER.info('Closing active sub warehouse order %s', self.active_sub_who.who)
+            who = WhoIdentifier(self.active_sub_who.lgnum, self.active_sub_who.who)
+            self.warehouseorders.pop(who, None)
+
         self.active_sub_who = None
 
-        # Log warehouse order completion
-        self.who_ts['finish'] = time.time()
-        self.who_times.labels(  # pylint: disable=no-member
-            robot=self.robot_config.robco_robot_name, order_type=self.who_type,
-            activity='completed').observe(
-                self.who_ts['finish']-self.who_ts['start'])
-
-        if event.event.name == 'cancel_warehouseorder':
-            self.who_counter.labels(  # pylint: disable=no-member
-                robot=self.robot_config.robco_robot_name,
-                order_type=self.who_type,
-                result=STATE_FAILED).inc()
-        else:
-            self.who_counter.labels(  # pylint: disable=no-member
-                robot=self.robot_config.robco_robot_name,
-                order_type=self.who_type,
-                result=STATE_SUCCEEDED).inc()
-
-        # Reset warehouse order type
-        self.who_type = ''
-        # Reset time stamps
-        for key in self.who_ts:
-            self.who_ts[key] = 0.0
-
-        # Get robots battery level
-        battery = self.get_battery_level()
-
-        # If still warehouse orders in queue, start the next one
-        if self.warehouseorders:
-            _LOGGER.info('More warehouse orders in queue, start processing')
-            # Get robots battery level
-            _LOGGER.info(
-                'Battery level after finishing order: "%s" percent', battery)
-            self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
-        else:
-            _LOGGER.info('No more warehouse orders in queue')
-            if battery < self.robot_config.battery_min:
-                _LOGGER.info(
-                    'Battery level is "%s". It is below minimum of "%s". Charging robot.', battery,
-                    self.robot_config.battery_min)
-                self.charge_battery()
+    def _close_active_wht(self, event: EventData) -> None:
+        """Close the active warehouse task."""
+        if isinstance(self.active_wht, WarehouseTask):
+            _LOGGER.info('Closing active warehouse task %s', self.active_wht.tanum)
+            # Remove active warehouse task from active warehouse order
+            if isinstance(self.active_who, WarehouseOrder):
+                self.active_who.warehousetasks[:] = [
+                    wht for wht in self.active_who.warehousetasks if (
+                        wht.tanum != self.active_wht.tanum)]
             else:
-                _LOGGER.info(
-                    'Battery level after finishing order: "%s" percent', battery)
-                # Robot has no work
-                self.no_work()
-                # Request new work from SAP EWM Ordermanager if robot available
-                if self.mission_api.api_check_state_ok():
-                    self.request_ewm_work(onlynewwho=True)
-                else:
-                    _LOGGER.warning('Robot is not "AVAILABLE", not requesting work')
+                _LOGGER.error('There is no active warehouse order')
+            # Remove active warehouse task from active sub warehouse order
+            if isinstance(self.active_sub_who, WarehouseOrder):
+                self.active_sub_who.warehousetasks[:] = [
+                    wht for wht in self.active_sub_who.warehousetasks if (
+                        wht.tanum != self.active_wht.tanum)]
+            # Unset active warehouse task
+            self.active_wht = None
 
-    def on_enter_MoveHU_findingTarget(self, event: EventData) -> None:
-        """Find next target from warehouse task of active warehouse order."""
-        wht = None
-        tosourcebin = False
-        # First check if there is a warehouse task where the robot did not
-        # confirm the loading of the HU yet
-        for task in self.active_who.warehousetasks:  # type: ignore
-            if task.vlpla:
-                wht = task
-                tosourcebin = True
-                _LOGGER.info(
-                    'Target: source bin of warehouse task "%s", HU "%s"', task.tanum, task.vlenr)
-                break
-        # If no task was found, check for the first warehouse task to unload a HU
-        if wht is None:
-            for task in self.active_who.warehousetasks:  # type: ignore
-                if task.nlpla:
-                    wht = task
-                    tosourcebin = False
-                    _LOGGER.info(
-                        'Target: target bin of warehouse task %s, HU "%s"',
-                        task.tanum, task.nlenr)
-                    break
+    def _more_warehouse_tasks(self, event: EventData) -> bool:
+        """Check if there are more warehouse tasks in active warehouse order."""
+        if isinstance(self.active_who, WarehouseOrder):
+            tanum = ''
+            # More warehouse tasks than the current active one
+            if isinstance(self.active_wht, WarehouseTask):
+                tanum = self.active_wht.tanum
+            for wht in self.active_who.warehousetasks:
+                if wht.tanum != tanum:
+                    return True
 
-        # Start moving to the target
-        if wht:
-            if wht.flghuto:
-                self.active_wht = wht
-                if tosourcebin:
-                    self.goto_sourcebin()
-                else:
-                    self.goto_targetbin()
+        return False
+
+    def _more_sub_warehouse_tasks(self, event: EventData) -> bool:
+        """Check if there are more warehouse tasks in active sub warehouse order."""
+        if isinstance(self.active_sub_who, WarehouseOrder):
+            tanum = ''
+            # More warehouse tasks than the current active one
+            if isinstance(self.active_wht, WarehouseTask):
+                tanum = self.active_wht.tanum
+            for wht in self.active_sub_who.warehousetasks:
+                if wht.tanum != tanum:
+                    return True
+
+        return False
+
+    def _save_active_warehouse_order(self, event: EventData) -> None:
+        """Save warehouse order as active warehouse order."""
+        if isinstance(event.kwargs.get('warehouseorder'), WarehouseOrder):
+            if self.active_who:
+                _LOGGER.error('Warehouse order %s not closed properly', self.active_who.who)
+            self.active_who = event.kwargs.get('warehouseorder')
+        else:
+            _LOGGER.error('No warehouse order object in parameters.')
+
+    def _save_active_sub_warehouse_order(self, event: EventData) -> None:
+        """Save warehouse order as active sub warehouse order."""
+        if isinstance(event.kwargs.get('sub_warehouseorder'), WarehouseOrder):
+            if self.active_sub_who:
+                _LOGGER.error(
+                    'Sub warehouse order %s not closed properly', self.active_sub_who.who)
+            self.active_sub_who = event.kwargs.get('sub_warehouseorder')
+        else:
+            _LOGGER.error('No warehouse order object in parameters.')
+
+    def _send_first_wht_confirmation(self, event: EventData) -> None:
+        """Send first confirmation of a warehouse task."""
+        if isinstance(self.active_wht, WarehouseTask):
+            confirmation = ConfirmWarehouseTask(
+                lgnum=self.active_wht.lgnum, tanum=self.active_wht.tanum,
+                rsrc=self.robot_config.rsrc, who=self.active_wht.who,
+                confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
+                confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
+
+            dtype = create_robcoewmtype_str(confirmation)
+            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+
+            _LOGGER.info(
+                'First confirmation for warehouse task %s of warehouse order %s sent to order '
+                'manager', self.active_wht.tanum, self.active_wht.who)
+
+            # Delete source information from warehouse task of active warehouse order
+            if isinstance(self.active_who, WarehouseOrder):
+                for i, wht in enumerate(self.active_who.warehousetasks):
+                    if wht.tanum == self.active_wht.tanum:
+                        self.active_who.warehousetasks[i].vltyp = ''
+                        self.active_who.warehousetasks[i].vlber = ''
+                        self.active_who.warehousetasks[i].vlpla = ''
+        else:
+            raise TypeError('No warehouse task assigned to self.active_wht')
+
+    def _send_second_wht_confirmation(self, event: EventData) -> None:
+        """Send second confirmation of a warehouse task."""
+        if isinstance(self.active_wht, WarehouseTask):
+            confirmation = ConfirmWarehouseTask(
+                lgnum=self.active_wht.lgnum, tanum=self.active_wht.tanum,
+                rsrc=self.robot_config.rsrc, who=self.active_wht.who,
+                confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
+                confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
+
+            dtype = create_robcoewmtype_str(confirmation)
+            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+
+            _LOGGER.info(
+                'Second confirmation for warehouse task %s of warehouse order %s sent to order '
+                'manager', self.active_wht.tanum, self.active_wht.who)
+            # Close active warehouse task
+            self._close_active_wht(event)
+        else:
+            raise TypeError('No warehouse task assigned to self.active_wht')
+
+    def _send_first_wht_confirmation_error(self, event: EventData) -> None:
+        """Send first confirmation error of a warehouse task."""
+        if isinstance(self.active_wht, WarehouseTask):
+            confirmation = ConfirmWarehouseTask(
+                lgnum=self.active_wht.lgnum, tanum=self.active_wht.tanum,
+                rsrc=self.robot_config.rsrc, who=self.active_wht.who,
+                confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
+                confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
+
+            dtype = create_robcoewmtype_str(confirmation)
+            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+
+            _LOGGER.info(
+                'First confirmation error for warehouse task %s of warehouse order %s sent to '
+                'order manager', self.active_wht.tanum, self.active_wht.who)
+            # Close active warehouse task
+            self._close_active_wht(event)
+        else:
+            raise TypeError('No warehouse task assigned to self.active_wht')
+
+    def _send_second_wht_confirmation_error(self, event: EventData) -> None:
+        """Send second confirmation of a warehouse task."""
+        if isinstance(self.active_wht, WarehouseTask):
+            confirmation = ConfirmWarehouseTask(
+                lgnum=self.active_wht.lgnum, tanum=self.active_wht.tanum,
+                rsrc=self.robot_config.rsrc, who=self.active_wht.who,
+                confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
+                confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
+
+            dtype = create_robcoewmtype_str(confirmation)
+            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+
+            _LOGGER.info(
+                'Second confirmation error for warehouse task %s of warehouse order %s sent to '
+                'order manager', self.active_wht.tanum, self.active_wht.who)
+            # Close active warehouse task
+            self._close_active_wht(event)
+        else:
+            raise TypeError('No warehouse task assigned to self.active_wht')
+
+    def _request_work(self, event: EventData) -> None:
+        """Request work from order manager."""
+        if self.conf.is_new_work_state(event.state.name):
+            _LOGGER.info('Requesting new warehouse order from order manager')
+            request = RequestFromRobot(
+                self.robot_config.lgnum, self.robot_config.rsrc, requestnewwho=True)
+        else:
+            _LOGGER.info('Requesting warehouse order from order manager')
+            request = RequestFromRobot(
+                self.robot_config.lgnum, self.robot_config.rsrc, requestwork=True)
+
+        dtype = create_robcoewmtype_str(request)
+        self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
+
+    def _request_who_confirmation_notification(self, event: EventData) -> None:
+        """
+        Send a  warehouse order completion request to EWM Order Manager.
+
+        It notifies the robot when the warehouse order was completed.
+        """
+        if isinstance(self.active_who, WarehouseOrder):
+            request = RequestFromRobot(
+                self.robot_config.lgnum, self.robot_config.rsrc,
+                notifywhocompletion=self.active_who.who)
+
+            dtype = create_robcoewmtype_str(request)
+            self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
+
+            _LOGGER.info(
+                'Requesting warehouse order completion notification for %s from order manager',
+                self.active_who.who)
+        else:
+            raise TypeError('No warehouse order object in self.active_who')
+
+    def _request_wht_confirmation_notification(self, event: EventData) -> None:
+        """
+        Send a  warehouse task completion request to EWM Order Manager.
+
+        It notifies the robot when the warehouse task was completed.
+        """
+        if isinstance(self.active_wht, WarehouseTask):
+            request = RequestFromRobot(
+                self.robot_config.lgnum, self.robot_config.rsrc,
+                notifywhtcompletion=self.active_wht.tanum)
+
+            dtype = create_robcoewmtype_str(request)
+            self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
+
+            _LOGGER.info(
+                'Requesting warehouse task completion notification for %s from order manager',
+                self.active_wht.tanum)
+        else:
+            raise TypeError('No warehouse task object in self.active_wht')
+
+    def _decide_whats_next(self, event: EventData) -> None:
+        """Decide what the robot should do next."""
+        if self.warehouseorders:
+            _LOGGER.info('Warehouse order in queue, start processing')
+            self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
+        elif self.mission_api.battery_percentage < self.robot_config.battery_min:
+            _LOGGER.info(
+                'Battery level %s is below minimum of %s, start charging',
+                self.mission_api.battery_percentage, self.robot_config.battery_min)
+            if self.active_mission:
+                self._cancel_active_mission(event)
+            self.charge_battery()
+        elif self.mission_api.api_check_state_ok():
+            if self.failed_warehouseorders > 3:
+                _LOGGER.error(
+                    'Too many consecutive failed warehouse orders (%s). Robot enters error state',
+                    self.failed_warehouseorders)
+                self.too_many_failed_whos()
+            else:
+                self._request_work(event)
+
+    def _increase_mission_errorcount(self, event: EventData) -> None:
+        """Increase errorcount for the state which triggered the event."""
+        self.error_count[event.state.name] += 1
+
+    def _max_mission_errors_reached(self, event: EventData) -> bool:
+        """Check if max errorcount is reached."""
+        if self.error_count[event.state.name] >= 3:
+            return True
+        return False
+
+    def _is_move_trolley_order(self, event: EventData) -> bool:
+        """Check if there is a moveTrolley warehouse order."""
+        warehouseorder = event.kwargs.get('warehouseorder')
+        if isinstance(warehouseorder, WarehouseOrder):
+            # flgwho is False for moveTrolley warehouse orders
+            if warehouseorder.flgwho is False:
+                return True
+        return False
+
+    def _is_pickpackpass_order(self, event: EventData) -> bool:
+        """Check if there is a pickPackPass warehouse order."""
+        warehouseorder = event.kwargs.get('warehouseorder')
+        if isinstance(warehouseorder, WarehouseOrder):
+            # flgwho is True for pickPackPass warehouse orders
+            if warehouseorder.flgwho is True:
+                return True
+        return False
+
+    def _create_move_mission(self, event: EventData) -> None:
+        """Create a RobCo move mission."""
+        if self.active_mission:
+            _LOGGER.error('Active mission %s overwritten', self.active_mission)
+        self.active_mission = self.mission_api.api_moveto_named_position(
+            event.kwargs.get('target'))
+        _LOGGER.info(
+            'Created move mission %s to %s', self.active_mission, event.kwargs.get('target'))
+
+    def _create_charge_mission(self, event: EventData) -> None:
+        """Create a RobCo charge mission."""
+        if self.active_mission:
+            _LOGGER.error('Active mission %s overwritten', self.active_mission)
+        self.active_mission = self.mission_api.api_charge_robot()
+        _LOGGER.info('Created charge mission %s', self.active_mission)
+
+    def _create_staging_mission(self, event: EventData) -> None:
+        """Create a RobCo staging mission."""
+        if self.active_mission:
+            _LOGGER.error('Active mission %s overwritten', self.active_mission)
+        self.active_mission = self.mission_api.api_moveto_staging_position()
+        _LOGGER.info('Created staging mission %s', self.active_mission)
+
+    def _create_get_trolley_mission(self, event: EventData) -> None:
+        """Create a RobCo get trolley mission."""
+        if self.active_mission:
+            _LOGGER.error('Active mission %s overwritten', self.active_mission)
+        self.active_mission = self.mission_api.api_get_trolley(event.kwargs.get('target'))
+        _LOGGER.info(
+            'Created get trolley from %s mission %s', event.kwargs.get('target'),
+            self.active_mission)
+
+    def _create_return_trolley_mission(self, event: EventData) -> None:
+        """Create a RobCo return trolley mission."""
+        if self.active_mission:
+            _LOGGER.error('Active mission %s overwritten', self.active_mission)
+        self.active_mission = self.mission_api.api_return_trolley(event.kwargs.get('target'))
+        _LOGGER.info(
+            'Created return trolley to %s mission %s', event.kwargs.get('target'),
+            self.active_mission)
+
+    def _cancel_active_mission(self, event: EventData) -> None:
+        """Cancel the active mission."""
+        if self.active_mission:
+            success = self.mission_api.api_cancel_mission(self.active_mission)
+            if success:
+                _LOGGER.info('Active mission %s canceled', self.active_mission)
+            else:
+                _LOGGER.error('Active mission %s did not exist', self.active_mission)
+            self.active_mission = ''
+        else:
+            _LOGGER.info('There is no active mission which could be canceled')
+
+    def _set_next_charger(self, event: EventData) -> None:
+        """Set next charger of available chargers."""
+        self.mission_api.api_set_next_charger()
+
+    def _save_warehouse_order_start(self, event: EventData) -> None:
+        """Save the start time stamp of a warehouse order."""
+        if self.who_ts:
+            _LOGGER.error('There is an unfinished warehouse order processing times session')
+        self.who_ts = WarehouseOrderTimestamps()
+
+    def _log_warehouse_order_completed(self, event: EventData) -> None:
+        """Log warehouse order completion time."""
+        if isinstance(self.who_ts, WarehouseOrderTimestamps):
+            self.who_ts.end = time.time()
+            time_elapsed = self.who_ts.end - self.who_ts.start
+            self.who_times.labels(
+                robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                    event.state.name), activity='completed').observe(time_elapsed)
+        else:
+            _LOGGER.error('Warehouse order processing times logging not started correctly.')
+        # Unset timestamps
+        self.who_ts = None
+
+    def _log_get_trolley_completed(self, event: EventData) -> None:
+        """Log time until trolley was reached."""
+        if isinstance(self.who_ts, WarehouseOrderTimestamps):
+            self.who_ts.get_trolley = time.time()
+            # For multiple warehouse tasks per order, a return_trolley timestamp is already set
+            if not self.who_ts.return_trolley:
+                time_elapsed = self.who_ts.get_trolley - self.who_ts.return_trolley
+            else:
+                time_elapsed = self.who_ts.get_trolley - self.who_ts.start
+            self.who_times.labels(
+                robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                    event.state.name), activity='get_trolley').observe(time_elapsed)
+        else:
+            _LOGGER.error('Warehouse order processing times logging not started correctly.')
+
+    def _log_return_trolley_completed(self, event: EventData) -> None:
+        """Log time until trolley was returned."""
+        if isinstance(self.who_ts, WarehouseOrderTimestamps):
+            self.who_ts.return_trolley = time.time()
+            time_elapsed = self.who_ts.return_trolley - self.who_ts.get_trolley
+            self.who_times.labels(
+                robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                    event.state.name), activity='get_trolley').observe(time_elapsed)
+        else:
+            _LOGGER.error('Warehouse order processing times logging not started correctly.')
+
+    def _log_warehouse_order_fail(self, event: EventData) -> None:
+        """Log a failed warehouse order."""
+        # Increase error counter
+        self.failed_warehouseorders += 1
+        # Log processing times
+        self._log_warehouse_order_completed(event)
+        # Log outcome
+        self.who_counter.labels(
+            robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                event.state.name), result=STATE_FAILED).inc()
+
+    def _log_warehouse_order_success(self, event: EventData) -> None:
+        """Log a succeeeded warehouse order."""
+        # Reset error counter
+        self.failed_warehouseorders = 0
+        # Log processing times
+        self._log_warehouse_order_completed(event)
+        # Log outcome
+        self.who_counter.labels(
+            robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                event.state.name), result=STATE_SUCCEEDED).inc()
+
+    def on_enter_atStaging(self, event: EventData) -> None:
+        """Decide what's next when arriving at staging area."""
+        self._decide_whats_next(event)
+
+    def on_enter_noWork(self, event: EventData) -> None:
+        """Decide what's next when robot is not working."""
+        # There is no active work
+        self.active_who = None
+        self.active_sub_who = None
+        self.active_wht = None
+
+        self._decide_whats_next(event)
+
+    def on_enter_charging(self, event: EventData) -> None:
+        """Create charge mission."""
+        _LOGGER.info(
+            'Robot starts charge mission at battery level %s %%',
+            self.mission_api.battery_percentage)
+        self.create_charge_mission()
+
+    def on_enter_movingToStaging(self, event: EventData) -> None:
+        """Move to staging area."""
+        _LOGGER.info('Robot starts moving to staging area')
+        self.create_staging_mission()
+        self._decide_whats_next(event)
+
+    def on_enter_robotError(self, event: EventData) -> None:
+        """Print error message."""
+        _LOGGER.error(
+            'Too many warehouse orders failed. Please check robot and start recovery with flag in '
+            'robotconfiguration CR')
+        # Reset error counter
+        self.failed_warehouseorders = 0
+
+    def on_enter_moveTrolley_movingToSourceBin(self, event: EventData) -> None:
+        """Start moving to the source bin of a warehouse task."""
+        if self.active_wht:
+            _LOGGER.error('Warehouse task %s not closed properly', self.active_wht.tanum)
+            self.active_wht = None
+
+        # Work on the first warehouse task from the warehouse order
+        if isinstance(self.active_who, WarehouseOrder):
+            if self.active_who.warehousetasks:
+                self.active_wht = self.active_who.warehousetasks[0]
+                # Create get trolley mission
+                _LOGGER.info('Start moving to source bin of trolley %s', self.active_wht.vlenr)
+                self.create_get_trolley_mission(target=self.active_wht.vlpla)
+            else:
+                _LOGGER.error('No warehouse task in warehouse order %s', self.active_who.who)
+                self.mission_failed(mission=self.active_mission)
+        else:
+            raise TypeError('No warehouse order object in self.active_who')
+
+    def on_enter_moveTrolley_loadingTrolley(self, event: EventData) -> None:
+        """Start loading the trolley."""
+        cls = self.__class__
+        if isinstance(self.active_wht, WarehouseTask):
+            _LOGGER.info('Start loading trolley %s', self.active_wht.vlenr)
+            if event.event.name == cls.conf.t_mission_succeeded:
+                _LOGGER.info('Mission already in state SUCCEEDED')
+                self.mission_succeeded(mission=self.active_mission)
+        else:
+            raise TypeError('No warehouse task object in self.active_wht')
+
+    def on_enter_moveTrolley_movingToTargetBin(self, event: EventData) -> None:
+        """Start moving to the target bin of a warehouse task."""
+        if isinstance(self.active_wht, WarehouseTask):
+            # Create return trolley mission
+            _LOGGER.info('Start moving to target bin of trolley %s', self.active_wht.nlenr)
+            self.create_return_trolley_mission(target=self.active_wht.nlpla)
+        else:
+            raise TypeError('No warehouse task object in self.active_wht')
+
+    def on_enter_moveTrolley_unloadingTrolley(self, event: EventData) -> None:
+        """Start unloading the trolley."""
+        cls = self.__class__
+        if isinstance(self.active_wht, WarehouseTask):
+            _LOGGER.info('Start unloading trolley %s', self.active_wht.nlenr)
+            if event.event.name == cls.conf.t_mission_succeeded:
+                _LOGGER.info('Mission already in state SUCCEEDED')
+                self.mission_succeeded(mission=self.active_mission)
+        else:
+            raise TypeError('No warehouse task object in self.active_wht')
+
+    def on_enter_moveTrolley_waitingForErrorRecovery(self, event: EventData) -> None:
+        """Wait for moveTrolley error recovery."""
+        if isinstance(self.active_who, WarehouseOrder):
+            _LOGGER.error(
+                'Too many missions failed when returning trolley for moveTrolley warehouse order '
+                '%s, waiting for recovery', self.active_who.who)
+        else:
+            _LOGGER.error(
+                'Too many missions failed when returning trolley for moveTrolley warehouse order, '
+                'waiting for recovery')
+
+    def on_enter_pickPackPass_movingtoPickLocation(self, event: EventData) -> None:
+        """Start moving to pick location."""
+        if self.active_wht:
+            _LOGGER.error('Warehouse task %s not closed properly', self.active_wht.tanum)
+            self.active_wht = None
+
+        # Work on the first warehouse task from the sub warehouse order
+        if isinstance(self.active_sub_who, WarehouseOrder):
+            if self.active_sub_who.warehousetasks:
+                self.active_wht = self.active_sub_who.warehousetasks[0]
+                # Create move mission
+                _LOGGER.info('Start moving to pick location')
+                self.create_move_mission(target=self.active_wht.vlpla)
             else:
                 _LOGGER.error(
-                    'Warehouse task "%s" is not a MoveHU warehouse task. Not supported by this '
-                    'process. Cannot continue.', wht.tanum)
+                    'No warehouse task in sub warehouse order %s', self.active_sub_who.who)
+                self.mission_failed(mission=self.active_mission)
         else:
-            _LOGGER.info(
-                'No more warehouse task for warehouse order "%s" found. Finish job.',
-                self.active_who.who)  # type: ignore
-            self.complete_warehouseorder()
+            _LOGGER.info('No sub warehouse order available, waiting for it')
 
-    def on_enter_MoveHU_movingToSourceBin(self, event: EventData) -> None:
-        """Start moving to the source bin of a warehouse task."""
-        mission = self.mission_api.api_load_unload(self.active_wht)
-        _LOGGER.info(
-            'Started moving to "%s" with mission name "%s"',
-            self.active_wht.vlpla, mission.name)  # type: ignore
-        self._mission.name = mission.name
-        self._mission.status = mission.status
-        self._mission.target_name = self.active_wht.vlpla  # type: ignore
-
-    def on_enter_MoveHU_movingToTargetBin(self, event: EventData) -> None:
-        """Start moving to the target bin of a warehouse task."""
-        mission = self.mission_api.api_load_unload(self.active_wht)
-        _LOGGER.info(
-            'Started moving to "%s" with mission name "%s"',
-            self.active_wht.nlpla, mission.name)  # type: ignore
-        self._mission.name = mission.name
-        self._mission.status = mission.status
-        self._mission.target_name = self.active_wht.nlpla  # type: ignore
-
-    def on_enter_MoveHU_loading(self, event: EventData) -> None:
-        """Load handling unit of a warehouse task on a robot."""
-        _LOGGER.info('Started loading HU "%s"', self.active_wht.vlenr)  # type: ignore
-
-    def on_exit_MoveHU_loading(self, event: EventData) -> None:
-        """Confirm and delete information about source handling unit."""
-        # Confirm loading only if no error occured
-        if event.event.name != 'robot_error_occurred':
-            self.confirm_api(self.active_wht)
-            _LOGGER.info('Loaded HU "%s"', self.active_wht.vlenr)  # type: ignore
-            # Log elapsed time from order start to HU load
-            self.who_ts['load'] = time.time()
-            self.who_times.labels(  # pylint: disable=no-member
-                robot=self.robot_config.robco_robot_name, order_type=self.who_type,
-                activity='load_hu').observe(self.who_ts['load']-self.who_ts['start'])
-
-            for i, task in enumerate(self.active_who.warehousetasks):  # type: ignore
-                if task.tanum == self.active_wht.tanum:  # type: ignore
-                    self.active_who.warehousetasks[i].vltyp = ''  # type: ignore
-                    self.active_who.warehousetasks[i].vlber = ''  # type: ignore
-                    self.active_who.warehousetasks[i].vlpla = ''  # type: ignore
-
-                    self.active_wht = self.active_who.warehousetasks[i]  # type: ignore
+    def on_enter_pickPackPass_waitingAtPick(self, event: EventData) -> None:
+        """Wait at picking position until pick completed."""
+        cls = self.__class__
+        if event.event.name == cls.conf.t_warehousetask_confirmed:
+            _LOGGER.info('Waiting for warehouse task to target')
+        elif isinstance(self.active_wht, WarehouseTask):
+            _LOGGER.info('Waiting at storage bin %s for pick', self.active_wht.vlpla)
         else:
-            _LOGGER.info('Error occurred not confirming HU load')
+            _LOGGER.error('Waiting at pick position, but no active warehousetask')
 
-        self._mission.name = ''
-        self._mission.status = ''
-        self._mission.target_name = ''
+    def on_enter_pickPackPass_movingtoTargetLocation(self, event: EventData) -> None:
+        """Start moving to target location."""
+        if self.active_wht:
+            _LOGGER.error('Warehouse task %s not closed properly', self.active_wht.tanum)
+            self.active_wht = None
 
-    def on_enter_MoveHU_unloading(self, event: EventData) -> None:
-        """Unload handling unit of a warehouse task on a robot."""
-        _LOGGER.info('Started unloading HU "%s"', self.active_wht.nlenr)  # type: ignore
-
-    def on_exit_MoveHU_unloading(self, event: EventData) -> None:
-        """Confirm and delete information about target handling unit."""
-        # Confirm loading only if no error occured
-        if event.event.name != 'robot_error_occurred':
-            self.confirm_api(self.active_wht)
-            _LOGGER.info('Unloaded HU "%s"', self.active_wht.nlenr)  # type: ignore
-            # Log elapsed time from HU load to HU unload
-            self.who_ts['unload'] = time.time()
-            self.who_times.labels(  # pylint: disable=no-member
-                robot=self.robot_config.robco_robot_name, order_type=self.who_type,
-                activity='unload_hu').observe(self.who_ts['unload']-self.who_ts['load'])
-
-            for i, task in enumerate(self.active_who.warehousetasks):  # type: ignore
-                if task.tanum == self.active_wht.tanum:  # type: ignore
-                    self.active_who.warehousetasks[i].nltyp = ''  # type: ignore
-                    self.active_who.warehousetasks[i].nlber = ''  # type: ignore
-                    self.active_who.warehousetasks[i].nlpla = ''  # type: ignore
-
-                    self.active_wht = self.active_who.warehousetasks[i]  # type: ignore
+        # Work on the first warehouse task from the warehouse order to go to the target location
+        if isinstance(self.active_who, WarehouseOrder):
+            if self.active_who.warehousetasks:
+                self.active_wht = self.active_who.warehousetasks[0]
+                # Create move mission
+                _LOGGER.info('Start moving to target location')
+                self.create_move_mission(target=self.active_wht.nlpla)
+            else:
+                _LOGGER.info(
+                    'No warehouse task in warehouse order %s, waiting for it', self.active_who.who)
         else:
-            _LOGGER.error('Error occurred not confirming HU unload')
+            raise TypeError('No warehouse order object in self.active_who')
 
-        self._mission.name = ''
-        self._mission.status = ''
-        self._mission.target_name = ''
-
-    def on_enter_MoveHU_waitingForErrorRecovery(self, event: EventData) -> None:
-        """
-        Robot waits until error is recovered.
-
-        EWM confirms completion of error causing warehouse order.
-        """
-        return None
-
-    def on_enter_PickPackPass_findingTarget(self, event: EventData) -> None:
-        """Find next target from warehouse task of active warehouse order."""
-        wht = None
-        sub_who = None
-
-        # Try to get a sub warehouse order
-        for order in self.sub_warehouseorders.values():
-            if order.topwhoid == self.active_who.who:  # type: ignore
-                sub_who = order
-                break
-
-        # Check if there is a warehouse task where the robot did not confirm the loading of the HU
-        # yet
-        if sub_who:
-            for task in sub_who.warehousetasks:
-                if task.vlpla:
-                    wht = task
-                    target = StorageBin(task.lgnum, task.vlpla)
-                    _LOGGER.info(
-                        'Target: source bin of warehouse task "%s"', task.tanum)
-                    break
-        # If no task was found, check for the first warehouse task to unload a HU
-        if wht is None:
-            for task in self.active_who.warehousetasks:  # type: ignore
-                if task.nlpla:
-                    wht = task
-                    target = StorageBin(task.lgnum, task.nlpla)
-                    _LOGGER.info(
-                        'Target: target bin of warehouse task %s, HU "%s", enforcing first '
-                        'confirmation', task.tanum, task.nlenr)
-                    # Enforce first confirmation that warehouse order is flagged "started" in EWM
-                    self.confirm_api(wht, enforce_first_conf=True)
-                    break
-
-        # Start moving to the target
-        if wht:
-            self.active_wht = wht
-            self.active_sub_who = sub_who
-            _LOGGER.info('Next target is storage bin "%s"', target.lgpla)
-            self.goto_storagebin(storagebin=target)
-        # Check if the sub warehouse orders are already received
-        elif sub_who:
-            # If there are sub warehouse order, but no more warehouse tasks, everything is done.
-            _LOGGER.info(
-                'No more warehouse task for warehouse order "%s" found. Finish job.',
-                self.active_who.who)  # type: ignore
-            self.complete_warehouseorder()
-        # If no sub warehouse order for this active order found, wait until they arrive
+    def on_enter_pickPackPass_waitingAtTarget(self, event: EventData) -> None:
+        """Wait at target position until robot was unloaded."""
+        if isinstance(self.active_wht, WarehouseTask):
+            _LOGGER.info('Waiting at storage bin %s for unloading', self.active_wht.nlpla)
         else:
-            _LOGGER.info(
-                'No warehouse task for warehouse order "%s" found. Wait.',
-                self.active_who.who)  # type: ignore
-            # Request work from EWM in case message was lost
-            self.request_ewm_work()
+            _LOGGER.error('Waiting at target position, but no active warehousetask')
 
-    def on_enter_PickPackPass_moving(self, event: EventData) -> None:
-        """Start moving to a bin."""
-        storagebin = event.kwargs.get('storagebin')
-        mission = self.mission_api.api_moveto_storagebin_position(storagebin)
-        _LOGGER.info(
-            'Started moving to "%s" with mission name "%s"', storagebin.lgpla, mission.name)
-        self._mission.name = mission.name
-        self._mission.status = mission.status
-        self._mission.target_name = storagebin
-
-    def on_exit_PickPackPass_moving(self, event: EventData) -> None:
-        """Delete goal ids when stop moving."""
-        self._mission.name = ''
-        self._mission.status = ''
-        self._mission.target_name = ''
-
-    def on_exit_PickPackPass_waitingAtPick(self, event: EventData) -> None:
-        """Confirm and delete information about source handling unit."""
-        _LOGGER.info('Picking finished')
-
-        for i, task in enumerate(self.active_sub_who.warehousetasks):  # type: ignore
-            if task.tanum == self.active_wht.tanum:  # type: ignore
-                self.active_sub_who.warehousetasks[i].vltyp = ''  # type: ignore
-                self.active_sub_who.warehousetasks[i].vlber = ''  # type: ignore
-                self.active_sub_who.warehousetasks[i].vlpla = ''  # type: ignore
-
-                self.active_wht = self.active_sub_who.warehousetasks[i]  # type: ignore
-
-                # Update queue of sub warehouse orders
-                sub_who = WhoIdentifier(
-                    self.active_sub_who.lgnum, self.active_sub_who.who)  # type: ignore
-                self.sub_warehouseorders[sub_who] = self.active_sub_who
-
-    def on_exit_PickPackPass_waitingAtTarget(
-            self, event: EventData) -> None:
-        """Confirm and delete information about target handling unit."""
-        self.confirm_api(self.active_wht)
-        _LOGGER.info('Pick HU "%s" was unloaded', self.active_wht.nlenr)  # type: ignore
-
-        for i, task in enumerate(self.active_who.warehousetasks):  # type: ignore
-            if task.tanum == self.active_wht.tanum:  # type: ignore
-                self.active_who.warehousetasks[i].nltyp = ''  # type: ignore
-                self.active_who.warehousetasks[i].nlber = ''  # type: ignore
-                self.active_who.warehousetasks[i].nlpla = ''  # type: ignore
-
-                self.active_wht = self.active_who.warehousetasks[i]  # type: ignore
+    def on_enter_pickPackPass_waitingForErrorRecovery(self, event: EventData) -> None:
+        """Wait for pickPackPass error recovery."""
+        if isinstance(self.active_who, WarehouseOrder):
+            _LOGGER.error(
+                'Too many missions failed on pickPackPass warehouse order %s, waiting '
+                'for recovery', self.active_who.who)
+        else:
+            _LOGGER.error(
+                'Too many missions failed on pickPackPass warehouse order, waiting for recovery')

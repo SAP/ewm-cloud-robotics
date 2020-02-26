@@ -42,11 +42,17 @@ spec:
           type: object
           required:
             - lgnum
+            - notifywhocompletion
+            - notifywhtcompletion
             - rsrc
             - requestwork
             - requestnewwho
           properties:
             lgnum:
+              type: string
+            notifywhocompletion:
+              type: string
+            notifywhtcompletion:
               type: string
             rsrc:
               type: string
@@ -63,6 +69,8 @@ spec:
                 lgnum:
                   type: string
                 notifywhocompletion:
+                  type: string
+                notifywhtcompletion:
                   type: string
                 requestnewwho:
                   type: boolean

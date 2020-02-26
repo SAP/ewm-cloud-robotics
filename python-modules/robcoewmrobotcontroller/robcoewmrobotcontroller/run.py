@@ -20,7 +20,6 @@ import time
 
 from prometheus_client import start_http_server
 
-from robcoewmtypes.warehouseorder import WarehouseTask
 from robcoewmrobotcontroller.ordercontroller import OrderController
 from robcoewmrobotcontroller.robotrequestcontroller import (
     RobotRequestController, )
@@ -59,12 +58,6 @@ class MainLoopController:
         self.last_time = time.time()
 
 
-def dummy_confirm_true(wht: WarehouseTask) -> bool:
-    """For testing only."""
-    time.sleep(5.0)
-    return True
-
-
 def run_robot():
     """Determine robot type and run one instance of it."""
     # Start prometheus client
@@ -101,9 +94,7 @@ def robot_main_loop(
     k8s_rc = RobotRequestController()
 
     # Create robot controller instance
-    # TODO: Replace dummy confirmation method by real method
-    robot = EWMRobot(
-        robot_mission_api, robot_config, k8s_oc, k8s_rc, confirm_target=dummy_confirm_true)
+    robot = EWMRobot(robot_mission_api, robot_config, k8s_oc, k8s_rc)
 
     # Start
     robot.ordercontroller.run(reprocess=True)
@@ -111,21 +102,8 @@ def robot_main_loop(
     _LOGGER.info('SAP EWM Robot "%s" started - K8S CR mode', robot.robot_config.rsrc)
 
     try:
-        # Wait 1 seconds for initial messages being processed
-        time.sleep(1.0)
-
-        # Run state machine update
-        robot.runner()
-        # If still no warehouse order - request work
-        stateok = robot.mission_api.api_check_state_ok()
-        if robot.state_machine.is_noWarehouseorder and stateok:
-            robot.request_work()
-
         # Looping while K8S stream watchers are running
         while loop_control.shutdown is False:
-            # Run state machine update
-            robot.runner()
-
             # Check if K8S CR handler exception occured
             for k, exc in robot.ordercontroller.thread_exceptions.items():
                 _LOGGER.error(
@@ -160,6 +138,8 @@ def robot_main_loop(
     except SystemExit:
         _LOGGER.info('System exit - terminating')
     finally:
+        # Disconnect state machine
+        robot.state_machine.disconnect_external_events()
         # Stop K8S CR watcher
         _LOGGER.info('Stopping K8S CR watchers')
         robot.ordercontroller.stop_watcher()

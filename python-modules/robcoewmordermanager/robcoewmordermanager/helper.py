@@ -64,9 +64,8 @@ class ProcessedMessageMemory:
         whoident = WhoIdentifier(conf.lgnum, conf.who)
         return bool(conf in self.who_confirmations[whoident])
 
-    def delete_who_from_memory(self, conf: ConfirmWarehouseTask) -> None:
+    def delete_who_from_memory(self, whoident: WhoIdentifier) -> None:
         """Delete warehouse order from memory."""
-        whoident = WhoIdentifier(conf.lgnum, conf.who)
         # Save timestamp when the order was deleted
         self.deleted_whos[whoident] = time.time()
 

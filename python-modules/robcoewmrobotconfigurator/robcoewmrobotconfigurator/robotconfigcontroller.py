@@ -41,6 +41,10 @@ class RobotConfigurationController(K8sCRHandler):
             {}
         )
 
+        # Register callbacks
+        self.register_callback(
+            'robotconfiguration', ['ADDED', 'MODIFIED', 'REPROCESS'], self.reset_recovery_flag_cb)
+
     def init_default_values_fromenv(self) -> None:
         """Initialize robot configuration controller from environment variables."""
         # Read environment variables
@@ -94,8 +98,21 @@ class RobotConfigurationController(K8sCRHandler):
                 'rsrcgrp': self.rsrc_grp,
                 'rsrctype': self.rsrc_type,
                 'maxIdleTime': self.max_idle_time,
-                'chargers': self.chargers
+                'chargers': self.chargers,
+                'recoverFromRobotError': False
                 }
 
             # Create CR
             self.create_cr(name, labels, spec)
+
+    def reset_recovery_flag_cb(self, name: str, custom_res: Dict) -> None:
+        """Reset recovery flag of robots if they are not in robotError state anymore."""
+        if custom_res['spec'].get('recoverFromRobotError'):
+            statemachine = custom_res.get('status', {}).get('statemachine')
+            if statemachine != 'robotError':
+                spec = {'recoverFromRobotError': False}
+                # Update CR spec
+                self.update_cr_spec(name, spec)
+                _LOGGER.info(
+                    'Robot %s recovered to state %s. recoverFromRobotError flag to false',
+                    name, statemachine)
