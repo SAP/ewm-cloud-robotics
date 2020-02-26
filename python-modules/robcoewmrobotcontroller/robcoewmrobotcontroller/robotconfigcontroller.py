@@ -42,6 +42,7 @@ class RobotConfigurationController(K8sCRHandler):
         self.battery_ok = 0.0
         self.battery_idle = 0.0
         self.chargers: List[str] = []
+        self.recover_from_robot_error = False
 
         template_cr = get_sample_cr('robotconfiguration')
 
@@ -83,6 +84,7 @@ class RobotConfigurationController(K8sCRHandler):
         self.battery_ok = float(custom_res['spec']['batteryOk'])
         self.battery_idle = float(custom_res['spec']['batteryIdle'])
         self.chargers = custom_res['spec']['chargers']
+        self.recover_from_robot_error = custom_res['spec']['recoverFromRobotError']
 
     def get_robot_state(self) -> Optional[RobotConfigurationStatus]:
         """Get current state of robot's state machine from CR."""
@@ -93,6 +95,6 @@ class RobotConfigurationController(K8sCRHandler):
             state = None
         return state
 
-    def save_robot_state(self, state: RobotConfigurationStatus) -> bool:
+    def save_robot_state(self, state: RobotConfigurationStatus) -> None:
         """Save current state of robot's state machine to CR."""
-        return self.update_cr_status(self.robco_robot_name, unstructure(state))
+        self.update_cr_status(self.robco_robot_name, unstructure(state))

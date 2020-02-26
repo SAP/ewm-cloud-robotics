@@ -31,9 +31,10 @@ from robcoewminterface.types import ODataConfig
 from robcoewminterface.odata import ODataHandler
 from robcoewminterface.ewm import WarehouseOData, WarehouseOrderOData
 from robcoewminterface.exceptions import (
-    ODataAPIException, NoOrderFoundError, RobotHasOrderError, WarehouseTaskAlreadyConfirmedError)
+    ODataAPIException, NoOrderFoundError, RobotHasOrderError, WarehouseTaskAlreadyConfirmedError,
+    NotFoundError)
 
-from .helper import ProcessedMessageMemory, RobotIdentifier
+from .helper import ProcessedMessageMemory, RobotIdentifier, WhoIdentifier
 from .ordercontroller import OrderController
 from .robotrequestcontroller import RobotRequestController
 
@@ -207,13 +208,35 @@ class EWMOrderManager:
 
         # Check if warehouse order was completed
         if request.notifywhocompletion and not status.notifywhocompletion:
+            notfound = False
             try:
-                self.ewmwho.get_robot_warehouseorders(robotident.lgnum, robotident.rsrc)
-            except NoOrderFoundError:
+                wht = self.ewmwho.get_openwarehousetasks(
+                    lgnum=robotident.lgnum, who=request.notifywhocompletion)
+            except NotFoundError:
+                notfound = True
+            else:
+                if not wht:
+                    notfound = True
+            if notfound:
                 status.notifywhocompletion = request.notifywhocompletion
                 _LOGGER.info(
                     'Warehouse order %s was confirmed, notifying robot "%s"',
                     request.notifywhocompletion, robotident.rsrc)
+                # Warehouse orders are completed in EWM, thus ensure that they are marked PROCESSED
+                self.ordercontroller.cleanup_who(unstructure(
+                    WarehouseOrder(lgnum=robotident.lgnum, who=request.notifywhocompletion)))
+                self.msg_mem.delete_who_from_memory(
+                    WhoIdentifier(robotident.lgnum, request.notifywhocompletion))
+
+        # Check if warehouse task was completed
+        if request.notifywhtcompletion and not status.notifywhtcompletion:
+            try:
+                self.ewmwho.get_openwarehousetask(robotident.lgnum, request.notifywhtcompletion)
+            except NotFoundError:
+                status.notifywhtcompletion = request.notifywhtcompletion
+                _LOGGER.info(
+                    'Warehouse task %s was confirmed, notifying robot "%s"',
+                    request.notifywhtcompletion, robotident.rsrc)
 
         # Raise exception if request was not complete
         if request == status:
@@ -317,7 +340,7 @@ class EWMOrderManager:
                 # Cleanup warehouse order if there are no warehouse tasks
                 if not who.warehousetasks:
                     self.ordercontroller.cleanup_who(unstructure(who))
-                    self.msg_mem.delete_who_from_memory(whtask)
+                    self.msg_mem.delete_who_from_memory(WhoIdentifier(whtask.lgnum, whtask.who))
 
         # ERROR Messages
         elif whtask.confirmationtype == ConfirmWarehouseTask.CONF_ERROR:
@@ -352,7 +375,7 @@ class EWMOrderManager:
                 # In case of an error in warehouse order processing always clean up because the
                 # order is moved to a different queue
                 self.ordercontroller.cleanup_who(unstructure(who))
-                self.msg_mem.delete_who_from_memory(whtask)
+                self.msg_mem.delete_who_from_memory(WhoIdentifier(whtask.lgnum, whtask.who))
 
     def get_and_send_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = True,
@@ -455,10 +478,7 @@ class EWMOrderManager:
         # Send orders to robot
         for who in whos:
             dtype = create_robcoewmtype_str(who)
-            success = self.ordercontroller.send_who_to_robot(robotident, dtype, unstructure(who))
-
-        if success is False:
-            raise ConnectionError
+            self.ordercontroller.send_who_to_robot(robotident, dtype, unstructure(who))
 
         # Create success log message
         whos_who = [entry.who for entry in whos]

@@ -49,6 +49,7 @@ spec:
             - batteryOk
             - batteryIdle
             - maxIdleTime
+            - recoverFromRobotError
           properties:
             lgnum:
               type: string
@@ -68,16 +69,14 @@ spec:
               type: number
             maxIdleTime:
               type: number
+            recoverFromRobotError:
+              type: boolean
         status:
           type: object
           properties:
             lgnum:
               type: string
             mission:
-              type: string
-            missiontarget:
-              type: string
-            statebeforeerror:
               type: string
             statemachine:
               type: string

@@ -59,6 +59,8 @@ class RequestFromRobot:
         default=False, validator=validate_annotation, converter=bool)
     notifywhocompletion: str = attr.ib(
         default='', validator=attr.validators.instance_of(str), converter=strstrip)
+    notifywhtcompletion: str = attr.ib(
+        default='', validator=attr.validators.instance_of(str), converter=strstrip)
 
 
 @attr.s
@@ -103,7 +105,6 @@ class RobotMission:
     status: str = attr.ib(default=STATE_UNKNOWN, validator=attr.validators.instance_of(str))
     active_action: str = attr.ib(
         default=ACTION_UNKNOWN, validator=attr.validators.instance_of(str))
-    target_name: str = attr.ib(default='', validator=attr.validators.instance_of(str))
 
 
 @attr.s
@@ -111,10 +112,19 @@ class RobotConfigurationStatus:
     """Current status of warehouse robots state machine."""
 
     statemachine: str = attr.ib(validator=validate_annotation)
-    statebeforeerror: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     mission: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
-    missiontarget: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     lgnum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     who: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     tanum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     subwho: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class RobcoRobotStates:
+    """Robot states in RobCo."""
+
+    STATE_UNDEFINED = 'UNDEFINED'
+    STATE_UNAVAILABLE = 'UNAVAILABLE'
+    STATE_AVAILABLE = 'AVAILABLE'
+    STATE_EMERGENCY_STOP = 'EMERGENCY_STOP'
+    STATE_ERROR = 'ERROR'

@@ -16,8 +16,8 @@
         "rsrcgrp": "",
         "rsrctype": "",
         "maxIdleTime": 0,
-        "chargers":
-            [ "Charger" ]
+        "chargers": [ "Charger" ],
+        "recoverFromRobotError": false
     },
     "status": {}
 }

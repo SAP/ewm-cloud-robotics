@@ -137,7 +137,7 @@ class OrderController(K8sCRHandler):
         # Robot identifier
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
 
-    def confirm_wht(self, dtype: str, wht: Dict, clear_progress: bool = False) -> bool:
+    def confirm_wht(self, dtype: str, wht: Dict) -> None:
         """Notify order manager about current status of who + tasks."""
         name = '{lgnum}.{who}'.format(lgnum=wht['lgnum'], who=wht['who'])
         # Get current status from custom resource of the warehouse order
@@ -150,11 +150,9 @@ class OrderController(K8sCRHandler):
         for conf in status['data']:
             if conf == wht:
                 _LOGGER.error('Confirmation already sent. Not doing anything.')
-                return True
+                return
         status['data'].append(wht)
-        success = self.update_cr_status(name, status)
-
-        return success
+        self.update_cr_status(name, status)
 
     def get_warehouseorder(
             self, lgnum: str, who: str) -> Optional[WarehouseOrder]:
