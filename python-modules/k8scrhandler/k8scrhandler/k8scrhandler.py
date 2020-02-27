@@ -160,7 +160,7 @@ class K8sCRHandler:
         self.reprocess_thread = threading.Thread(target=self._reprocess_crs_loop)
         # Control flag for thread
         self.thread_run = True
-        self.number_executor_threads = 1
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
     def register_callback(
             self, name: str, operations: List, callback: Callable[[Dict], None]) -> None:
@@ -213,10 +213,10 @@ class K8sCRHandler:
         Supporting multiple executor threads for blocking callbacks.
         """
         if self.thread_run:
+            # Restart ThreadPoolExecutor when not running with default max_worker=1
             if multiple_executor_threads:
-                self.number_executor_threads = 5
-            else:
-                self.number_executor_threads = 1
+                self.executor.shutdown()
+                self.executor = ThreadPoolExecutor(max_workers=5)
             if watcher:
                 _LOGGER.info(
                     'Watching for changes on %s.%s/%s', self.plural, self.group, self.version)
@@ -246,7 +246,7 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully processed custom resource %s', self.group, self.plural, name)
 
-    def _watch_on_crs(self, executor: ThreadPoolExecutor) -> None:
+    def _watch_on_crs(self) -> None:
         """Stream events on orders and execute callbacks."""
         _LOGGER.info(
             '%s/%s: Starting watcher at resourceVersion "%s"',
@@ -263,6 +263,10 @@ class K8sCRHandler:
                 resource_version=self.resv_watcher
             )
             for event in stream:
+                # Break loop when thread stops
+                if not self.thread_run:
+                    break
+                # Process event
                 obj = event['object']
                 operation = event['type']
                 # Too old resource version error handling
@@ -290,7 +294,7 @@ class K8sCRHandler:
                     '%s/%s: Handling %s on %s', self.group, self.plural,
                     operation, name)
                 # Submit callbacks to ThreadPoolExecutor
-                executor.submit(self._callback, name, labels, operation, obj)
+                self.executor.submit(self._callback, name, labels, operation, obj)
         except ApiException as err:
             _LOGGER.error(
                 '%s/%s: Exception when watching CustomObjectsApi: %s',
@@ -300,26 +304,24 @@ class K8sCRHandler:
         """Start watching on custom resources in a loop."""
         _LOGGER.info(
             '%s/%s: Start watching on custom resources', self.group, self.plural)
-        max_workers = self.number_executor_threads
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            while self.thread_run:
-                try:
-                    if self.resv_watcher == '':
-                        self.process_all_crs(executor, 'ADDED', set_resv_watcher=True)
-                    self._watch_on_crs(executor)
-                except Exception as exc:  # pylint: disable=broad-except
-                    exc_info = sys.exc_info()
-                    _LOGGER.error(
-                        '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
-                        'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                        traceback.format_exception(*exc_info))
-                    # On uncovered exception in thread save the exception
-                    self.thread_exceptions['watcher'] = exc
-                    # Stop the watcher
-                    self.stop_watcher()
-                finally:
-                    if self.thread_run:
-                        _LOGGER.debug('%s/%s: Restarting watcher', self.group, self.plural)
+        while self.thread_run:
+            try:
+                if self.resv_watcher == '':
+                    self.process_all_crs('ADDED', set_resv_watcher=True)
+                self._watch_on_crs()
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                _LOGGER.error(
+                    '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['watcher'] = exc
+                # Stop the watcher
+                self.stop_watcher()
+            finally:
+                if self.thread_run:
+                    _LOGGER.debug('%s/%s: Restarting watcher', self.group, self.plural)
 
     @retry(wait_fixed=500, stop_max_attempt_number=10)
     def update_cr_status(self, name: str, status: Dict) -> None:
@@ -479,9 +481,7 @@ class K8sCRHandler:
                 '%s/%s: Successfully retrieved all custom resources', self.group, self.plural)
             return api_response
 
-    def process_all_crs(
-            self, executor: ThreadPoolExecutor, operation: str,
-            set_resv_watcher: bool = False) -> None:
+    def process_all_crs(self, operation: str, set_resv_watcher: bool = False) -> None:
         """
         Reprocess custom resources.
 
@@ -507,7 +507,7 @@ class K8sCRHandler:
                 name = metadata['name']
                 labels = metadata.get('labels', {})
                 # Submit callbacks to ThreadPoolExecutor
-                executor.submit(
+                self.executor.submit(
                     self._callback, name, labels, operation, obj)
 
             # Set resource version for watcher to highest version found here
@@ -519,29 +519,29 @@ class K8sCRHandler:
         _LOGGER.info(
             'Start continiously reprocessing existing custom resources')
         last_run = time.time()
-        max_workers = self.number_executor_threads
-        with ThreadPoolExecutor(max_workers=max_workers) as executor:
-            while self.thread_run:
-                try:
-                    self.process_all_crs(executor, 'REPROCESS')
-                except Exception as exc:  # pylint: disable=broad-except
-                    exc_info = sys.exc_info()
-                    _LOGGER.error(
-                        '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
-                        'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                        traceback.format_exception(*exc_info))
-                    # On uncovered exception in thread save the exception
-                    self.thread_exceptions['reprocessor'] = exc
-                    # Stop the watcher
-                    self.stop_watcher()
-                finally:
-                    # Wait up to 10 seconds
-                    if self.thread_run:
-                        time.sleep(max(0, last_run - time.time() + 10))
-                        last_run = time.time()
+        while self.thread_run:
+            try:
+                self.process_all_crs('REPROCESS')
+            except Exception as exc:  # pylint: disable=broad-except
+                exc_info = sys.exc_info()
+                _LOGGER.error(
+                    '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
+                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
+                    traceback.format_exception(*exc_info))
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['reprocessor'] = exc
+                # Stop the watcher
+                self.stop_watcher()
+            finally:
+                # Wait up to 10 seconds
+                if self.thread_run:
+                    time.sleep(max(0, last_run - time.time() + 10))
+                    last_run = time.time()
 
     def stop_watcher(self) -> None:
         """Stop watching CR stream."""
         self.thread_run = False
         _LOGGER.info('Stopping watcher for %s/%s', self.group, self.plural)
         self.watcher.stop()
+        _LOGGER.info('Stopping ThreadPoolExecutor')
+        self.executor.shutdown(wait=False)
