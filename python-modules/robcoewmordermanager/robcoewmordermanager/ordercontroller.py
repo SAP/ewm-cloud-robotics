@@ -202,10 +202,13 @@ class OrderController(K8sCRHandler):
         to_be_closed.append(name)
         spec_order_processed = {'order_status': WarehouseOrderCRDSpec.STATE_PROCESSED}
 
-        self.update_cr_spec(name, spec_order_processed)
-        _LOGGER.info(
-            'Cleanup successfull, warehouse order CR "%s" in order_status %s', name,
-            WarehouseOrderCRDSpec.STATE_PROCESSED)
+        if self.check_cr_exists(name):
+            self.update_cr_spec(name, spec_order_processed)
+            _LOGGER.info(
+                'Cleanup successfull, warehouse order CR "%s" in order_status %s', name,
+                WarehouseOrderCRDSpec.STATE_PROCESSED)
+        else:
+            _LOGGER.warning('Warehouse order CR "%s" does not exist, unable to clean up', name)
 
         # Delete sub warehouse orders if existing
         crs = self.list_all_cr()
@@ -221,10 +224,14 @@ class OrderController(K8sCRHandler):
                     name = '{lgnum}.{who}'.format(
                         lgnum=spec['data']['lgnum'], who=spec['data']['who'])
                     to_be_closed.append(name)
-                    self.update_cr_spec(name, spec_order_processed)
-                    _LOGGER.info(
-                        'Cleanup successfull, warehouse order CR "%s" in order_status %s',
-                        name, WarehouseOrderCRDSpec.STATE_PROCESSED)
+                    if self.check_cr_exists(name):
+                        self.update_cr_spec(name, spec_order_processed)
+                        _LOGGER.info(
+                            'Cleanup successfull, warehouse order CR "%s" in order_status %s',
+                            name, WarehouseOrderCRDSpec.STATE_PROCESSED)
+                    else:
+                        _LOGGER.warning(
+                            'Warehouse order CR "%s" does not exist, unable to clean up', name)
 
     def _order_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove deleted CR from self._processed_orders."""

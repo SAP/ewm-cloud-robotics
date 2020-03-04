@@ -151,6 +151,9 @@ spec:
               properties:
                 status:
                   type: string
+                  enum:
+                    - MOVING
+                    - DOCKING
             message:
               type: string
             status:
