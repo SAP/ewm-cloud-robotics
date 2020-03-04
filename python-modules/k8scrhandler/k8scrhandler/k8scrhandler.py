@@ -162,6 +162,9 @@ class K8sCRHandler:
         self.thread_run = True
         self.executor = ThreadPoolExecutor(max_workers=1)
 
+        # finalizer
+        self.finalizer = ''
+
     def register_callback(
             self, name: str, operations: List, callback: Callable[[Dict], None]) -> None:
         """
@@ -545,3 +548,83 @@ class K8sCRHandler:
         self.watcher.stop()
         _LOGGER.info('Stopping ThreadPoolExecutor')
         self.executor.shutdown(wait=False)
+
+    @retry(wait_fixed=500, stop_max_attempt_number=10)
+    def add_finalizer(self, name: str) -> bool:
+        """Add a finalizer to a CR."""
+        cls = self.__class__
+        if not self.finalizer:
+            _LOGGER.error('No name for finalizer set in self.finalizer')
+            return False
+
+        if self.check_cr_exists(name):
+            # Get current finalizers
+            cr_resp = self.get_cr(name)
+            finalizers = cr_resp['metadata'].get('finalizers', [])
+            # Add finalize to list
+            finalizers.append(self.finalizer)
+            custom_res = {'metadata': {'finalizers': finalizers}}
+            # Update CR
+            try:
+                self.co_api.patch_namespaced_custom_object(
+                    self.group,
+                    self.version,
+                    self.namespace,
+                    self.plural,
+                    name,
+                    custom_res,
+                    _request_timeout=cls.REQUEST_TIMEOUT)
+            except ApiException as err:
+                _LOGGER.error(
+                    '%s/%s: Exception when calling CustomObjectsApi->'
+                    'patch_namespaced_custom_object: %s', self.group, self.plural, err)
+                raise
+            else:
+                _LOGGER.debug('Added finalizer %s to CR %s', self.finalizer, name)
+                return True
+        else:
+            _LOGGER.error('Unable to add finalizer to CR %s. CR not found', name)
+            return False
+
+    @retry(wait_fixed=500, stop_max_attempt_number=10)
+    def remove_finalizer(self, name: str) -> bool:
+        """Remove a finalizer from a CR."""
+        cls = self.__class__
+        if not self.finalizer:
+            _LOGGER.error('No name for finalizer set in self.finalizer')
+            return False
+
+        if self.check_cr_exists(name):
+            # Get current finalizers
+            cr_resp = self.get_cr(name)
+            finalizers = cr_resp['metadata'].get('finalizers', [])
+            # Remove finalizer from list
+            try:
+                finalizers.remove(self.finalizer)
+            except ValueError:
+                _LOGGER.error(
+                    'Unable to remove finalizer from CR %s. Finalizer %s not found', name,
+                    self.finalizer)
+                return False
+            custom_res = {'metadata': {'finalizers': finalizers}}
+            # Update CR
+            try:
+                self.co_api.patch_namespaced_custom_object(
+                    self.group,
+                    self.version,
+                    self.namespace,
+                    self.plural,
+                    name,
+                    custom_res,
+                    _request_timeout=cls.REQUEST_TIMEOUT)
+            except ApiException as err:
+                _LOGGER.error(
+                    '%s/%s: Exception when calling CustomObjectsApi->'
+                    'patch_namespaced_custom_object: %s', self.group, self.plural, err)
+                raise
+            else:
+                _LOGGER.debug('Removed finalizer %s from CR %s', self.finalizer, name)
+                return True
+        else:
+            _LOGGER.error('Unable to remove finalizer from CR %s. CR not found', name)
+            return False

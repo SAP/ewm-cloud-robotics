@@ -52,6 +52,9 @@ class OrderController(K8sCRHandler):
             labels
         )
 
+        # Set finalizer name for robot controller
+        self.finalizer = '{}.ewm-robot-controller.sap.com'.format(self.robco_robot_name)
+
     @k8s_cr_callback
     def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
         """Process custom resource operation."""
@@ -167,3 +170,17 @@ class OrderController(K8sCRHandler):
                 return None
         else:
             return None
+
+    def add_who_finalizer(self, lgnum: str, who: str) -> None:
+        """Add a finalizer to warehouse order CR."""
+        name = '{}.{}'.format(lgnum, who)
+
+        if self.add_finalizer(name):
+            _LOGGER.info('Added finalizer %s to warehouse order CR %s', self.finalizer, name)
+
+    def remove_who_finalizer(self, lgnum: str, who: str) -> None:
+        """Add a finalizer from warehouse order CR."""
+        name = '{}.{}'.format(lgnum, who)
+
+        if self.remove_finalizer(name):
+            _LOGGER.info('Removed finalizer %s from warehouse order CR %s', self.finalizer, name)

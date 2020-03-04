@@ -453,6 +453,8 @@ class RobotEWMMachine(Machine):
             _LOGGER.info('Closing active warehouse order %s', self.active_who.who)
             who = WhoIdentifier(self.active_who.lgnum, self.active_who.who)
             self.warehouseorders.pop(who, None)
+            # Remove finalizer from warehouse order CR
+            self.order_controller.remove_who_finalizer(self.active_who.lgnum, self.active_who.who)
         else:
             _LOGGER.error('There is no active warehouse order')
 
@@ -465,6 +467,9 @@ class RobotEWMMachine(Machine):
             _LOGGER.info('Closing active sub warehouse order %s', self.active_sub_who.who)
             who = WhoIdentifier(self.active_sub_who.lgnum, self.active_sub_who.who)
             self.warehouseorders.pop(who, None)
+            # Remove finalizer from warehouse order CR
+            self.order_controller.remove_who_finalizer(
+                self.active_sub_who.lgnum, self.active_sub_who.who)
 
         self.active_sub_who = None
 
@@ -519,6 +524,8 @@ class RobotEWMMachine(Machine):
             if self.active_who:
                 _LOGGER.error('Warehouse order %s not closed properly', self.active_who.who)
             self.active_who = event.kwargs.get('warehouseorder')
+            # Add finalizer to warehouse order CR
+            self.order_controller.add_who_finalizer(self.active_who.lgnum, self.active_who.who)
         else:
             _LOGGER.error('No warehouse order object in parameters.')
 
@@ -529,6 +536,9 @@ class RobotEWMMachine(Machine):
                 _LOGGER.error(
                     'Sub warehouse order %s not closed properly', self.active_sub_who.who)
             self.active_sub_who = event.kwargs.get('sub_warehouseorder')
+            # Add finalizer to warehouse order CR
+            self.order_controller.add_who_finalizer(
+                self.active_sub_who.lgnum, self.active_sub_who.who)
         else:
             _LOGGER.error('No warehouse order object in parameters.')
 
