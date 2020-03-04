@@ -139,14 +139,7 @@ class ODataHandler:
             raise IOError(err)
         else:
             # Identify authorization error
-            if resp.status_code == 401 and self._config.authorization == self._config.AUTH_OAUTH:
-                self.auth_error = True
-                _LOGGER.error('Authorization error at %s', uri)
-            if ('application/json' not in resp.headers.get('content-type', '')
-                    and self._config.authorization == self._config.AUTH_OAUTH):
-                self.auth_error = True
-                _LOGGER.error(
-                    'Assuming authorization error at %s, content-type not application/json', uri)
+            self._identify_authorization_error(resp)
 
             # Save X-CSRF-Token and cookies
             if fetch_csrf:
@@ -226,14 +219,7 @@ class ODataHandler:
             raise IOError(err)
         else:
             # Identify authorization error
-            if resp.status_code == 401 and self._config.authorization == self._config.AUTH_OAUTH:
-                self.auth_error = True
-                _LOGGER.error('Authorization error at %s', uri)
-            if ('application/json' not in resp.headers.get('content-type', '')
-                    and self._config.authorization == self._config.AUTH_OAUTH):
-                self.auth_error = True
-                _LOGGER.error(
-                    'Assuming authorization error at %s, content-type not application/json', uri)
+            self._identify_authorization_error(resp)
 
             # Invalid X-CSRF-Token returns 403 error.
             # Refresh token and try again
@@ -242,9 +228,19 @@ class ODataHandler:
                 self.http_get('', fetch_csrf=True)
                 headers['X-CSRF-Token'] = self._csrftoken
                 try:
-                    resp = req(
-                        uri, json=jsonbody, params=params, headers=headers,
-                        cookies=self._cookies, auth=(self._config.user, self._config.password))
+                    # Basic authorization
+                    if self._config.authorization == ODataConfig.AUTH_BASIC:
+                        resp = req(
+                            uri, json=jsonbody, params=params, headers=headers,
+                            cookies=self._cookies, auth=(self._config.user, self._config.password))
+                    # OAuth
+                    else:
+                        if not self._bearer:
+                            self.get_bearer_token()
+                        headers['Authorization'] = 'Bearer {}'.format(self._bearer)
+                        resp = req(
+                            uri, json=jsonbody, params=params, headers=headers,
+                            cookies=self._cookies, timeout=cls.TIMEOUT)
                 except requests.ConnectionError as err:
                     _LOGGER.error(
                         'Connection error on OData %s request: %s', mode.upper(), err)
@@ -255,8 +251,30 @@ class ODataHandler:
                 except requests.RequestException as err:
                     _LOGGER.error('Error on OData %s request: %s', mode.upper(), err)
                     raise IOError(err)
+                else:
+                    # Identify authorization error
+                    self._identify_authorization_error(resp)
 
             return resp
+
+    def _identify_authorization_error(self, resp: requests.Response) -> None:
+        """Identify authorization errors when using OAuth."""
+        # Identify authorization error
+        if resp.status_code == 401 and self._config.authorization == self._config.AUTH_OAUTH:
+            self.auth_error = True
+            _LOGGER.error('Authorization error at %s', resp.url)
+            raise ConnectionError(
+                'Authorization error at {}'.format(resp.url))
+        # This is for the "feature" of certain services to respond with status code 200 and
+        # redirecting to a login page at authorization errors instead of status 401
+        if ('application/json' not in resp.headers.get('content-type', '')
+                and self._config.authorization == self._config.AUTH_OAUTH):
+            self.auth_error = True
+            _LOGGER.error(
+                'Assuming authorization error at %s, content-type not application/json', resp.url)
+            raise ConnectionError(
+                'Assuming authorization error at {}, content-type not application/json'.format(
+                    resp.url))
 
     def prepare_uri(
             self, endpoint: str, ids: Optional[Dict], navigation: Optional[str] = None) -> str:
