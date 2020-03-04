@@ -10,9 +10,9 @@ envs:
   ewmauth: "Basic"
   ewmpassword: ""
   ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
-  ewmlgnum: "1710"
-  ewmrsrctype: "RB01"
-  ewmrsrcgrp: "RB02"
+  ewmclientid: ""
+  ewmclientsecret: ""
+  ewmtokenendpoint: ""
 
 robot:
   name: ""

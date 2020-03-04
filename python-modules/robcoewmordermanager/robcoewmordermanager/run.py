@@ -78,6 +78,9 @@ def run_ordermanager():
     try:
         # Looping while K8S watchers are running
         while loop_control.shutdown is False:
+            # Refresh bearer token when using OAuth
+            if manager.odataconfig.authorization == manager.odataconfig.AUTH_OAUTH:
+                manager.odatahandler.refresh_bearer()
             # Check if K8S CR handler exception occured
             for k, exc in manager.ordercontroller.thread_exceptions.items():
                 _LOGGER.error(

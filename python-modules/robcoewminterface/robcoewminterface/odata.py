@@ -13,6 +13,7 @@
 """OData handler for robcoewminterface."""
 
 import logging
+import time
 
 from typing import Optional, Dict
 
@@ -40,6 +41,45 @@ class ODataHandler:
         self._config = config
         self._csrftoken = ''
         self._cookies: Optional[requests.cookies.RequestsCookieJar] = None
+        # OAuth related
+        self._bearer = ''
+        self._bearer_expires = time.time()
+        self.auth_error = False
+
+    def get_bearer_token(self) -> None:
+        """Authenticate at OAuth token endpoint."""
+        cls = self.__class__
+
+        headers = {'Accept': 'application/json'}
+
+        resp = requests.post(
+            self._config.tokenendpoint, headers=headers, timeout=cls.TIMEOUT,
+            auth=(self._config.clientid, self._config.clientsecret))
+
+        if resp.status_code == 200:
+            resp_dict = resp.json()
+            if resp_dict.get('token_type') != 'Bearer':
+                _LOGGER.error('token_type %s is not Bearer', resp_dict.get('token_type'))
+                return
+            self._bearer = resp_dict.get('access_token')
+            self.auth_error = False
+            # Add a 5 minutes buffer for token expiration
+            self._bearer_expires = time.time() + resp_dict.get('expires_in') - 300
+        else:
+            _LOGGER.error('Unable to get bearer token, status code: %s', resp.status_code)
+            raise requests.RequestException(
+                'Unable to get bearer token, status code: {}'.format(resp.status_code))
+
+    def refresh_bearer(self) -> None:
+        """Refresh bearer token before it expires."""
+        if time.time() > self._bearer_expires or self.auth_error:
+            try:
+                self.get_bearer_token()
+            except requests.RequestException as err:
+                _LOGGER.error(
+                    'Exception when connecting to token endpoint: %s', err)
+            else:
+                _LOGGER.info('Bearer token refreshed')
 
     def http_get(
             self, endpoint: str, urlparams: Optional[Dict] = None, ids: Optional[Dict] = None,
@@ -64,46 +104,60 @@ class ODataHandler:
         if fetch_csrf:
             headers['X-CSRF-Token'] = 'Fetch'
 
-        # Basic authorization
-        if self._config.authorization == ODataConfig.AUTH_BASIC:
-            try:
+        try:
+            # Basic authorization
+            if self._config.authorization == ODataConfig.AUTH_BASIC:
                 resp = requests.get(
                     uri, params=params, headers=headers, timeout=cls.TIMEOUT,
                     auth=(self._config.user, self._config.password))
-            except requests.ConnectionError as err:
-                _LOGGER.error(
-                    'Connection error on OData GET request to URI %s: %s',
-                    uri, err)
-                self.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=err.__class__.__name__).inc()
-                raise ConnectionError(err)
-            except requests.Timeout as err:
-                _LOGGER.error(
-                    'Timeout on OData GET request to URI %s: %s',
-                    uri, err)
-                self.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=err.__class__.__name__).inc()
-                raise TimeoutError(err)
-            except requests.RequestException as err:
-                _LOGGER.error(
-                    'Error on OData GET request to URI %s: %s', uri, err)
-                self.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=err.__class__.__name__).inc()
-                raise IOError(err)
+            # OAuth
             else:
-                # Save X-CSRF-Token and cookies
-                if fetch_csrf:
-                    try:
-                        self._csrftoken = resp.headers['X-CSRF-Token']
-                        self._cookies = resp.cookies
-                    except KeyError:
-                        _LOGGER.error('CSRF-Token requested but not returned')
-                        raise ConnectionError(
-                            'CSRF-Token requested but not returned')
-                return resp
+                if not self._bearer:
+                    self.get_bearer_token()
+                headers['Authorization'] = 'Bearer {}'.format(self._bearer)
+                resp = requests.get(
+                    uri, params=params, headers=headers, timeout=cls.TIMEOUT)
+        except requests.ConnectionError as err:
+            _LOGGER.error(
+                'Connection error on OData GET request to URI %s: %s',
+                uri, err)
+            self.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=err.__class__.__name__).inc()
+            raise ConnectionError(err)
+        except requests.Timeout as err:
+            _LOGGER.error(
+                'Timeout on OData GET request to URI %s: %s',
+                uri, err)
+            self.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=err.__class__.__name__).inc()
+            raise TimeoutError(err)
+        except requests.RequestException as err:
+            _LOGGER.error(
+                'Error on OData GET request to URI %s: %s', uri, err)
+            self.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=err.__class__.__name__).inc()
+            raise IOError(err)
         else:
-            # Other authorization types not implemented yet
-            raise NotImplementedError
+            # Identify authorization error
+            if resp.status_code == 401 and self._config.authorization == self._config.AUTH_OAUTH:
+                self.auth_error = True
+                _LOGGER.error('Authorization error at %s', uri)
+            if ('application/json' not in resp.headers.get('content-type', '')
+                    and self._config.authorization == self._config.AUTH_OAUTH):
+                self.auth_error = True
+                _LOGGER.error(
+                    'Assuming authorization error at %s, content-type not application/json', uri)
+
+            # Save X-CSRF-Token and cookies
+            if fetch_csrf:
+                try:
+                    self._csrftoken = resp.headers['X-CSRF-Token']
+                    self._cookies = resp.cookies
+                except KeyError:
+                    _LOGGER.error('CSRF-Token requested but not returned')
+                    raise ConnectionError(
+                        'CSRF-Token requested but not returned')
+            return resp
 
     def http_patch_post(
             self, mode: str, endpoint: str, jsonbody: Optional[Dict] = None,
@@ -138,56 +192,71 @@ class ODataHandler:
             self.http_get('', fetch_csrf=True)
         headers['X-CSRF-Token'] = self._csrftoken
 
-        # Basic authorization
-        if self._config.authorization == ODataConfig.AUTH_BASIC:
-            try:
+        try:
+            # Basic authorization
+            if self._config.authorization == ODataConfig.AUTH_BASIC:
                 resp = req(
                     uri, json=jsonbody, params=params, headers=headers, cookies=self._cookies,
                     timeout=cls.TIMEOUT, auth=(self._config.user, self._config.password))
-            except requests.ConnectionError as err:
-                _LOGGER.error(
-                    'Connection error on OData %s request to URI %s: %s', mode.upper(), uri, err)
-                self.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=err.__class__.__name__).inc()
-                raise ConnectionError(err)
-            except requests.Timeout as err:
-                _LOGGER.error(
-                    'Timeout on OData %s request to URI %s: %s', mode.upper(), uri, err)
-                self.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=err.__class__.__name__).inc()
-                raise TimeoutError(err)
-            except requests.RequestException as err:
-                _LOGGER.error(
-                    'Error on OData %s request to URI %s: %s', mode.upper(), uri, err)
-                self.odata_counter.labels(  # pylint: disable=no-member
-                    endpoint=endpoint, result=err.__class__.__name__).inc()
-                raise IOError(err)
+            # OAuth
             else:
-                # Invalid X-CSRF-Token returns 403 error.
-                # Refresh token and try again
-                if resp.status_code == 403:
-                    # Request new token_csrftoken_csrftoken
-                    self.http_get('', fetch_csrf=True)
-                    headers['X-CSRF-Token'] = self._csrftoken
-                    try:
-                        resp = req(
-                            uri, json=jsonbody, params=params, headers=headers,
-                            cookies=self._cookies, auth=(self._config.user, self._config.password))
-                    except requests.ConnectionError as err:
-                        _LOGGER.error(
-                            'Connection error on OData %s request: %s', mode.upper(), err)
-                        raise ConnectionError(err)
-                    except requests.Timeout as err:
-                        _LOGGER.error('Timeout on OData %s request: %s', mode.upper(), err)
-                        raise TimeoutError(err)
-                    except requests.RequestException as err:
-                        _LOGGER.error('Error on OData %s request: %s', mode.upper(), err)
-                        raise IOError(err)
-
-                return resp
+                if not self._bearer:
+                    self.get_bearer_token()
+                headers['Authorization'] = 'Bearer {}'.format(self._bearer)
+                resp = req(
+                    uri, json=jsonbody, params=params, headers=headers, cookies=self._cookies,
+                    timeout=cls.TIMEOUT)
+        except requests.ConnectionError as err:
+            _LOGGER.error(
+                'Connection error on OData %s request to URI %s: %s', mode.upper(), uri, err)
+            self.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=err.__class__.__name__).inc()
+            raise ConnectionError(err)
+        except requests.Timeout as err:
+            _LOGGER.error(
+                'Timeout on OData %s request to URI %s: %s', mode.upper(), uri, err)
+            self.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=err.__class__.__name__).inc()
+            raise TimeoutError(err)
+        except requests.RequestException as err:
+            _LOGGER.error(
+                'Error on OData %s request to URI %s: %s', mode.upper(), uri, err)
+            self.odata_counter.labels(  # pylint: disable=no-member
+                endpoint=endpoint, result=err.__class__.__name__).inc()
+            raise IOError(err)
         else:
-            # Other authorization types not implemented yet
-            raise NotImplementedError
+            # Identify authorization error
+            if resp.status_code == 401 and self._config.authorization == self._config.AUTH_OAUTH:
+                self.auth_error = True
+                _LOGGER.error('Authorization error at %s', uri)
+            if ('application/json' not in resp.headers.get('content-type', '')
+                    and self._config.authorization == self._config.AUTH_OAUTH):
+                self.auth_error = True
+                _LOGGER.error(
+                    'Assuming authorization error at %s, content-type not application/json', uri)
+
+            # Invalid X-CSRF-Token returns 403 error.
+            # Refresh token and try again
+            if resp.status_code == 403:
+                # Request new token_csrftoken_csrftoken
+                self.http_get('', fetch_csrf=True)
+                headers['X-CSRF-Token'] = self._csrftoken
+                try:
+                    resp = req(
+                        uri, json=jsonbody, params=params, headers=headers,
+                        cookies=self._cookies, auth=(self._config.user, self._config.password))
+                except requests.ConnectionError as err:
+                    _LOGGER.error(
+                        'Connection error on OData %s request: %s', mode.upper(), err)
+                    raise ConnectionError(err)
+                except requests.Timeout as err:
+                    _LOGGER.error('Timeout on OData %s request: %s', mode.upper(), err)
+                    raise TimeoutError(err)
+                except requests.RequestException as err:
+                    _LOGGER.error('Error on OData %s request: %s', mode.upper(), err)
+                    raise IOError(err)
+
+            return resp
 
     def prepare_uri(
             self, endpoint: str, ids: Optional[Dict], navigation: Optional[str] = None) -> str:

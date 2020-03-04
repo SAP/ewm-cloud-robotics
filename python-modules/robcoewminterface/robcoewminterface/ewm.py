@@ -56,6 +56,7 @@ class EWMOdata:
             else:
                 return True
 
+        # Determine error code
         if http_resp.status_code == 403:
             error_code = '403'
         else:

@@ -52,7 +52,7 @@ class ProcessedMessageMemory:
         self.robotrequests: Dict[str, RequestFromRobot] = {}
         self.deleted_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
             str, float] = OrderedDict()
-        self.request_count: DefaultDict[RobotIdentifier, int] = defaultdict(int)
+        self.request_count: DefaultDict[str, int] = defaultdict(int)
 
     def memorize_who_conf(self, conf: ConfirmWarehouseTask) -> None:
         """Memorize warehouse order confirmation."""
@@ -97,3 +97,4 @@ class ProcessedMessageMemory:
         for _ in range(to_remove):
             robotrequest_del, _ = self.deleted_robotrequests.popitem(last=False)
             self.robotrequests.pop(robotrequest_del, None)
+            self.request_count.pop(robotrequest_del, None)
