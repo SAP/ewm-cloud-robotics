@@ -63,8 +63,8 @@ class ODataHandler:
                 return
             self._bearer = resp_dict.get('access_token')
             self.auth_error = False
-            # Add a 5 minutes buffer for token expiration
-            self._bearer_expires = time.time() + resp_dict.get('expires_in') - 300
+            # Add a 1 minute buffer for token expiration
+            self._bearer_expires = time.time() + resp_dict.get('expires_in') - 60
         else:
             _LOGGER.error('Unable to get bearer token, status code: %s', resp.status_code)
             raise requests.RequestException(
@@ -258,17 +258,16 @@ class ODataHandler:
             return resp
 
     def _identify_authorization_error(self, resp: requests.Response) -> None:
-        """Identify authorization errors when using OAuth."""
+        """Identify authorization errors."""
         # Identify authorization error
-        if resp.status_code == 401 and self._config.authorization == self._config.AUTH_OAUTH:
+        if resp.status_code == 401:
             self.auth_error = True
             _LOGGER.error('Authorization error at %s', resp.url)
             raise ConnectionError(
                 'Authorization error at {}'.format(resp.url))
         # This is for the "feature" of certain services to respond with status code 200 and
         # redirecting to a login page at authorization errors instead of status 401
-        if ('application/json' not in resp.headers.get('content-type', '')
-                and self._config.authorization == self._config.AUTH_OAUTH):
+        if 'application/json' not in resp.headers.get('content-type', ''):
             self.auth_error = True
             _LOGGER.error(
                 'Assuming authorization error at %s, content-type not application/json', resp.url)
