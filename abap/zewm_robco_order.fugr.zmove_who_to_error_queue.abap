@@ -52,11 +52,22 @@ function zmove_who_to_error_queue .
 
 
 * Get error queue
-  select single error_queue from zewm_trsrc_typ into @lv_queue
+* First try to get error queue from resource group
+  select single zewm_error_queue from /scwm/trsrc_grp into @lv_queue
     where lgnum = @iv_lgnum and
-          rsrc_type = @is_rsrc-rsrc_type.
+          rsrc_grp = @is_rsrc-rsrc_grp.
   if sy-subrc <> 0.
-    raise robot_not_found.
+    clear lv_queue.
+  endif.
+
+* If error queue is still initial, get it from resource type
+  if lv_queue is initial.
+    select single error_queue from zewm_trsrc_typ into @lv_queue
+      where lgnum = @iv_lgnum and
+            rsrc_type = @is_rsrc-rsrc_type.
+    if sy-subrc <> 0.
+      raise robot_not_found.
+    endif.
   endif.
 
   if lv_queue is initial.
