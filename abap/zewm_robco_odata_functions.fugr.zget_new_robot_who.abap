@@ -58,7 +58,7 @@ function zget_new_robot_who .
 * Enqueue resource assignment to warehouse order
   call function 'ENQUEUE_EZEWM_ASSIGNROBO'
     exporting
-      mode_/scwm/rsrc = 'X'
+      mode_/scwm/rsrc = 'E'
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc
@@ -77,7 +77,6 @@ function zget_new_robot_who .
     exporting
       iv_lgnum        = iv_lgnum
       iv_rsrc         = iv_rsrc
-      iv_enqueue      = abap_false
     importing
       et_who          = lt_who
     exceptions
@@ -126,19 +125,19 @@ function zget_new_robot_who .
 * Assign Warehouse Order to Ressource
       call function 'ZASSIGN_WHO_TO_RSRC'
         exporting
-          iv_lgnum           = iv_lgnum
-          iv_rsrc            = iv_rsrc
-          it_whoid           = lt_whoid
+          iv_lgnum               = iv_lgnum
+          iv_rsrc                = iv_rsrc
+          it_whoid               = lt_whoid
         importing
-          et_who             = lt_who
+          et_who                 = lt_who
         exceptions
-          who_locked         = 1
-          wht_assigned       = 2
-          who_assigned       = 3
-          no_operating_env   = 4
-          rsrc_not_found     = 5
-          who_status_not_set = 6
-          others             = 7.
+          who_locked             = 1
+          wht_assigned           = 2
+          who_assigned           = 3
+          no_operating_env       = 4
+          rsrc_not_found         = 5
+          who_status_not_updated = 6
+          others                 = 7.
 
       case sy-subrc.
         when 0.

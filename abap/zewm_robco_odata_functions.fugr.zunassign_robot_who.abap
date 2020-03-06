@@ -68,7 +68,7 @@ function zunassign_robot_who.
 * Enqueue resource unassignment to warehouse order
   call function 'ENQUEUE_EZEWM_ASSIGNROBO'
     exporting
-      mode_/scwm/rsrc = 'X'
+      mode_/scwm/rsrc = 'E'
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc
@@ -97,6 +97,7 @@ function zunassign_robot_who.
   case sy-subrc.
     when 0.
       clear ls_who-rsrc.
+      clear ls_who-status.
       move-corresponding ls_who to es_who.
     when 1.
       raise who_locked.

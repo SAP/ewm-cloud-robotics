@@ -19,7 +19,6 @@ function zget_new_robotgroup_who .
 *"  EXCEPTIONS
 *"      NO_ORDER_FOUND
 *"      NO_ROBOT_RESOURCE_TYPE
-*"      INTERNAL_ERROR
 *"----------------------------------------------------------------------
 
   data: lv_robot_type type zewm_de_robot_type,
@@ -54,30 +53,20 @@ function zget_new_robotgroup_who .
     append ls_wo_rsrc_ty-who to lt_whoid.
   endloop.
 
-* Don't assign WHO to resource (empty resource), but set status in process
-  call function 'ZASSIGN_WHO_TO_RSRC'
+* Set Warehouse Order status in process
+  call function 'ZSET_WHO_IN_PROCESS'
     exporting
-      iv_lgnum           = iv_lgnum
-      iv_rsrc            = space
-      it_whoid           = lt_whoid
-      iv_set_ip_only     = abap_true
+      iv_lgnum               = iv_lgnum
+      it_whoid               = lt_whoid
     importing
-      et_who             = et_who
+      et_who                 = et_who
     exceptions
-      who_locked         = 1
-      wht_assigned       = 2
-      who_assigned       = 3
-      no_operating_env   = 4
-      rsrc_not_found     = 5
-      who_status_not_set = 6
-      others             = 7.
-  case sy-subrc.
-    when 0.
+      who_locked             = 1
+      who_status_not_updated = 2
+      others                 = 3.
 
-    when 1 or 2.
-      raise no_order_found.
-    when others.
-      raise internal_error.
-  endcase.
+  if sy-subrc <> 0.
+    raise no_order_found.
+  endif.
 
 endfunction.

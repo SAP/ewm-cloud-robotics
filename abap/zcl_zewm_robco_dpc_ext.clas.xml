@@ -150,6 +150,12 @@
      <ENTRY>Warehouse Task is confirmed already.</ENTRY>
      <LENGTH>80</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>024</KEY>
+     <ENTRY>Warehouse Order status not updated.</ENTRY>
+     <LENGTH>70</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
@@ -283,6 +289,12 @@
      <CMPNAME>GC_ERROR_WOL</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Error Code: Warehouse Order locked</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_WSN</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Warehouse Order status not updated.</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>

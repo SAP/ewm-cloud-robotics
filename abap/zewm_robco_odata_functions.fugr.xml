@@ -359,9 +359,6 @@
       <RSEXC>
        <EXCEPTION>NO_ROBOT_RESOURCE_TYPE</EXCEPTION>
       </RSEXC>
-      <RSEXC>
-       <EXCEPTION>INTERNAL_ERROR</EXCEPTION>
-      </RSEXC>
      </EXCEPTION>
      <DOCUMENTATION>
       <RSFDO>
@@ -398,11 +395,6 @@
        <PARAMETER>NO_ROBOT_RESOURCE_TYPE</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Resource Type is not a Robot Resource Type</STEXT>
-      </RSFDO>
-      <RSFDO>
-       <PARAMETER>INTERNAL_ERROR</PARAMETER>
-       <KIND>X</KIND>
-       <STEXT>Internal error</STEXT>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -494,13 +486,6 @@
        <REFERENCE>X</REFERENCE>
        <TYP>/SCWM/DE_RSRC</TYP>
       </RSIMP>
-      <RSIMP>
-       <PARAMETER>IV_ENQUEUE</PARAMETER>
-       <DEFAULT>&apos;X&apos;</DEFAULT>
-       <OPTIONAL>X</OPTIONAL>
-       <REFERENCE>X</REFERENCE>
-       <TYP>ABAP_BOOL</TYP>
-      </RSIMP>
      </IMPORT>
      <EXPORT>
       <RSEXP>
@@ -530,11 +515,6 @@
        <PARAMETER>IV_RSRC</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource (Means of Transportation or User)</STEXT>
-      </RSFDO>
-      <RSFDO>
-       <PARAMETER>IV_ENQUEUE</PARAMETER>
-       <KIND>P</KIND>
-       <STEXT>Enqueue Resource Assignment</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WHO</PARAMETER>
@@ -946,6 +926,80 @@
        <PARAMETER>WHO_NOT_UNASSIGNED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Order could not be unassigned</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>INTERNAL_ERROR</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Internal error</STEXT>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
+     <FUNCNAME>ZUNSET_WHO_IN_PROCESS_STATUS</FUNCNAME>
+     <SHORT_TEXT>Unset warehouse order in process status</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_WHO</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_WHO</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>ES_WHO</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/WHO</TYP>
+      </RSEXP>
+     </EXPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>WHO_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_LOCKED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_STATUS_NOT_UPDATED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>INTERNAL_ERROR</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_WHO</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Order Number</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ES_WHO</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Order</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order was not found</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_LOCKED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order is locked</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_STATUS_NOT_UPDATED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order Status could not be updated</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>INTERNAL_ERROR</PARAMETER>

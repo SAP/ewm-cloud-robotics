@@ -38,7 +38,7 @@ function zconfirm_warehouse_task.
 * Enqueue resource unassignment from warehouse order
   call function 'ENQUEUE_EZEWM_ASSIGNROBO'
     exporting
-      mode_/scwm/rsrc = 'X'
+      mode_/scwm/rsrc = 'E'
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc

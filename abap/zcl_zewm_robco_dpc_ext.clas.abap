@@ -28,6 +28,7 @@ public section.
   constants GC_ERROR_NEQ type STRING value 'NO_ERROR_QUEUE_FOUND' ##NO_TEXT.
   constants GC_ERROR_QNC type STRING value 'QUEUE_NOT_CHANGED' ##NO_TEXT.
   constants GC_ERROR_WAC type STRING value 'WAREHOUSE_TASK_ALREADY_CONFIRMED' ##NO_TEXT.
+  constants GC_ERROR_WSN type STRING value 'WAREHOUSE_ORDER_STATUS_NOT_UPDATED' ##NO_TEXT.
 
   methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~EXECUTE_ACTION
     redefinition .
@@ -157,7 +158,6 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           exporting
             iv_lgnum        = lv_lgnum
             iv_rsrc         = lv_rsrc
-            iv_enqueue      = abap_true
           importing
             et_who          = lt_who
           exceptions
@@ -256,8 +256,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           exceptions
             no_order_found         = 1
             no_robot_resource_type = 2
-            internal_error         = 3
-            others                 = 4.
+            others                 = 3.
 
         case sy-subrc.
           when 0.
@@ -475,7 +474,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
                 message          = text-003.
         endcase.  "case sy-subrc.
 
-      when 'UnassignRobotFromWarehouseorder'.
+      when 'UnassignRobotFromWarehouseOrder'.
         call function 'ZUNASSIGN_ROBOT_WHO'
           exporting
             iv_lgnum           = lv_lgnum
@@ -540,6 +539,53 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
                 message          = text-003.
         endcase.  "case sy-subrc.
 
+      when 'UnsetWarehouseorderInProcessStatus'.
+        call function 'ZUNSET_WHO_IN_PROCESS_STATUS'
+          exporting
+            iv_lgnum               = lv_lgnum
+            iv_who                 = lv_who
+          importing
+            es_who                 = ls_who
+          exceptions
+            who_not_found          = 1
+            who_locked             = 2
+            who_status_not_updated = 3
+            internal_error         = 4
+            others                 = 5.
+        case sy-subrc.
+          when 0.
+            move-corresponding ls_who to ls_warehouseorder.
+            copy_data_to_ref( exporting is_data = ls_warehouseorder
+              changing cr_data = er_data ).
+          when 1.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
+          when 2.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wol
+                message          = text-010.
+          when 3.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_wsn
+                message          = text-024.
+          when others.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
+        endcase.  "case sy-subrc.
 
       when 'SendFirstConfirmationError'.
 

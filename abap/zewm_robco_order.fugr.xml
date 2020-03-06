@@ -27,13 +27,6 @@
        <REFERENCE>X</REFERENCE>
        <TYP>/SCWM/TT_WHOID</TYP>
       </RSIMP>
-      <RSIMP>
-       <PARAMETER>IV_SET_IP_ONLY</PARAMETER>
-       <DEFAULT>ABAP_FALSE</DEFAULT>
-       <OPTIONAL>X</OPTIONAL>
-       <REFERENCE>X</REFERENCE>
-       <TYP>XFELD</TYP>
-      </RSIMP>
      </IMPORT>
      <EXPORT>
       <RSEXP>
@@ -59,7 +52,7 @@
        <EXCEPTION>RSRC_NOT_FOUND</EXCEPTION>
       </RSEXC>
       <RSEXC>
-       <EXCEPTION>WHO_STATUS_NOT_SET</EXCEPTION>
+       <EXCEPTION>WHO_STATUS_NOT_UPDATED</EXCEPTION>
       </RSEXC>
      </EXCEPTION>
      <DOCUMENTATION>
@@ -77,11 +70,6 @@
        <PARAMETER>IT_WHOID</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Table of Warehouse Order Numbers</STEXT>
-      </RSFDO>
-      <RSFDO>
-       <PARAMETER>IV_SET_IP_ONLY</PARAMETER>
-       <KIND>P</KIND>
-       <STEXT>Set orders to status in process without ressource assignment</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WHO</PARAMETER>
@@ -114,9 +102,9 @@
        <STEXT>Ressource not found</STEXT>
       </RSFDO>
       <RSFDO>
-       <PARAMETER>WHO_STATUS_NOT_SET</PARAMETER>
+       <PARAMETER>WHO_STATUS_NOT_UPDATED</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Warehouse Order Status could not be set</STEXT>
+       <STEXT>Warehouse Order Status could not be updated</STEXT>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -299,6 +287,75 @@
        <PARAMETER>QUEUE_NOT_CHANGED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Queue could not be changed</STEXT>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
+     <FUNCNAME>ZSET_WHO_IN_PROCESS</FUNCNAME>
+     <SHORT_TEXT>Set or unset Warehouse Orders status in process</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IT_WHOID</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WHOID</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_UNSET</PARAMETER>
+       <OPTIONAL>X</OPTIONAL>
+       <REFERENCE>X</REFERENCE>
+       <TYP>ABAP_BOOL</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>ET_WHO</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WHO</TYP>
+      </RSEXP>
+     </EXPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>WHO_LOCKED</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>WHO_STATUS_NOT_UPDATED</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IT_WHOID</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Table of Warehouse Order Numbers</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_UNSET</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>if abap_true unset in process status</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ET_WHO</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Order</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_LOCKED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order is locked</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>WHO_STATUS_NOT_UPDATED</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Warehouse Order Status could not be updated</STEXT>
       </RSFDO>
      </DOCUMENTATION>
     </item>

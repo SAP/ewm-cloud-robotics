@@ -56,7 +56,7 @@ function zsend_second_conf_error .
 * Enqueue resource assignment to warehouse order
   call function 'ENQUEUE_EZEWM_ASSIGNROBO'
     exporting
-      mode_/scwm/rsrc = 'X'
+      mode_/scwm/rsrc = 'E'
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc

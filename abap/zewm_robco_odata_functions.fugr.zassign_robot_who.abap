@@ -57,7 +57,7 @@ function zassign_robot_who.
 * Enqueue resource assignment to warehouse order
   call function 'ENQUEUE_EZEWM_ASSIGNROBO'
     exporting
-      mode_/scwm/rsrc = 'X'
+      mode_/scwm/rsrc = 'E'
       mandt           = sy-mandt
       lgnum           = iv_lgnum
       rsrc            = iv_rsrc
@@ -86,19 +86,19 @@ function zassign_robot_who.
 * Assign Warehouse Order to Resource
   call function 'ZASSIGN_WHO_TO_RSRC'
     exporting
-      iv_lgnum           = iv_lgnum
-      iv_rsrc            = iv_rsrc
-      it_whoid           = lt_whoid
+      iv_lgnum               = iv_lgnum
+      iv_rsrc                = iv_rsrc
+      it_whoid               = lt_whoid
     importing
-      et_who             = lt_who
+      et_who                 = lt_who
     exceptions
-      who_locked         = 1
-      wht_assigned       = 2
-      who_assigned       = 3
-      no_operating_env   = 4
-      rsrc_not_found     = 5
-      who_status_not_set = 6
-      others             = 7.
+      who_locked             = 1
+      wht_assigned           = 2
+      who_assigned           = 3
+      no_operating_env       = 4
+      rsrc_not_found         = 5
+      who_status_not_updated = 6
+      others                 = 7.
 
   case sy-subrc.
     when 0.
@@ -112,7 +112,7 @@ function zassign_robot_who.
     when 2.
       raise wht_assigned.
     when 3.
-      raise wht_assigned.
+      raise who_assigned.
     when 4.
       raise internal_error.
     when 5.

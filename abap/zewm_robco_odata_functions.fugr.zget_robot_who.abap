@@ -12,7 +12,6 @@ function zget_robot_who .
 *"  IMPORTING
 *"     REFERENCE(IV_LGNUM) TYPE  /SCWM/LGNUM
 *"     REFERENCE(IV_RSRC) TYPE  /SCWM/DE_RSRC
-*"     REFERENCE(IV_ENQUEUE) TYPE  ABAP_BOOL DEFAULT 'X'
 *"  EXPORTING
 *"     REFERENCE(ET_WHO) TYPE  /SCWM/TT_WHO
 *"  EXCEPTIONS
@@ -50,24 +49,22 @@ function zget_robot_who .
     endif.
   endif.
 
-* Enqueue resource assignment to warehouse order if requested
-  if iv_enqueue = abap_true.
-    call function 'ENQUEUE_EZEWM_ASSIGNROBO'
-      exporting
-        mode_/scwm/rsrc = 'X'
-        mandt           = sy-mandt
-        lgnum           = iv_lgnum
-        rsrc            = iv_rsrc
-        _scope          = '3'
-        _wait           = abap_true
-      exceptions
-        foreign_lock    = 1
-        system_failure  = 2
-        others          = 3.
-    if sy-subrc <> 0.
-      raise internal_error.
-    endif.
-  endif.  "if iv_enqueue = abap_true.
+* Enqueue resource assignment to warehouse order
+  call function 'ENQUEUE_EZEWM_ASSIGNROBO'
+    exporting
+      mode_/scwm/rsrc = 'E'
+      mandt           = sy-mandt
+      lgnum           = iv_lgnum
+      rsrc            = iv_rsrc
+      _scope          = '3'
+      _wait           = abap_true
+    exceptions
+      foreign_lock    = 1
+      system_failure  = 2
+      others          = 3.
+  if sy-subrc <> 0.
+    raise internal_error.
+  endif.
 
 * Get WHO assigend to the robot
   call function 'ZGET_ASSIGNED_ROBOT_WHO'

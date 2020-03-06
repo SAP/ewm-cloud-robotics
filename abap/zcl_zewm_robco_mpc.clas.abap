@@ -6,9 +6,9 @@ class ZCL_ZEWM_ROBCO_MPC definition
 public section.
 
   types:
-          NEWWAREHOUSEORDER type /SCWM/WHO .
+      NEWWAREHOUSEORDER type /SCWM/WHO .
   types:
-       begin of ts_text_element,
+   begin of ts_text_element,
       artifact_name  type c length 40,       " technical name
       artifact_type  type c length 4,
       parent_artifact_name type c length 40, " technical name
@@ -16,53 +16,53 @@ public section.
       text_symbol    type textpoolky,
    end of ts_text_element .
   types:
-             tt_text_elements type standard table of ts_text_element with key text_symbol .
+         tt_text_elements type standard table of ts_text_element with key text_symbol .
   types:
-          WAREHOUSETASKCONFIRMATION type /SCWM/LTAP .
+      WAREHOUSETASKCONFIRMATION type /SCWM/LTAP .
   types:
-        begin of TS_GETNEWROBOTWAREHOUSEORDER,
-        RSRC type C length 18,
+    begin of TS_GETNEWROBOTWAREHOUSEORDER,
         LGNUM type C length 4,
+        RSRC type C length 18,
     end of TS_GETNEWROBOTWAREHOUSEORDER .
   types:
-        begin of TS_SETROBOTSTATUS,
-        EXCCODE type C length 4,
-        RSRC type C length 18,
+    begin of TS_SETROBOTSTATUS,
         LGNUM type C length 4,
+        RSRC type C length 18,
+        EXCCODE type C length 4,
     end of TS_SETROBOTSTATUS .
   types:
-        begin of TS_GETROBOTWAREHOUSEORDERS,
-        RSRC type C length 18,
+    begin of TS_GETROBOTWAREHOUSEORDERS,
         LGNUM type C length 4,
+        RSRC type C length 18,
     end of TS_GETROBOTWAREHOUSEORDERS .
   types:
-        begin of TS_CONFIRMWAREHOUSETASKFIRSTST,
-        RSRC type C length 18,
-        LGNUM type C length 4,
+    begin of TS_CONFIRMWAREHOUSETASKFIRSTST,
         TANUM type C length 12,
+        LGNUM type C length 4,
+        RSRC type C length 18,
     end of TS_CONFIRMWAREHOUSETASKFIRSTST .
   types:
-        begin of TS_GETNEWROBOTTYPEWAREHOUSEORD,
-        NO_WHO type /IWBEP/SB_ODATA_TY_INT2,
-        LGNUM type C length 4,
-        RSRC_GRP type C length 4,
+    begin of TS_GETNEWROBOTTYPEWAREHOUSEORD,
         RSRC_TYPE type C length 4,
+        RSRC_GRP type C length 4,
+        LGNUM type C length 4,
+        NO_WHO type /IWBEP/SB_ODATA_TY_INT2,
     end of TS_GETNEWROBOTTYPEWAREHOUSEORD .
   types:
-        begin of TS_UNASSIGNROBOTFROMWAREHOUSEO,
-        WHO type C length 10,
-        RSRC type C length 18,
+    begin of TS_UNASSIGNROBOTFROMWAREHOUSEO,
         LGNUM type C length 4,
+        RSRC type C length 18,
+        WHO type C length 10,
     end of TS_UNASSIGNROBOTFROMWAREHOUSEO .
   types:
-        begin of TS_SENDFIRSTCONFIRMATIONERROR,
-        TANUM type C length 12,
-        WHO type C length 10,
-        RSRC type C length 18,
+    begin of TS_SENDFIRSTCONFIRMATIONERROR,
         LGNUM type C length 4,
+        RSRC type C length 18,
+        WHO type C length 10,
+        TANUM type C length 12,
     end of TS_SENDFIRSTCONFIRMATIONERROR .
   types:
-        begin of TS_CONFIRMWAREHOUSETASK,
+    begin of TS_CONFIRMWAREHOUSETASK,
         LGNUM type C length 4,
         TANUM type C length 12,
         NISTA type P length 16 decimals 14,
@@ -74,42 +74,47 @@ public section.
         RSRC type C length 18,
     end of TS_CONFIRMWAREHOUSETASK .
   types:
-        begin of TS_ASSIGNROBOTTOWAREHOUSEORDER,
+    begin of TS_ASSIGNROBOTTOWAREHOUSEORDER,
         LGNUM type C length 4,
         RSRC type C length 18,
         WHO type C length 10,
     end of TS_ASSIGNROBOTTOWAREHOUSEORDER .
   types:
-        begin of TS_SENDSECONDCONFIRMATIONERROR,
+    begin of TS_SENDSECONDCONFIRMATIONERROR,
         LGNUM type C length 4,
         RSRC type C length 18,
         WHO type C length 10,
         TANUM type C length 12,
     end of TS_SENDSECONDCONFIRMATIONERROR .
   types:
-         TS_WAREHOUSEORDER type /SCWM/WHO .
+    begin of TS_UNSETWAREHOUSEORDERINPROCES,
+        WHO type C length 10,
+        LGNUM type C length 4,
+    end of TS_UNSETWAREHOUSEORDERINPROCES .
   types:
-    TT_WAREHOUSEORDER type standard table of TS_WAREHOUSEORDER .
+     TS_WAREHOUSEORDER type /SCWM/WHO .
   types:
-         TS_WAREHOUSENUMBER type /SCWM/T300 .
+TT_WAREHOUSEORDER type standard table of TS_WAREHOUSEORDER .
   types:
-    TT_WAREHOUSENUMBER type standard table of TS_WAREHOUSENUMBER .
+     TS_WAREHOUSENUMBER type /SCWM/T300 .
   types:
-         TS_WAREHOUSEDESCRIPTION type /SCWM/T300T .
+TT_WAREHOUSENUMBER type standard table of TS_WAREHOUSENUMBER .
   types:
-    TT_WAREHOUSEDESCRIPTION type standard table of TS_WAREHOUSEDESCRIPTION .
+     TS_WAREHOUSEDESCRIPTION type /SCWM/T300T .
   types:
-         TS_STORAGEBIN type /SCWM/LAGP .
+TT_WAREHOUSEDESCRIPTION type standard table of TS_WAREHOUSEDESCRIPTION .
   types:
-    TT_STORAGEBIN type standard table of TS_STORAGEBIN .
+     TS_STORAGEBIN type /SCWM/LAGP .
   types:
-         TS_ROBOT type /SCWM/RSRC .
+TT_STORAGEBIN type standard table of TS_STORAGEBIN .
   types:
-    TT_ROBOT type standard table of TS_ROBOT .
+     TS_ROBOT type /SCWM/RSRC .
   types:
-         TS_OPENWAREHOUSETASK type /SCWM/ORDIM_O .
+TT_ROBOT type standard table of TS_ROBOT .
   types:
-    TT_OPENWAREHOUSETASK type standard table of TS_OPENWAREHOUSETASK .
+     TS_OPENWAREHOUSETASK type /SCWM/ORDIM_O .
+  types:
+TT_OPENWAREHOUSETASK type standard table of TS_OPENWAREHOUSETASK .
 
   constants GC_NEWWAREHOUSEORDER type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'NewWarehouseOrder' ##NO_TEXT.
   constants GC_OPENWAREHOUSETASK type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'OpenWarehouseTask' ##NO_TEXT.
@@ -224,14 +229,14 @@ lo_action->set_return_multiplicity( '1' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '021' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '020' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '021' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_GETNEWROBOTWAREHOUSEORDER' ). "#EC NOTEXT
 ***********************************************************************************************************************************
 *   ACTION - SetRobotStatus
@@ -250,16 +255,16 @@ lo_action->set_return_multiplicity( '1' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Exccode'    iv_abap_fieldname = 'EXCCODE' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '008' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '010' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '009' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '010' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Exccode'    iv_abap_fieldname = 'EXCCODE' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '008' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_SETROBOTSTATUS' ). "#EC NOTEXT
@@ -280,14 +285,14 @@ lo_action->set_return_multiplicity( 'N' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '027' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '026' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '027' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_GETROBOTWAREHOUSEORDERS' ). "#EC NOTEXT
 ***********************************************************************************************************************************
 *   ACTION - ConfirmWarehouseTaskFirstStep
@@ -306,18 +311,18 @@ lo_action->set_return_multiplicity( 'N' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '030' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '029' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Tanum'    iv_abap_fieldname = 'TANUM' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '028' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 12 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '029' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '030' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_CONFIRMWAREHOUSETASKFIRSTST' ). "#EC NOTEXT
 ***********************************************************************************************************************************
 *   ACTION - GetNewRobotTypeWarehouseOrders
@@ -336,27 +341,27 @@ lo_action->set_return_multiplicity( 'N' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'NoWho'    iv_abap_fieldname = 'NO_WHO' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '024' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_int16( ).
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '022' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'RsrcType'    iv_abap_fieldname = 'RSRC_TYPE' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '025' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'RsrcGrp'    iv_abap_fieldname = 'RSRC_GRP' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '031' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'RsrcType'    iv_abap_fieldname = 'RSRC_TYPE' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '025' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '022' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'NoWho'    iv_abap_fieldname = 'NO_WHO' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '024' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_int16( ).
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_GETNEWROBOTTYPEWAREHOUSEORD' ). "#EC NOTEXT
 ***********************************************************************************************************************************
-*   ACTION - UnassignRobotFromWarehouseorder
+*   ACTION - UnassignRobotFromWarehouseOrder
 ***********************************************************************************************************************************
 
-lo_action = model->create_action( 'UnassignRobotFromWarehouseorder' ).  "#EC NOTEXT
+lo_action = model->create_action( 'UnassignRobotFromWarehouseOrder' ).  "#EC NOTEXT
 *Set return entity type
 lo_action->set_return_entity_type( 'WarehouseOrder' ). "#EC NOTEXT
 *Set HTTP method GET or POST
@@ -369,18 +374,18 @@ lo_action->set_return_multiplicity( '1' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Who'    iv_abap_fieldname = 'WHO' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '036' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '035' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '034' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '054' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '055' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Who'    iv_abap_fieldname = 'WHO' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '056' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_UNASSIGNROBOTFROMWAREHOUSEO' ). "#EC NOTEXT
 ***********************************************************************************************************************************
 *   ACTION - SendFirstConfirmationError
@@ -399,22 +404,22 @@ lo_action->set_return_multiplicity( '1' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Tanum'    iv_abap_fieldname = 'TANUM' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '046' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 12 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Who'    iv_abap_fieldname = 'WHO' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '042' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '041' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
-lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
-lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '040' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Rsrc'    iv_abap_fieldname = 'RSRC' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '041' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Who'    iv_abap_fieldname = 'WHO' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '042' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Tanum'    iv_abap_fieldname = 'TANUM' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '046' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 12 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_SENDFIRSTCONFIRMATIONERROR' ). "#EC NOTEXT
 ***********************************************************************************************************************************
 *   ACTION - ConfirmWarehouseTask
@@ -534,6 +539,32 @@ lo_parameter->set_label_from_text_element( iv_text_element_symbol = '047' iv_tex
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 12 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_SENDSECONDCONFIRMATIONERROR' ). "#EC NOTEXT
+***********************************************************************************************************************************
+*   ACTION - UnsetWarehouseorderInProcessStatus
+***********************************************************************************************************************************
+
+lo_action = model->create_action( 'UnsetWarehouseorderInProcessStatus' ).  "#EC NOTEXT
+*Set return entity type
+lo_action->set_return_entity_type( 'WarehouseOrder' ). "#EC NOTEXT
+*Set HTTP method GET or POST
+lo_action->set_http_method( 'POST' ). "#EC NOTEXT
+*Set the action for entity
+lo_action->set_action_for( 'WarehouseOrder' ).        "#EC NOTEXT
+* Set return type multiplicity
+lo_action->set_return_multiplicity( '1' ). "#EC NOTEXT
+***********************************************************************************************************************************
+* Parameters
+***********************************************************************************************************************************
+
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Who'    iv_abap_fieldname = 'WHO' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '057' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '058' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
+lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_UNSETWAREHOUSEORDERINPROCES' ). "#EC NOTEXT
   endmethod.
 
 
@@ -630,8 +661,8 @@ lo_assoc_set = model->create_association_set( iv_association_set_name  = 'Wareho
                             iv_def_assoc_set    = abap_false ). "#EC NOTEXT
 * Referential constraint for association - WarehouseOrderToOpenWarehouseTask
 lo_ref_constraint = lo_association->create_ref_constraint( ).
-lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_ref_constraint->add_property( iv_principal_property = 'Who'   iv_dependent_property = 'Who' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_assoc_set = model->create_association_set( iv_association_set_name  = 'WarehouseOrderToOpenWarehouseTaskSet'                         "#EC NOTEXT
                                               iv_left_entity_set_name  = 'WarehouseOrderSet'              "#EC NOTEXT
                                               iv_right_entity_set_name = 'OpenWarehouseTaskSet'             "#EC NOTEXT
@@ -1012,6 +1043,7 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
         iv_key      = 'unicode'
         iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'Vlber' iv_abap_fieldname = 'VLBER' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '052' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
 lo_property->set_type_edm_string( ).
 lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
@@ -1073,6 +1105,7 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
         iv_key      = 'unicode'
         iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'Nlpla' iv_abap_fieldname = 'NLPLA' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '053' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
 lo_property->set_type_edm_string( ).
 lo_property->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
@@ -1357,6 +1390,7 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
         iv_key      = 'unicode'
         iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'Aisle' iv_abap_fieldname = 'AISLE' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '049' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
 lo_property->set_type_edm_string( ).
 lo_property->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
@@ -1369,6 +1403,7 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
         iv_key      = 'unicode'
         iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'Stack' iv_abap_fieldname = 'STACK' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '050' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
 lo_property->set_type_edm_string( ).
 lo_property->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
@@ -1381,6 +1416,7 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
         iv_key      = 'unicode'
         iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'LvlV' iv_abap_fieldname = 'LVL_V' ). "#EC NOTEXT
+lo_property->set_label_from_text_element( iv_text_element_symbol = '051' iv_text_element_container = gc_incl_name ).  "#EC NOTEXT
 lo_property->set_type_edm_string( ).
 lo_property->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
@@ -1822,7 +1858,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20191122125429'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20200306155239'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.
@@ -1846,12 +1882,44 @@ CLEAR ls_text_element.
 
 
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
-ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'GetNewRobotWarehouseOrder'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '021'.                            "#EC NOTEXT
+ls_text_element-artifact_name          = 'Aisle'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'StorageBin'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '049'.              "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Stack'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'StorageBin'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '050'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'LvlV'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'StorageBin'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '051'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Vlber'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'OpenWarehouseTask'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '052'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Nlpla'.                 "#EC NOTEXT
+ls_text_element-artifact_type          = 'PROP'.                                       "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'OpenWarehouseTask'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'ETYP'.                                       "#EC NOTEXT
+ls_text_element-text_symbol            = '053'.              "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
@@ -1859,13 +1927,20 @@ ls_text_element-parent_artifact_type   = 'FIMP'.                                
 ls_text_element-parent_artifact_name   = 'GetNewRobotWarehouseOrder'.                                      "#EC NOTEXT
 ls_text_element-text_symbol            = '020'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'GetNewRobotWarehouseOrder'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '021'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
 
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Exccode'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'SetRobotStatus'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '008'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '010'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
@@ -1875,20 +1950,13 @@ ls_text_element-parent_artifact_name   = 'SetRobotStatus'.                      
 ls_text_element-text_symbol            = '009'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Exccode'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'SetRobotStatus'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '010'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '008'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 
-clear ls_text_element.
-ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
-ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'GetRobotWarehouseOrders'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '027'.                            "#EC NOTEXT
-APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
@@ -1896,13 +1964,20 @@ ls_text_element-parent_artifact_type   = 'FIMP'.                                
 ls_text_element-parent_artifact_name   = 'GetRobotWarehouseOrders'.                                      "#EC NOTEXT
 ls_text_element-text_symbol            = '026'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
-
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'GetRobotWarehouseOrders'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '027'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Tanum'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'ConfirmWarehouseTaskFirstStep'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '030'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '028'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
@@ -1912,26 +1987,19 @@ ls_text_element-parent_artifact_name   = 'ConfirmWarehouseTaskFirstStep'.       
 ls_text_element-text_symbol            = '029'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Tanum'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'ConfirmWarehouseTaskFirstStep'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '028'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '030'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 
 clear ls_text_element.
-ls_text_element-artifact_name          = 'NoWho'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'RsrcType'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'GetNewRobotTypeWarehouseOrders'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '024'.                            "#EC NOTEXT
-APPEND ls_text_element TO rt_text_elements.
-clear ls_text_element.
-ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
-ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'GetNewRobotTypeWarehouseOrders'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '022'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '025'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'RsrcGrp'.                               "#EC NOTEXT
@@ -1941,48 +2009,48 @@ ls_text_element-parent_artifact_name   = 'GetNewRobotTypeWarehouseOrders'.      
 ls_text_element-text_symbol            = '031'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
-ls_text_element-artifact_name          = 'RsrcType'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'GetNewRobotTypeWarehouseOrders'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '025'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '022'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'NoWho'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'GetNewRobotTypeWarehouseOrders'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '024'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Who'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'UnassignRobotFromWarehouseorder'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '036'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UnassignRobotFromWarehouseOrder'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '054'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'UnassignRobotFromWarehouseorder'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '035'.                            "#EC NOTEXT
-APPEND ls_text_element TO rt_text_elements.
-clear ls_text_element.
-ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
-ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'UnassignRobotFromWarehouseorder'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '034'.                            "#EC NOTEXT
-APPEND ls_text_element TO rt_text_elements.
-
-clear ls_text_element.
-ls_text_element-artifact_name          = 'Tanum'.                               "#EC NOTEXT
-ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
-ls_text_element-parent_artifact_name   = 'SendFirstConfirmationError'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '046'.                            "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UnassignRobotFromWarehouseOrder'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '055'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Who'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UnassignRobotFromWarehouseOrder'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '056'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'SendFirstConfirmationError'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '042'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '040'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'Rsrc'.                               "#EC NOTEXT
@@ -1992,11 +2060,18 @@ ls_text_element-parent_artifact_name   = 'SendFirstConfirmationError'.          
 ls_text_element-text_symbol            = '041'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Who'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'SendFirstConfirmationError'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '040'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '042'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Tanum'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'SendFirstConfirmationError'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '046'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 
 clear ls_text_element.
@@ -2112,6 +2187,21 @@ ls_text_element-artifact_type          = 'FIPA'.                                
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'SendSecondConfirmationError'.                                      "#EC NOTEXT
 ls_text_element-text_symbol            = '047'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Who'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UnsetWarehouseorderInProcessStatus'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '057'.                            "#EC NOTEXT
+APPEND ls_text_element TO rt_text_elements.
+clear ls_text_element.
+ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
+ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
+ls_text_element-parent_artifact_name   = 'UnsetWarehouseorderInProcessStatus'.                                      "#EC NOTEXT
+ls_text_element-text_symbol            = '058'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
   endmethod.
 ENDCLASS.
