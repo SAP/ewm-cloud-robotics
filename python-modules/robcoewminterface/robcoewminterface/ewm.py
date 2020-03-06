@@ -485,11 +485,24 @@ class WarehouseOrderOData(EWMOdata):
     def unassign_robot_warehouseorder(self, lgnum: str, rsrc: str, who: str) -> WarehouseOrder:
         """Unassign a robot resource from a warehouse order."""
         # define endpoint
-        endpoint = '/UnassignRobotFromWarehouseorder'
+        endpoint = '/UnassignRobotFromWarehouseOrder'
 
         # create URL parameter
         params = {'Lgnum': "'{}'".format(lgnum), 'Rsrc': "'{}'".format(rsrc),
                   'Who': "'{}'".format(who)}
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def unset_warehouseorder_in_process(self, lgnum: str, who: str) -> WarehouseOrder:
+        """Unset in process status of a warehouse order."""
+        # define endpoint
+        endpoint = '/UnsetWarehouseorderInProcessStatus'
+
+        # create URL parameter
+        params = {'Lgnum': "'{}'".format(lgnum), 'Who': "'{}'".format(who)}
 
         # HTTP OData GET request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)

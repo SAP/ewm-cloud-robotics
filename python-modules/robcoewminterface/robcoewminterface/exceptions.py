@@ -43,7 +43,8 @@ ODATA_ERROR_CODES = {
     'NO_ERROR_QUEUE_FOUND': 'No Error Queue found.',
     'QUEUE_NOT_CHANGED': 'Queue not changed.',
     'WAREHOUSE_TASK_ALREADY_CONFIRMED': 'Warehouse Task is confirmed already.',
-    'URL_PARAM_BODY_INCONSISTENT': 'URL parameters and POST body inconsistent.'
+    'URL_PARAM_BODY_INCONSISTENT': 'URL parameters and POST body inconsistent.',
+    'WAREHOUSE_ORDER_STATUS_NOT_UPDATED': 'Warehouse Order status not updated.'
 }
 
 ODATA_ERROR_REVERSE = {v: k for k, v in ODATA_ERROR_CODES.items()}
