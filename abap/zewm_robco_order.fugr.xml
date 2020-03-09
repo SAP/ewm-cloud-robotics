@@ -167,6 +167,13 @@
        <REFERENCE>X</REFERENCE>
        <TYP>/SCWM/DE_RSRC_GRP</TYP>
       </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_GET_IN_PROCESS_ORDERS</PARAMETER>
+       <DEFAULT>ABAP_FALSE</DEFAULT>
+       <OPTIONAL>X</OPTIONAL>
+       <REFERENCE>X</REFERENCE>
+       <TYP>ABAP_BOOL</TYP>
+      </RSIMP>
      </IMPORT>
      <EXPORT>
       <RSEXP>
@@ -190,6 +197,11 @@
        <PARAMETER>IV_RSRC_GROUP</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Resource Group</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_GET_IN_PROCESS_ORDERS</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Get assigned Warehouse Orders</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>ET_WO_RSRC_TY</PARAMETER>
@@ -305,7 +317,8 @@
        <TYP>/SCWM/TT_WHOID</TYP>
       </RSIMP>
       <RSIMP>
-       <PARAMETER>IV_UNSET</PARAMETER>
+       <PARAMETER>IV_UNSET_IN_PROCESS</PARAMETER>
+       <DEFAULT>ABAP_FALSE</DEFAULT>
        <OPTIONAL>X</OPTIONAL>
        <REFERENCE>X</REFERENCE>
        <TYP>ABAP_BOOL</TYP>
@@ -338,7 +351,7 @@
        <STEXT>Table of Warehouse Order Numbers</STEXT>
       </RSFDO>
       <RSFDO>
-       <PARAMETER>IV_UNSET</PARAMETER>
+       <PARAMETER>IV_UNSET_IN_PROCESS</PARAMETER>
        <KIND>P</KIND>
        <STEXT>if abap_true unset in process status</STEXT>
       </RSFDO>

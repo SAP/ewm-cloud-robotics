@@ -42,7 +42,7 @@ function zunset_who_in_process_status.
     exporting
       iv_lgnum               = iv_lgnum
       it_whoid               = lt_whoid
-      iv_unset               = abap_true
+      iv_unset_in_process    = abap_true
     exceptions
       who_locked             = 1
       who_status_not_updated = 2

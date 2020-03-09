@@ -12,7 +12,8 @@ function zset_who_in_process .
 *"  IMPORTING
 *"     REFERENCE(IV_LGNUM) TYPE  /SCWM/LGNUM
 *"     REFERENCE(IT_WHOID) TYPE  /SCWM/TT_WHOID
-*"     REFERENCE(IV_UNSET) TYPE  ABAP_BOOL OPTIONAL
+*"     REFERENCE(IV_UNSET_IN_PROCESS) TYPE  ABAP_BOOL DEFAULT
+*"       ABAP_FALSE
 *"  EXPORTING
 *"     REFERENCE(ET_WHO) TYPE  /SCWM/TT_WHO
 *"  EXCEPTIONS
@@ -29,12 +30,12 @@ function zset_who_in_process .
   field-symbols: <ls_who_int> type /scwm/s_who_int.
 
 * Set current and new status according to iv_unset parameter
-  if iv_unset = abap_false.
-    lv_should_status = wmegc_wo_open.
-    lv_new_status = wmegc_wo_in_process.
-  else.
+  if iv_unset_in_process = abap_true.
     lv_should_status = wmegc_wo_in_process.
     lv_new_status = wmegc_wo_open.
+  else.
+    lv_should_status = wmegc_wo_open.
+    lv_new_status = wmegc_wo_in_process.
   endif.
 
 * Select WO to check if already locked
@@ -58,7 +59,7 @@ function zset_who_in_process .
     if <ls_who_int>-status <> lv_should_status.
       delete lt_who_int.
 * Skip unsetting if warehouse order is already assigned to a resource
-    elseif iv_unset = abap_true and <ls_who_int>-rsrc <> space.
+    elseif iv_unset_in_process = abap_true and <ls_who_int>-rsrc <> space.
       delete lt_who_int.
     else.
 * Set new status for export

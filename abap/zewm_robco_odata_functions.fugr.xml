@@ -321,6 +321,74 @@
      </DOCUMENTATION>
     </item>
     <item>
+     <FUNCNAME>ZGET_IN_PROCESS_WHO</FUNCNAME>
+     <SHORT_TEXT>Get Warehouse Orders in process but not assigned to a resource</SHORT_TEXT>
+     <IMPORT>
+      <RSIMP>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/LGNUM</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC_TYPE</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC_TYPE</TYP>
+      </RSIMP>
+      <RSIMP>
+       <PARAMETER>IV_RSRC_GROUP</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/DE_RSRC_GRP</TYP>
+      </RSIMP>
+     </IMPORT>
+     <EXPORT>
+      <RSEXP>
+       <PARAMETER>ET_WHO</PARAMETER>
+       <REFERENCE>X</REFERENCE>
+       <TYP>/SCWM/TT_WHO</TYP>
+      </RSEXP>
+     </EXPORT>
+     <EXCEPTION>
+      <RSEXC>
+       <EXCEPTION>NO_ORDER_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
+       <EXCEPTION>NO_ROBOT_RESOURCE_TYPE</EXCEPTION>
+      </RSEXC>
+     </EXCEPTION>
+     <DOCUMENTATION>
+      <RSFDO>
+       <PARAMETER>IV_LGNUM</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Number/Warehouse Complex</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC_TYPE</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource Type</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>IV_RSRC_GROUP</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Resource Group</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ET_WHO</PARAMETER>
+       <KIND>P</KIND>
+       <STEXT>Warehouse Order</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>NO_ORDER_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>No Warehouse Order was found for the robot</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>NO_ROBOT_RESOURCE_TYPE</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Resource Type is not a Robot Resource Type</STEXT>
+      </RSFDO>
+     </DOCUMENTATION>
+    </item>
+    <item>
      <FUNCNAME>ZGET_NEW_ROBOTGROUP_WHO</FUNCNAME>
      <SHORT_TEXT>Get warehouse orders for a robot type which are transferred to RobCo yet</SHORT_TEXT>
      <IMPORT>

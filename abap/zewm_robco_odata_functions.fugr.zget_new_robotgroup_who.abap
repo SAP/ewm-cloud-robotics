@@ -53,6 +53,10 @@ function zget_new_robotgroup_who .
     append ls_wo_rsrc_ty-who to lt_whoid.
   endloop.
 
+  if lt_whoid is initial.
+    raise no_order_found.
+  endif.
+
 * Set Warehouse Order status in process
   call function 'ZSET_WHO_IN_PROCESS'
     exporting

@@ -286,6 +286,47 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
                 message          = text-003.
         endcase.  "case sy-subrc.
 
+      when 'GetInProcessWarehouseOrders'.
+        call function 'ZGET_IN_PROCESS_WHO'
+          exporting
+            iv_lgnum               = lv_lgnum
+            iv_rsrc_type           = lv_rsrc_type
+            iv_rsrc_group          = lv_rsrc_group
+          importing
+            et_who                 = lt_who
+          exceptions
+            no_order_found         = 1
+            no_robot_resource_type = 2
+            others                 = 3.
+
+        case sy-subrc.
+          when 0.
+            move-corresponding lt_who to lt_warehouseorder.
+            copy_data_to_ref( exporting is_data = lt_warehouseorder
+              changing cr_data = er_data ).
+          when 1.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_nof
+                message          = text-002.
+          when 2.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnr
+                message          = text-008.
+          when others.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_ie
+                message          = text-003.
+        endcase.  "case sy-subrc.
+
       when 'SetRobotStatus'.
         call function 'ZSET_ROBOT_STATUS'
           exporting
