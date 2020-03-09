@@ -80,6 +80,9 @@ spec:
                   type: string
             status:
               type: string
+              enum:
+                - RUNNING
+                - PROCESSED
   additionalPrinterColumns:
   - JSONPath: .status.status
     name: Status
