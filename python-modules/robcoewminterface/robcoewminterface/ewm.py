@@ -362,6 +362,22 @@ class WarehouseOrderOData(EWMOdata):
 
         return self.handle_http_response(endpoint, http_resp)
 
+    def get_in_process_warehouseorders(
+            self, lgnum: str, rsrcgrp: str, rsrctype: str) -> List[WarehouseOrder]:
+        """Get warehouse orders in process but not assigned to a robot resource."""
+        # define endpoint
+        endpoint = '/GetInProcessWarehouseOrders'
+
+        # create URL parameter
+        params = {'Lgnum': "'{}'".format(lgnum),
+                  'RsrcGrp': "'{}'".format(rsrcgrp),
+                  'RsrcType': "'{}'".format(rsrctype)}
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, urlparams=params)
+
+        return self.handle_http_response(endpoint, http_resp)
+
     def assign_robot_warehouseorder(self, lgnum: str, rsrc: str, who: str) -> WarehouseOrder:
         """Assign a robot resource to a warehouse order."""
         # define endpoint
