@@ -33,31 +33,31 @@
     <item>
      <ID>I</ID>
      <KEY>004</KEY>
-     <ENTRY>Robot ressource status could not be set.</ENTRY>
+     <ENTRY>Robot resource status could not be set.</ENTRY>
      <LENGTH>80</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>005</KEY>
-     <ENTRY>No ressource type provided.</ENTRY>
+     <ENTRY>No resource type provided.</ENTRY>
      <LENGTH>54</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>006</KEY>
-     <ENTRY>No ressource group provided.</ENTRY>
+     <ENTRY>No resource group provided.</ENTRY>
      <LENGTH>56</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>007</KEY>
-     <ENTRY>Ressource already existing.</ENTRY>
+     <ENTRY>Resource already existing.</ENTRY>
      <LENGTH>54</LENGTH>
     </item>
     <item>
      <ID>I</ID>
      <KEY>008</KEY>
-     <ENTRY>Ressource type is not robot ressource type.</ENTRY>
+     <ENTRY>Resource type is not robot resource type.</ENTRY>
      <LENGTH>84</LENGTH>
     </item>
     <item>
