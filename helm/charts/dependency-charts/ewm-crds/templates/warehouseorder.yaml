@@ -183,6 +183,9 @@ spec:
                     type: string
             order_status:
               type: string
+              enum:
+                - RUNNING
+                - PROCESSED
         status:
           type: object
           properties:
