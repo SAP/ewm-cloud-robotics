@@ -3,14 +3,14 @@
   "kind": "RobotRequest",
   "metadata": {
     "labels": {
-      "cloudrobotics.com/robot-name": "my-robot"
+      "cloudrobotics.com/robot-name": ""
     },
-    "name": "my-robot",
+    "name": "",
     "namespace": "default"
   },
   "spec": {
-    "lgnum": "1710",
-    "rsrc": "MY_ROBOT",
+    "lgnum": "",
+    "rsrc": "",
     "requestwork": false,
     "requestnewwho": false,
     "notifywhocompletion": "0",

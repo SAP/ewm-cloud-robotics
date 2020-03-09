@@ -3,9 +3,9 @@
   "kind": "Mission",
   "metadata": {
     "labels": {
-      "cloudrobotics.com/robot-name": "my-robot"
+      "cloudrobotics.com/robot-name": ""
     },
-    "name": "my-mission",
+    "name": "",
     "namespace": "default"
   },
   "spec": {},

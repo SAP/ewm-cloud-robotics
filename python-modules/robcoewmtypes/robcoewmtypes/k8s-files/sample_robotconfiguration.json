@@ -3,20 +3,20 @@
     "kind": "RobotConfiguration",
     "metadata": {
         "labels": {
-            "cloudrobotics.com/robot-name": "my-robot"
+            "cloudrobotics.com/robot-name": ""
         },
-        "name": "my-robot",
+        "name": "",
         "namespace": "default"
     },
     "spec": {
         "batteryIdle": 0,
         "batteryMin": 0,
         "batteryOk": 0,
-        "lgnum": "1710",
+        "lgnum": "",
         "rsrcgrp": "",
         "rsrctype": "",
         "maxIdleTime": 0,
-        "chargers": [ "Charger" ],
+        "chargers": [ "" ],
         "recoverFromRobotError": false
     },
     "status": {}

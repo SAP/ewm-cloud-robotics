@@ -3,24 +3,14 @@
     "kind": "Robot",
     "metadata": {
         "labels": {
-            "cloudrobotics.com/robot-name": "my-robot"
+            "cloudrobotics.com/robot-name": ""
         },
-        "name": "my-robot",
+        "name": "",
         "namespace": "default"
     },
     "spec": {
-        "role": "my-robo-role",
-        "type": "my-robo-type"
+        "project": "",
+        "type": ""
     },
-    "status": {
-        "configuration": {
-            "trolleyAttached": true
-        },
-        "robot": {
-            "batteryPercentage": 67.4,
-            "lastStateChangeTime": "2018-10-11T16:57:55.468Z",
-            "state": "AVAILABLE",
-            "updateTime": "2018-10-11T17:00:39.468Z"
-        }
-    }
+    "status": {}
 }
