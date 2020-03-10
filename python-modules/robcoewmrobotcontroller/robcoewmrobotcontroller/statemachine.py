@@ -176,11 +176,12 @@ class RobotEWMMachine(Machine):
 
     def _run_after_state_change(self, event: EventData) -> None:
         """Run these methods after state changed."""
+        cls = self.__class__
         # Set enter timestmap for prometheus logging
         self.state_enter_ts = time.time()
 
         # On state change reset errorcount for the state which triggered the event
-        if self.state != event.state.name:
+        if self.state != event.state.name and event.event.name != cls.conf.t_mission_failed:
             self.error_count[event.state.name] = 0
 
         # Save current state

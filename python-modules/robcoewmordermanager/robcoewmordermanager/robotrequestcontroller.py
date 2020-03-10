@@ -10,7 +10,7 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""K8s custom resource handler for new warehouse orders."""
+"""K8s custom resource handler for robot requests."""
 
 import logging
 
