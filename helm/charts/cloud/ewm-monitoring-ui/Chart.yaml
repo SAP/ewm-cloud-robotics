@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Monitoring UI for SAP EWM Cloud Robotics platform extension
+name: ewm-monitoring-ui
+version: 0.0.1

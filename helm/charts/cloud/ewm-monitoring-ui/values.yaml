@@ -1,0 +1,6 @@
+domain: "example.com"
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/monitoring-ui"
+  tag: "latest"

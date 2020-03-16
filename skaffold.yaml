@@ -46,6 +46,10 @@ build:
       context: .
       docker:
         dockerfile: docker/robot-configurator/Dockerfile
+    - image: monitoring-ui
+      context: .
+      docker:
+        dockerfile: docker/monitoring-ui/Dockerfile
   local: 
     push: false
 test:
@@ -70,6 +74,9 @@ test:
   - image: robot-configurator
     structureTests:
       - docker/robot-configurator/test/container-structure-test/prod.yaml
+  - image: monitoring-ui
+    structureTests:
+      - docker/monitoring-ui/test/container-structure-test/prod.yaml
 deploy:
   kubectl:
     manifests:
@@ -227,6 +234,23 @@ profiles:
       - image: robot-configurator
         structureTests:
           - docker/robot-configurator/test/container-structure-test/prod.yaml
+    ## ewm-monitoring-ui
+  - name: ewm-monitoring-ui
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: monitoring-ui
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: monitoring-ui
+        structureTests:
+          - docker/monitoring-ui/test/container-structure-test/prod.yaml
   ## ewm-sim        
   - name: ewm-sim
     build:
