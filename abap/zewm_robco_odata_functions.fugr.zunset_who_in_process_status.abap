@@ -54,6 +54,8 @@ function zunset_who_in_process_status.
       move-corresponding ls_who to es_who.
     when 1.
       raise who_locked.
+    when 2.
+      raise who_status_not_updated.
     when others.
       raise internal_error.
   endcase.
