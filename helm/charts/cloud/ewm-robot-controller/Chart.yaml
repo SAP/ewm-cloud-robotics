@@ -1,5 +1,5 @@
 apiVersion: v1
 appVersion: "1.0"
-description: SAP EWM Robot Controller Extension for Robco Platform
+description: SAP EWM Robot Controller Extension for Cloud Robotics Platform
 name: ewm-robot-controller
 version: 0.0.1
