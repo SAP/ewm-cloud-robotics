@@ -31,6 +31,7 @@ class RobotEWMConfig:
     t_mission_docking = 'mission_docking'
     t_mission_succeeded = 'mission_succeeded'
     t_mission_failed = 'mission_failed'
+    t_warehouseorder_aborted = 'warehouseorder_aborted'
     t_warehouseorder_confirmed = 'warehouseorder_confirmed'
     t_warehousetask_confirmed = 'warehousetask_confirmed'
     t_pickpackpass_who_with_tasks = 'pickpackpass_who_with_tasks'
@@ -179,6 +180,10 @@ class RobotEWMConfig:
          'before': '_save_active_warehouse_order',
          'after': '_save_warehouse_order_start'},
         # moveTrolley transitions
+        {'trigger': t_warehouseorder_aborted,
+         'source': 'moveTrolley_movingToSourceBin',
+         'dest': 'noWork',
+         'before': ['_log_warehouse_order_fail', '_close_active_who']},
         {'trigger': t_mission_failed,
          'source': [
              'moveTrolley_movingToSourceBin', 'moveTrolley_loadingTrolley'],
@@ -251,6 +256,10 @@ class RobotEWMConfig:
          'source': 'pickPackPass_movingtoPickLocation',
          'dest': '=',
          'before': '_save_active_sub_warehouse_order'},
+        {'trigger': t_warehouseorder_aborted,
+         'source': 'pickPackPass_movingtoPickLocation',
+         'dest': 'pickPackPass_waitingForErrorRecovery',
+         'before': '_log_warehouse_order_fail'},
         {'trigger': t_mission_failed,
          'source': ['pickPackPass_movingtoPickLocation', 'pickPackPass_movingtoTargetLocation'],
          'dest': '=',

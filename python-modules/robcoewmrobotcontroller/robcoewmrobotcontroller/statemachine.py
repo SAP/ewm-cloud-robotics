@@ -905,7 +905,7 @@ class RobotEWMMachine(Machine):
                 self.create_get_trolley_mission(target=self.active_wht.vlpla)
             else:
                 _LOGGER.error('No warehouse task in warehouse order %s', self.active_who.who)
-                self.mission_failed(mission=self.active_mission)
+                self.warehouseorder_aborted()
         else:
             raise TypeError('No warehouse order object in self.active_who')
 
@@ -967,7 +967,7 @@ class RobotEWMMachine(Machine):
             else:
                 _LOGGER.error(
                     'No warehouse task in sub warehouse order %s', self.active_sub_who.who)
-                self.mission_failed(mission=self.active_mission)
+                self.warehouseorder_aborted()
         else:
             _LOGGER.info('No sub warehouse order available, waiting for it')
 
