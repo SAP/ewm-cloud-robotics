@@ -10,6 +10,9 @@ envs:
   ewmauth: "Basic"
   ewmpassword: ""
   ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmclientid: ""
+  ewmclientsecret: ""
+  ewmtokenendpoint: ""
   ewmlgnum: "1710"
   chargerlist: "Charger"
   batterymin: 10

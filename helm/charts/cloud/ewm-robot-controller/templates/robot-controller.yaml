@@ -11,7 +11,9 @@ stringData:
   ewmuser: "{{ .Values.envs.ewmuser }}"
   ewmpswd: "{{ .Values.envs.ewmpassword }}"
   ewmpath: "{{ .Values.envs.ewmbasepath }}"
----
+  ewmclid: "{{ .Values.envs.ewmclientid }}"
+  ewmclse: "{{ .Values.envs.ewmclientsecret }}"
+  ewmtkep: "{{ .Values.envs.ewmtokenendpoint }}"
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -57,6 +59,21 @@ spec:
             secretKeyRef:
               name: ewm-odata-api
               key: ewmpath
+        - name: EWM_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmclid
+        - name: EWM_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmclse
+        - name: EWM_TOKENENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmtkep
         - name: EWM_LGNUM
           value: "{{ .Values.envs.ewmlgnum }}"
         - name: EWM_RSRC_TYPE

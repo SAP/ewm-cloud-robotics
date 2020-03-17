@@ -89,6 +89,20 @@ class WarehouseOrderLockedError(ODataAPIException):
     ERROR_CODE = 'WAREHOUSE_ORDER_LOCKED'
 
 
+class WarehouseTaskAssignedError(ODataAPIException):
+    """Warehouse Task is already assigned."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'WAREHOUSE_TASK_ASSIGNED'
+
+
+class WarehouseOrderAssignedError(ODataAPIException):
+    """Warehouse Order is already assigned."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'WAREHOUSE_ORDER_ASSIGNED'
+
+
 class WarehouseTaskAlreadyConfirmedError(ODataAPIException):
     """Warehouse Task already confirmed."""
 
@@ -115,6 +129,13 @@ class RobotStatusNotSetError(ODataAPIException):
 
     # OData error code this exception class should be used to.
     ERROR_CODE = 'ROBOT_STATUS_NOT_SET'
+
+
+class ResourceTypeIsNoRobot(ODataAPIException):
+    """No warehouse order was found."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'RESOURCE_TYPE_IS_NO_ROBOT'
 
 
 class InternalError(ODataAPIException):

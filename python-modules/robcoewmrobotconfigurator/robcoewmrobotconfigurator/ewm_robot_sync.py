@@ -53,23 +53,40 @@ class EWMRobotSync:
         """Initialize OData interface from environment variables."""
         # Read environment variables
         envvar = {}
-        envvar['EWM_USER'] = os.environ.get('EWM_USER')
-        envvar['EWM_PASSWORD'] = os.environ.get('EWM_PASSWORD')
         envvar['EWM_HOST'] = os.environ.get('EWM_HOST')
         envvar['EWM_BASEPATH'] = os.environ.get('EWM_BASEPATH')
         envvar['EWM_AUTH'] = os.environ.get('EWM_AUTH')
+        if envvar['EWM_AUTH'] == ODataConfig.AUTH_BASIC:
+            envvar['EWM_USER'] = os.environ.get('EWM_USER')
+            envvar['EWM_PASSWORD'] = os.environ.get('EWM_PASSWORD')
+        else:
+            envvar['EWM_CLIENTID'] = os.environ.get('EWM_CLIENTID')
+            envvar['EWM_CLIENTSECRET'] = os.environ.get('EWM_CLIENTSECRET')
+            envvar['EWM_TOKENENDPOINT'] = os.environ.get('EWM_TOKENENDPOINT')
         # Check if complete
         for var, val in envvar.items():
             if val is None:
                 raise ValueError(
                     'Environment variable "{}" is not set'.format(var))
 
-        self.odataconfig = ODataConfig(
-            host=envvar['EWM_HOST'],
-            basepath=envvar['EWM_BASEPATH'],
-            authorization=envvar['EWM_AUTH'],
-            user=envvar['EWM_USER'],
-            password=envvar['EWM_PASSWORD'])
+        # OData config
+        if envvar['EWM_AUTH'] == ODataConfig.AUTH_BASIC:
+            self.odataconfig = ODataConfig(
+                host=envvar['EWM_HOST'],
+                basepath=envvar['EWM_BASEPATH'],
+                authorization=envvar['EWM_AUTH'],
+                user=envvar['EWM_USER'],
+                password=envvar['EWM_PASSWORD'],
+                )
+        else:
+            self.odataconfig = ODataConfig(
+                host=envvar['EWM_HOST'],
+                basepath=envvar['EWM_BASEPATH'],
+                authorization=envvar['EWM_AUTH'],
+                clientid=envvar['EWM_CLIENTID'],
+                clientsecret=envvar['EWM_CLIENTSECRET'],
+                tokenendpoint=envvar['EWM_TOKENENDPOINT'],
+                )
 
         _LOGGER.info('Connecting to OData host "%s"', self.odataconfig.host)
 
