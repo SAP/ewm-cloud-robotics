@@ -5,7 +5,7 @@
 #     because the first step of a docker build is to send the context directory (and subdirectories) 
 #     to the docker daemon." - https://docs.docker.com/engine/reference/builder/#copy
 
-FROM python:3.7.6-slim-stretch
+FROM python:3.8.2-slim
 
 RUN pip3 install -U wss_plugin
 

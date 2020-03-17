@@ -386,7 +386,6 @@ class K8sCRHandler:
                 self.namespace,
                 self.plural,
                 name,
-                client.V1DeleteOptions(),
                 _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
