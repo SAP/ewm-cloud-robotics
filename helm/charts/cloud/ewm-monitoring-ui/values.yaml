@@ -4,3 +4,16 @@ replicaCount: 1
 image:
   repository: "ewmcloudrobotics/monitoring-ui"
   tag: "latest"
+
+nginxpath: "/ewm-monitoring-ui"
+
+envs:
+  ewmuser: ""
+  ewmhost: ""
+  ewmauth: "Basic"
+  ewmpassword: ""
+  ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+  ewmnewpath: "/ewm-monitoring-ui/ZEWM_ROBCO_SRV"
+  ewmclientid: ""
+  ewmclientsecret: ""
+  ewmtokenendpoint: ""

@@ -1,25 +1,43 @@
 apiVersion: v1
+kind: Secret
+metadata:
+  name: ewm-odata-api
+type: Opaque
+## Usage of 'stringData' field rather than 'data' to leverage automatic base64 en-/decoding 
+## (ref. https://kubernetes.io/docs/concepts/configuration/secret/#creating-a-secret-manually)
+stringData:
+  ewmhost: "{{ .Values.envs.ewmhost }}"
+  ewmauth: "{{ .Values.envs.ewmauth }}"
+  ewmuser: "{{ .Values.envs.ewmuser }}"
+  ewmpswd: "{{ .Values.envs.ewmpassword }}"
+  ewmpath: "{{ .Values.envs.ewmbasepath }}"
+  ewmnewpath: "{{ .Values.envs.ewmnewpath }}"
+  ewmclid: "{{ .Values.envs.ewmclientid }}"
+  ewmclse: "{{ .Values.envs.ewmclientsecret }}"
+  ewmtkep: "{{ .Values.envs.ewmtokenendpoint }}"
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: ewm-monitoring-ui-nginx
 data:
   openui5app.conf: |-
     server {
-       listen       80;
+       listen      80;
        server_name  _;
        location / {
-           root   /app;
+           root /app;
        }
        location /robots/ {
-           proxy_pass  http://localhost:8001/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/;
-           proxy_pass_request_headers off;
+           proxy_pass http://localhost:8001/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/;
        }
        location /warehouseorders/ {
-           proxy_pass  http://localhost:8002/apis/sap.com/v1/namespaces/default/warehouseorders/;
+           proxy_pass http://localhost:8002/apis/sap.com/v1/namespaces/default/warehouseorders/;
        }
        location /robotconfigurations/ {
-           proxy_pass  http://localhost:8003/apis/sap.com/v1/namespaces/default/robotconfigurations/;
+           proxy_pass http://localhost:8003/apis/sap.com/v1/namespaces/default/robotconfigurations/;
        }
+       include /odata/location.conf;
     }
 ---
 apiVersion: apps/v1
@@ -58,6 +76,54 @@ spec:
         volumeMounts:
         - mountPath: /etc/nginx/conf.d
           name: nginx-configmap-volume
+        env:
+        - name: CLOUD_ROBOTICS_DOMAIN
+          value: {{ $.Values.domain }}
+        - name: ODATA_USER
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmuser
+        - name: ODATA_HOST
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmhost
+        - name: ODATA_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmpswd
+        - name: ODATA_AUTH
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmauth
+        - name: ODATA_BASEPATH
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmpath
+        - name: ODATA_NEWPATH
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmnewpath
+        - name: ODATA_CLIENTID
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmclid
+        - name: ODATA_CLIENTSECRET
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmclse
+        - name: ODATA_TOKENENDPOINT
+          valueFrom:
+            secretKeyRef:
+              name: ewm-odata-api
+              key: ewmtkep
 ---
 apiVersion: v1
 kind: Service
@@ -95,7 +161,7 @@ spec:
   - host: {{ $.Values.domain }}
     http:
       paths:
-      - path: /ewm-monitoring-ui
+      - path: {{ $.Values.nginxpath }}
         backend:
           serviceName: monitoring-ui
           servicePort: 80

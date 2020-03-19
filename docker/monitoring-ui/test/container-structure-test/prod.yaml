@@ -4,3 +4,6 @@ fileExistenceTests:
   - name: "verify that openui5 app is in '/app' directory"
     path: "/app"
     shouldExist: true
+  - name: "verify that go binary nginx-odata-auth is in '/cmd' directory"
+    path: "/cmd/nginx-odata-auth"
+    shouldExist: true
