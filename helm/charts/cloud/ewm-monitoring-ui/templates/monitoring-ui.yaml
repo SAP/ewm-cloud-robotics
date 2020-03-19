@@ -153,6 +153,7 @@ metadata:
     # 401 with an error page.
     nginx.ingress.kubernetes.io/configuration-snippet: |
       error_page 403 = https://{{ $.Values.domain }}/oauth2/start?rd=$escaped_request_uri;
+      rewrite ^([^.\?]*[^/])$ $1/;
 spec:
   tls:
   - hosts:
