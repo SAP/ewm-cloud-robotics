@@ -124,6 +124,8 @@ spec:
             secretKeyRef:
               name: ewm-odata-api
               key: ewmtkep
+        - name: ZEROLOG_CONFIG
+          value: stackdriver
 ---
 apiVersion: v1
 kind: Service
