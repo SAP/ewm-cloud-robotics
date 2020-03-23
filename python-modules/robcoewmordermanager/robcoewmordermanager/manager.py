@@ -425,10 +425,14 @@ class EWMOrderManager:
                     robotident.lgnum, robotident.rsrc))
             except NoOrderFoundError:
                 # Create log entry only for the initial query to SAP EWM
-                if firstrequest:
+                if firstrequest and newwho:
                     _LOGGER.info(
                         'No order assigned to robot "%s" in warehouse "%s" in SAP EWM yet. Try to '
                         'get a new order.', robotident.rsrc, robotident.lgnum)
+                elif firstrequest:
+                    _LOGGER.info(
+                        'No order assigned to robot "%s" in warehouse "%s" in SAP EWM',
+                        robotident.rsrc, robotident.lgnum)
             else:
                 whos_who = [entry.who for entry in whos]
                 _LOGGER.info(
@@ -478,8 +482,6 @@ class EWMOrderManager:
         # Forth step - if a warehouse order includes warehouse tasks, but they are not received
         # yet, get those tasks from SAP EWM
         for i, who in enumerate(whos):
-            # TODO: Check who.flgto again when EWM bug fixed if who.flgto is True and not
-            # who.warehousetasks:
             if not who.warehousetasks:
                 whos[i] = self.ewmwho.get_warehouseorder(
                     who.lgnum, who.who, openwarehousetasks=True)
@@ -558,12 +560,36 @@ class EWMOrderManager:
                     and dataset.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF
                     and dataset.confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
                 success = self.get_and_send_robot_whos(
-                    robotident, firstrequest=True, newwho=True, onlynewwho=False)
+                    robotident, firstrequest=True, newwho=False, onlynewwho=False)
                 if success is False:
                     raise NoOrderFoundError
 
             # Memorize the dataset in the end
             self.msg_mem.memorize_who_conf(dataset)
+
+        # In case order status is RUNNING and there is nothing to do, verify in EWM
+        who_spec = structure(custom_res['spec'], WarehouseOrderCRDSpec)
+        if not robcoewmdata and who_spec.order_status == WarehouseOrderCRDSpec.STATE_RUNNING:
+            processed = False
+            try:
+                who = self.ewmwho.get_warehouseorder(who_spec.data.lgnum, who_spec.data.who)
+            except NotFoundError:
+                processed = True
+                _LOGGER.warning(
+                    'Warehouse order %s not found in EWM but in status RUNNING, setting to '
+                    'PROCESSED', name)
+            else:
+                if who.status != 'D':
+                    processed = True
+                    _LOGGER.warning(
+                        'Warehouse order %s in status %s in EWM but RUNNING in Cloud Robotics, '
+                        'setting to PROCESSED', name, who.status)
+
+            if processed:
+                # Cleanup warehouse order CRs
+                self.ordercontroller.cleanup_who(unstructure(who_spec.data))
+                self.msg_mem.delete_who_from_memory(
+                    WhoIdentifier(who_spec.data.lgnum, who_spec.data.who))
 
     def _get_who_confirmations(self, custom_res: Dict) -> List:
         """Get Warehouse Order confirmations to be processed."""
