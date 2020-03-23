@@ -1452,41 +1452,53 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 **
 
-    data: lv_lgnum          type /scwm/lgnum,
-          lt_filter         type /iwbep/t_mgw_select_option,
+    data: lt_filter         type /iwbep/t_mgw_select_option,
           lt_warehouseorder type zcl_zewm_robco_mpc=>tt_warehouseorder,
+          ls_selopt         type /iwbep/s_cod_select_option,
+          lt_selopt         type /iwbep/t_cod_select_options,
           s_lgnum           type range of /scwm/lgnum,
+          s_rsrc            type range of /scwm/who-rsrc,
+          s_status          type range of /scwm/who-status,
           s_topwhoid        type range of /scwm/who-topwhoid.
 
     field-symbols: <ls_filter> type /iwbep/s_mgw_select_option,
                    <ls_key>    like line of it_key_tab.
 
-    loop at it_key_tab assigning <ls_key>.
-      case <ls_key>-name.
-        when 'Lgnum'.
-          lv_lgnum = <ls_key>-value.
-      endcase.
-    endloop.
-
-
+* OData filters
     lt_filter = io_tech_request_context->get_filter( )->get_filter_select_options( ).
     loop at lt_filter assigning <ls_filter>.
       if <ls_filter>-property = 'LGNUM'.
         move-corresponding <ls_filter>-select_options[] to s_lgnum[] keeping target lines.
+      elseif <ls_filter>-property = 'RSRC'.
+        move-corresponding <ls_filter>-select_options[] to s_rsrc[] keeping target lines.
+      elseif <ls_filter>-property = 'STATUS'.
+        move-corresponding <ls_filter>-select_options[] to s_status[] keeping target lines.
       elseif <ls_filter>-property = 'TOPWHOID'.
         move-corresponding <ls_filter>-select_options[] to s_topwhoid[] keeping target lines.
       endif.
     endloop.
 
-    if lv_lgnum is not initial.
-      select * from /scwm/who into corresponding fields of table @lt_warehouseorder
-          where lgnum = @lv_lgnum
-            and topwhoid in @s_topwhoid.
-    else.
-      select * from /scwm/who into corresponding fields of table @lt_warehouseorder
-          where lgnum in @s_lgnum
-            and topwhoid in @s_topwhoid.
-    endif.
+* OData keys from associations
+* If there are keys from OData associations, overwrite corresponding filters
+    loop at it_key_tab assigning <ls_key>.
+      clear: ls_selopt, lt_selopt.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_lgnum[].
+      endcase.
+    endloop.
+
+* Select from database
+    select * from /scwm/who into corresponding fields of table @lt_warehouseorder
+        where lgnum in @s_lgnum
+          and rsrc in @s_rsrc
+          and status in @s_status
+          and topwhoid in @s_topwhoid.
+
     if sy-subrc = 0.
       et_entityset = lt_warehouseorder.
     endif.
