@@ -178,13 +178,24 @@ class OrderController(K8sCRHandler):
         super().run(watcher=watcher, reprocess=reprocess,
                     multiple_executor_threads=multiple_executor_threads)
 
-    def send_who_to_robot(
-            self, robotident: RobotIdentifier, dtype: str, who: Dict) -> None:
+    def send_who_to_robot(self, robotident: RobotIdentifier, who: Dict) -> None:
         """Send the warehouse order to a robot."""
         labels = {}
         # Robot name and warehouse order CR names must be lower case
         labels['cloudrobotics.com/robot-name'] = robotident.rsrc.lower()
         name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who']).lower()
+        spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
+        if self.check_cr_exists(name):
+            _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)
+            self.update_cr_spec(name, spec, labels)
+        else:
+            _LOGGER.debug('Warehouse order CR "%s" not existing. Create it', name)
+            self.create_cr(name, labels, spec)
+
+    def save_who(self, who: Dict) -> None:
+        """Save the warehouse order."""
+        labels: Dict[str, str] = {}
+        name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
         spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
         if self.check_cr_exists(name):
             _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)

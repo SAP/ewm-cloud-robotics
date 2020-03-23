@@ -1,0 +1,16 @@
+{
+  "apiVersion": "sap.com/v1",
+  "kind": "AuctioneerRequest",
+  "metadata": {
+    "name": "",
+    "namespace": "default"
+  },
+  "spec": {
+    "orderrequest": {
+      "lgnum": "",
+      "rsrctype": "",
+      "rsrcgrp": "",
+      "quantity": 0}
+  },
+  "status": {}
+}
