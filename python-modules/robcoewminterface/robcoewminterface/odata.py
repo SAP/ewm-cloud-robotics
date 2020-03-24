@@ -267,7 +267,8 @@ class ODataHandler:
                 'Authorization error at {}'.format(resp.url))
         # This is for the "feature" of certain services to respond with status code 200 and
         # redirecting to a login page at authorization errors instead of status 401
-        if 'application/json' not in resp.headers.get('content-type', ''):
+        if resp.status_code == 200 and 'application/json' not in resp.headers.get(
+                'content-type', ''):
             self.auth_error = True
             _LOGGER.error(
                 'Assuming authorization error at %s, content-type not application/json', resp.url)
