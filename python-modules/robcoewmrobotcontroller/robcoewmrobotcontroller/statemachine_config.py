@@ -144,7 +144,7 @@ class RobotEWMConfig:
          'source': 'atStaging',
          'dest': 'atStaging'},
         {'trigger': t_charge_battery,
-         'source': idle_states,
+         'source': [*idle_states, 'movingToStaging'],
          'dest': 'charging'},
         {'trigger': t_mission_succeeded,
          'source': 'charging',
