@@ -42,11 +42,12 @@ class ODataHandler:
         self._csrftoken = ''
         self._cookies: Optional[requests.cookies.RequestsCookieJar] = None
         # OAuth related
-        self._bearer = ''
-        self._bearer_expires = time.time()
+        self._access_token = ''
+        self._token_type = ''
+        self._token_expires = time.time()
         self.auth_error = False
 
-    def get_bearer_token(self) -> None:
+    def get_access_token(self) -> None:
         """Authenticate at OAuth token endpoint."""
         cls = self.__class__
 
@@ -58,28 +59,26 @@ class ODataHandler:
 
         if resp.status_code == 200:
             resp_dict = resp.json()
-            if resp_dict.get('token_type') != 'Bearer':
-                _LOGGER.error('token_type %s is not Bearer', resp_dict.get('token_type'))
-                return
-            self._bearer = resp_dict.get('access_token')
+            self._access_token = resp_dict.get('access_token')
+            self._token_type = resp_dict.get('token_type')
             self.auth_error = False
             # Add a 1 minute buffer for token expiration
-            self._bearer_expires = time.time() + resp_dict.get('expires_in') - 60
+            self._token_expires = time.time() + resp_dict.get('expires_in') - 60
         else:
-            _LOGGER.error('Unable to get bearer token, status code: %s', resp.status_code)
+            _LOGGER.error('Unable to get access token, status code: %s', resp.status_code)
             raise requests.RequestException(
-                'Unable to get bearer token, status code: {}'.format(resp.status_code))
+                'Unable to get access token, status code: {}'.format(resp.status_code))
 
-    def refresh_bearer(self) -> None:
-        """Refresh bearer token before it expires."""
-        if time.time() > self._bearer_expires or self.auth_error:
+    def refresh_access_token(self) -> None:
+        """Refresh access token before it expires."""
+        if time.time() > self._token_expires or self.auth_error:
             try:
-                self.get_bearer_token()
+                self.get_access_token()
             except requests.RequestException as err:
                 _LOGGER.error(
                     'Exception when connecting to token endpoint: %s', err)
             else:
-                _LOGGER.info('Bearer token refreshed')
+                _LOGGER.info('Access token of type %s refreshed', self._token_type)
 
     def http_get(
             self, endpoint: str, urlparams: Optional[Dict] = None, ids: Optional[Dict] = None,
@@ -112,9 +111,9 @@ class ODataHandler:
                     auth=(self._config.user, self._config.password))
             # OAuth
             else:
-                if not self._bearer:
-                    self.get_bearer_token()
-                headers['Authorization'] = 'Bearer {}'.format(self._bearer)
+                if not self._access_token:
+                    self.get_access_token()
+                headers['Authorization'] = '{} {}'.format(self._token_type, self._access_token)
                 resp = requests.get(
                     uri, params=params, headers=headers, timeout=cls.TIMEOUT)
         except requests.ConnectionError as err:
@@ -193,9 +192,9 @@ class ODataHandler:
                     timeout=cls.TIMEOUT, auth=(self._config.user, self._config.password))
             # OAuth
             else:
-                if not self._bearer:
-                    self.get_bearer_token()
-                headers['Authorization'] = 'Bearer {}'.format(self._bearer)
+                if not self._access_token:
+                    self.get_access_token()
+                headers['Authorization'] = '{} {}'.format(self._token_type, self._access_token)
                 resp = req(
                     uri, json=jsonbody, params=params, headers=headers, cookies=self._cookies,
                     timeout=cls.TIMEOUT)
@@ -235,9 +234,10 @@ class ODataHandler:
                             cookies=self._cookies, auth=(self._config.user, self._config.password))
                     # OAuth
                     else:
-                        if not self._bearer:
-                            self.get_bearer_token()
-                        headers['Authorization'] = 'Bearer {}'.format(self._bearer)
+                        if not self._access_token:
+                            self.get_access_token()
+                        headers[
+                            'Authorization'] = '{} {}'.format(self._token_type, self._access_token)
                         resp = req(
                             uri, json=jsonbody, params=params, headers=headers,
                             cookies=self._cookies, timeout=cls.TIMEOUT)

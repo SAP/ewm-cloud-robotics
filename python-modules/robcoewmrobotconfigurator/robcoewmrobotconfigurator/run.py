@@ -77,6 +77,9 @@ def run_robotconfigurator():
     try:
         # Looping while K8S watchers are running
         while loop_control.shutdown is False:
+            # Refresh bearer token when using OAuth
+            if robotsync.odataconfig.authorization == robotsync.odataconfig.AUTH_OAUTH:
+                robotsync.odatahandler.refresh_access_token()
             # Check if K8S CR handler exception occured
             for k, exc in k8s_rb.thread_exceptions.items():
                 _LOGGER.error(
