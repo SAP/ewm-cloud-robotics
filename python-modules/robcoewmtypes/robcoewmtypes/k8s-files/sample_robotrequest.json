@@ -1,5 +1,5 @@
 {
-  "apiVersion": "sap.com/v1",
+  "apiVersion": "ewm.sap.com/v1alpha1",
   "kind": "RobotRequest",
   "metadata": {
     "labels": {

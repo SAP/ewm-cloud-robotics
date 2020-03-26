@@ -32,8 +32,8 @@ class RobotRequestController(K8sCRHandler):
         template_cr = get_sample_cr('robotrequest')
 
         super().__init__(
-            'sap.com',
-            'v1',
+            'ewm.sap.com',
+            'v1alpha1',
             'robotrequests',
             'default',
             template_cr,

@@ -132,6 +132,9 @@ class K8sCRHandler:
         self.plural = plural
         self.namespace = namespace
 
+        # Identify from CRD which method should be used to update CR status
+        self.get_status_update_method()
+
         self.label_selector = ''
         for k, val in labels.items():
             self.label_selector += k + '=' + val + ','
@@ -165,6 +168,34 @@ class K8sCRHandler:
         # finalizer
         self.finalizer = ''
 
+    @retry(wait_fixed=500, stop_max_attempt_number=10)
+    def get_status_update_method(self) -> None:
+        """
+        Get status update method from CRD.
+
+        Depends on status subresource is set or unset in CRD.
+        """
+        name = '{}.{}'.format(self.plural, self.group)
+        self.status_update_method = self.co_api.patch_namespaced_custom_object
+        try:
+            api_response = self.crd_api.read_custom_resource_definition(name)
+        except ApiException as err:
+            _LOGGER.error(
+                '%s/%s: Exception when calling ApiextensionsV1beta1Api->'
+                'read_custom_resource_definition: %s', self.group, self.plural, err)
+            raise
+        else:
+            _LOGGER.debug(
+                '%s/%s: Successfully read custom resource definition %s', self.group, self.plural,
+                name)
+            if api_response.spec.subresources is not None:
+                if api_response.spec.subresources.status is not None:
+                    self.status_update_method = self.co_api.patch_namespaced_custom_object_status
+                    _LOGGER.info('There is a status subresource defined in CRD %s', name)
+                    return
+
+            _LOGGER.info('There is no status subresource defined in CRD %s', name)
+
     def register_callback(
             self, name: str, operations: List, callback: Callable[[Dict], None]) -> None:
         """
@@ -196,9 +227,9 @@ class K8sCRHandler:
             raise ValueError(
                 '{}/{}: A callback with that name already registered'.format(
                     self.group, self.plural))
-        else:
-            for operation in operations:
-                self.callbacks[operation][name] = callback
+
+        for operation in operations:
+            self.callbacks[operation][name] = callback
 
     def unregister_callback(self, name: str) -> None:
         """Unregister a Pub/Sub order manager queue callback function."""
@@ -281,6 +312,9 @@ class K8sCRHandler:
                         _LOGGER.error(
                             'Updating resource version to %s due to "too old resource version" '
                             'error', new_version)
+                        # CRD could be the reason for a too old resource version error
+                        # Refresh status update method
+                        self.get_status_update_method()
                         break
 
                 # Skip CRs without a spec or without metadata
@@ -332,7 +366,7 @@ class K8sCRHandler:
         cls = self.__class__
         custom_res = {'status': status}
         try:
-            self.co_api.patch_namespaced_custom_object(
+            self.status_update_method(
                 self.group,
                 self.version,
                 self.namespace,

@@ -49,8 +49,8 @@ class RobotConfigurationController(K8sCRHandler):
         labels = {}
         labels['cloudrobotics.com/robot-name'] = self.robco_robot_name
         super().__init__(
-            'sap.com',
-            'v1',
+            'ewm.sap.com',
+            'v1alpha1',
             'robotconfigurations',
             'default',
             template_cr,

@@ -33,8 +33,8 @@ class RobotConfigurationController(K8sCRHandler):
         template_cr = get_sample_cr('robotconfiguration')
 
         super().__init__(
-            'sap.com',
-            'v1',
+            'ewm.sap.com',
+            'v1alpha1',
             'robotconfigurations',
             'default',
             template_cr,

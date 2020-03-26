@@ -46,8 +46,8 @@ class OrderController(K8sCRHandler):
         template_cr = get_sample_cr('warehouseorder')
 
         super().__init__(
-            'sap.com',
-            'v1',
+            'ewm.sap.com',
+            'v1alpha1',
             'warehouseorders',
             'default',
             template_cr,
@@ -243,6 +243,9 @@ class OrderController(K8sCRHandler):
 
     def save_processed_status(self, name: str, custom_res: Dict) -> None:
         """Save processed custom resource status in spec.process_status."""
+        # No status means nothing to update yet
+        if not custom_res.get('status'):
+            return
         if self.check_cr_exists(name):
             # Only if changed
             if custom_res['spec'].get('process_status') != custom_res[

@@ -6,22 +6,20 @@ metadata:
     cr-syncer.cloudrobotics.com/spec-source: robot
     cr-syncer.cloudrobotics.com/filter-by-robot-name: "True"
   # name must match the spec fields below, and be in the form: <plural>.<group>
-  name: robotrequests.sap.com
+  name: robotrequests.ewm.sap.com
 spec:
   # list of versions supported by this CustomResourceDefinition
-  group: sap.com
+  group: ewm.sap.com
   # list of versions supported by this CustomResourceDefinition
-  version: v1
+  version: v1alpha1
   versions:
-    - name: v1
+    - name: v1alpha1
       # Each version can be enabled/disabled by Served flag.
       served: true
       # One and only one version must be marked as the storage version.
       storage: true
   # either Namespaced or Cluster
   scope: Namespaced
-  # subresources:
-  #   status: {}
   names:
     # plural name to be used in the URL: /apis/<group>/<version>/<plural>
     plural: robotrequests
