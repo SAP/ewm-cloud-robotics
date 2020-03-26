@@ -125,7 +125,7 @@ spec:
               name: ewm-odata-api
               key: ewmtkep
         - name: ZEROLOG_CONFIG
-          value: stackdriver
+          value: json
 ---
 apiVersion: v1
 kind: Service

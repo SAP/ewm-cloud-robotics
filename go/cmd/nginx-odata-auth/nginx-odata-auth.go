@@ -14,6 +14,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -53,10 +54,7 @@ const (
 	filename string = "/odata/location.conf"
 )
 
-func init() {
-	// Init logging
-	initZerolog()
-}
+var log = zerologconfig.GetGlobalLogger()
 
 func createOAuthHeader(auth *odataOAuth) (string, time.Duration, error) {
 	// Create OAuth header with access_token from token endpoint
