@@ -1,0 +1,5 @@
+<mvc:View controllerName="monitoring.controller.Detail" xmlns:fo="sap.ui.layout.form" xmlns:u="sap.uxap"
+	xmlns="sap.m" xmlns:mvc="sap.ui.core.mvc" xmlns:core="sap.ui.core">
+	<core:Fragment fragmentName="monitoring.view.fragments.DetailRobotConfig" type="XML"/>
+	<core:Fragment fragmentName="monitoring.view.fragments.DetailWho" type="XML"/>
+</mvc:View>

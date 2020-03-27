@@ -1,31 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html style="height: 100%">
 <head>
-<title>ewm-monitoring-ui endpoints</title>
-<style>
-    body {
-        width: 35em;
-        margin: 0 auto;
-        font-family: Tahoma, Verdana, Arial, sans-serif;
-    }
-</style>
-<base href="/ewm-monitoring-ui/" />
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Monitoring UI</title>
+
+	<script id="sap-ui-bootstrap"
+		src="./openui5-resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_fiori_3"
+		data-sap-ui-resourceroots='{
+			"monitoring": "./",
+			"sap.ui.demo.mock": "https://openui5.hana.ondemand.com/test-resources/sap/ui/documentation/sdk/"
+		}'
+		data-sap-ui-oninit="module:sap/ui/core/ComponentSupport"
+		data-sap-ui-compatVersion="edge"
+		data-sap-ui-async="true"
+		data-sap-ui-frameOptions="trusted">
+	</script>
 </head>
-<body>
-<h1>ewm-monitoring-ui endpoints</h1>
-<p>Some Kubernetes API Server endpoints are configured...</p>
 
-
-<p>GET robots CRD: 
-<a href="./robots/">./robots/</a>.<br/></p>
-
-<p>GET warehouseorders CRD: 
-    <a href="./warehouseorders/">./warehouseorders/</a>.<br/></p>
-
-<p>GET, PATCH, PUT robotconfigurations CRD: 
-    <a href="./robotconfigurations/">./robotconfigurations/</a>.<br/></p>
-
-<p>ZEWM_ROBCO_SRV OData Service: 
-    <a href="./ZEWM_ROBCO_SRV/">./ZEWM_ROBCO_SRV/</a>.<br/></p>
+<body class="sapUiBody sapUiSizeCompact">
+	<div data-sap-ui-component
+		data-name="monitoring"
+		data-height="100%"
+		data-id="container"
+		data-settings='{"id" : "fiori2"}'
+		style="height: 100%">
+	</div>
 </body>
 </html>

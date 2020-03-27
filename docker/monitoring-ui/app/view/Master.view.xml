@@ -1,0 +1,125 @@
+<mvc:View controllerName="monitoring.controller.Master" xmlns="sap.m" xmlns:f="sap.f" xmlns:mvc="sap.ui.core.mvc" xmlns:u="sap.uxap">
+	<u:ObjectPageLayout id="ObjectPageLayout" alwaysShowContentHeader="true">
+		<u:headerTitle>
+			<u:ObjectPageHeader objectTitle="{i18n>appTitle}"/>
+		</u:headerTitle>
+		<u:sections>
+			<u:ObjectPageSection title="{i18n>robots}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'robots>updateTime', descending: 'true'} }">
+							<columns>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>updateTime}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>name}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>model}"/>
+								</Column>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>batteryPercentage}"/>
+								</Column>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>lastStateChangeTime}"/>
+								</Column>
+								<Column width="{= ${masterLayout>/mediumExpanded} ? '12em' : '4em'}">
+									<Text text="{i18n>state}"/>
+								</Column>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>creationTimestamp}"/>
+								</Column>
+								<Column visible="false">
+									<Text text="{i18n>uid}"/>
+								</Column>
+							</columns>
+							<items>
+								<ColumnListItem type="Navigation" press=".onRobotListItemPress">
+									<cells>
+										<Text text="{path: 'robots>updateTime', formatter: '.formatter.toDateTime'}"/>
+										<Text text="{robots>name}"/>
+										<Text text="{robots>model}"/>
+										<ProgressIndicator percentValue="{robots>batteryPercentage}"
+											displayValue="{path:'robots>batteryPercentage', formatter: '.formatter.toInt'}%" showValue="true"
+											state="{= ${robots>batteryPercentage} > 50 ? 'Success' : (${robots>batteryPercentage} > 25 ? 'Warning' : 'Error')}"/>
+										<Text text="{path: 'robots>lastStateChangeTime', formatter: '.formatter.toDateTime'}"/>
+										<ObjectStatus text="{= ${masterLayout>/mediumExpanded} ? ${robots>state} : ''}" state="{= ${robots>state} > 'AVAILABLE' ? 'Success' : 'Error'}"
+											icon="{= ${robots>state} === 'sap-icon://status-positive' ? 'Success' : 'sap-icon://status-negative'}"/>
+										<Text text="{path: 'robots>creationTimestamp', formatter: '.formatter.toDateTime'}"/>
+										<Text text="{robots>uid}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+			<u:ObjectPageSection title="{i18n>warehouseOrders}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: { path: 'whos>areawho', descending: 'false'} }"
+							growing="true" growingScrollToLoad="false">
+							<columns>
+								<Column>
+									<Text text="{i18n>who}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>areawho}"/>
+								</Column>
+								<Column visible="{masterLayout>/expanded}" width="5em">
+									<Text text="{i18n>flgto}"/>
+								</Column>
+								<Column visible="{masterLayout>/expanded}" width="5em">
+									<Text text="{i18n>flgwho}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>lgnum}"/>
+								</Column>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>lgtyp}"/>
+								</Column>
+								<Column visible="{masterLayout>/expanded}">
+									<Text text="{i18n>lsd}"/>
+								</Column>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>queue}"/>
+								</Column>
+								<Column visible="{masterLayout>/expanded}">
+									<Text text="{i18n>refwhoid}"/>
+								</Column>
+								<Column visible="{masterLayout>/mediumExpanded}">
+									<Text text="{i18n>rsrc}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>status}"/>
+								</Column>
+								<Column visible="{masterLayout>/expanded}">
+									<Text text="{i18n>topwhoid}"/>
+								</Column>
+							</columns>
+							<items>
+								<ColumnListItem type="Navigation" press=".onWhoListItemPress">
+									<cells>
+										<Text text="{who>who}"/>
+										<Text text="{who>areawho}"/>
+										<Text text="{who>flgto}"/>
+										<Text text="{who>flgwho}"/>
+										<Text text="{who>lgnum}"/>
+										<Text text="{who>lgtyp}"/>
+										<Text text="{who>lsd}"/>
+										<Text text="{who>queue}"/>
+										<Text text="{who>refwhoid}"/>
+										<Text text="{who>rsrc}"/>
+										<Text text="{who>status}"/>
+										<Text text="{who>topwhoid}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+		</u:sections>
+	</u:ObjectPageLayout>
+</mvc:View>

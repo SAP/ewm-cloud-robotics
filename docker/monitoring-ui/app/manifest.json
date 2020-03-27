@@ -1,0 +1,151 @@
+{
+	"_version": "1.12.0",
+	"sap.app": {
+		"dataSources": {
+			"resourceLinks": {
+				"uri": "model/resourceLinks.json",
+				"type": "JSON"
+			},
+			"zewm_robco_srv": {
+				"uri": "./ZEWM_ROBCO_SRV",
+				"type": "OData",
+				"settings": {
+					"odataVersion": "2.0"
+				}
+			}
+		},
+		"id": "monitoring",
+		"type": "application",
+		"i18n": "i18n/i18n.properties",
+		"applicationVersion": {
+			"version": "1.0.0"
+		}
+	},
+	
+	"sap.ui": {
+		"fullWidth": true,
+		"technology": "UI5",
+		"icons": {
+			"icon": "",
+			"favIcon": "",
+			"phone": "",
+			"phone@2": "",
+			"tablet": "",
+			"tablet@2": ""
+		},
+		"deviceTypes": {
+			"desktop": true,
+			"tablet": true,
+			"phone": true
+		}
+	},
+	
+	"sap.ui5": {
+		"rootView": {
+			"viewName": "monitoring.view.App",
+			"type": "XML",
+			"async": true,
+			"id": "fcl"
+		},
+		"dependencies": {
+			"minUI5Version": "1.60.0",
+			"libs": {
+				"sap.ui.core": {},
+				"sap.m": {},
+				"sap.f": {},
+				"sap.uxap": {}
+			}
+		},
+		"config": {
+			"fullWidth": true
+		},
+		"routing": {
+			"config": {
+				"routerClass": "sap.f.routing.Router",
+				"viewType": "XML",
+				"viewPath": "monitoring.view",
+				"controlId": "flexibleColumnLayout",
+				"transition": "slide",
+				"bypassed": {
+				},
+				"async": true
+			},
+			"routes": [
+				{
+					"pattern": ":layout:",
+					"name": "master",
+					"target": [
+						"master"
+					]
+				},
+				{
+					"pattern": "detail/robot/{robot}/{layout}",
+					"name": "robotDetail",
+					"target": [
+						"master",
+						"robotDetail"
+					]
+				},
+				{
+					"pattern": "detail/who/{who}/{layout}",
+					"name": "whoDetail",
+					"target": [
+						"master",
+						"whoDetail"
+					]
+				},
+				{
+					"pattern": "detailFull/robot/{robot}/{layout}",
+					"name": "robotDetailFullscreen",
+					"target": [
+						"robotDetailFullscreen"
+					]
+				},
+				{
+					"pattern": "detailFull/who/{who}/{layout}",
+					"name": "whoDetailFullscreen",
+					"target": [
+						"whoDetailFullscreen"
+					]
+				}
+			],
+			"targets": {
+				"master": {
+					"viewName": "Master",
+					"controlAggregation": "beginColumnPages"
+				},
+				"robotDetail": {
+					"viewName": "Detail",
+					"controlAggregation": "midColumnPages"
+				},
+				"whoDetail": {
+					"viewName": "Detail",
+					"controlAggregation": "midColumnPages"
+				},
+				"robotDetailFullscreen": {
+					"viewName": "Detail",
+					"controlAggregation": "midColumnPages"
+				},
+				"whoDetailFullscreen": {
+					"viewName": "Detail",
+					"controlAggregation": "midColumnPages"
+				}
+			}
+		},
+		"models": {
+			"odata": {
+				"dataSource": "zewm_robco_srv"
+			},
+			"i18n": {
+				"type": "sap.ui.model.resource.ResourceModel",
+				"settings": {
+					"bundleName": "monitoring.i18n.i18n"
+				}
+			},
+			"src": {
+				"type": "sap.ui.model.json.JSONModel",
+				"dataSource": "resourceLinks"
+			}
+		}
+	}
+}

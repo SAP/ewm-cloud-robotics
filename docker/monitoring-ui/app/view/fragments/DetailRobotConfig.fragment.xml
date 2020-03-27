@@ -1,0 +1,96 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:fo="sap.ui.layout.form" xmlns:u="sap.uxap" xmlns:mvc="sap.ui.core.mvc">
+	<u:ObjectPageLayout preserveHeaderStateOnScroll="false" visible="{viewType>/robot}">
+		<u:headerTitle>
+			<u:ObjectPageDynamicHeaderTitle>
+				<u:expandedHeading>
+					<Title text="{robotConfig>/name}" wrapping="true"/>
+				</u:expandedHeading>
+				<u:actions>
+					<Button icon="sap-icon://save" press="handleSave" text="{i18n>saveInput}" type="Success" class="sapUiSmallMarginEnd"/>
+					<OverflowToolbarButton icon="sap-icon://decline" press="handleClose" tooltip="{i18n>close}"/>
+					<OverflowToolbarButton icon="{= ${viewType>/layout} === 'MidColumnFullScreen' ? 'sap-icon://exit-full-screen' : 'sap-icon://full-screen'}" press="handleRobotFullscreen" tooltip="{i18n>fullscreen}"/>
+				</u:actions>
+			</u:ObjectPageDynamicHeaderTitle>
+		</u:headerTitle>
+		<u:headerContent>
+			<fo:SimpleForm editable="false" layout="ResponsiveGridLayout" labelSpanXL="5" labelSpanL="5" labelSpanM="5" labelSpanS="12"
+				adjustLabelSpan="false" emptySpanXL="1" emptySpanL="1" emptySpanM="1" emptySpanS="1" columnsXL="2" columnsL="2" columnsM="2"
+				singleContainerFullSize="false">
+				<fo:content>
+					<core:Title text="{i18n>currentStatus}"/>
+					<Label text="{i18n>lgnum}"/>
+					<Text text="{= ${robotConfig>/status/lgnum} === '' ? '---' : ${robotConfig>/status/lgnum}}"/>
+					<Label text="{i18n>mission}"/>
+					<Text text="{= ${robotConfig>/status/mission} === '' ? '---' : ${robotConfig>/status/mission}}"/>
+					<Label text="{i18n>stateMachine}"/>
+					<Text text="{= ${robotConfig>/status/statemachine} === '' ? '---' : ${robotConfig>/status/statemachine}}"/>
+					<core:Title text="{i18n>currentOrders}"/>
+					<Label text="{i18n>subwho}"/>
+					<Text text="{= ${robotConfig>/status/subwho} === '' ? '---' : ${robotConfig>/status/subwho}}"/>
+					<Label text="{i18n>tanum}"/>
+					<Text text="{= ${robotConfig>/status/tanum} === '' ? '---' : ${robotConfig>/status/tanum}}"/>
+					<Label text="{i18n>who}"/>
+					<Text text="{= ${robotConfig>/status/who} === '' ? '---' : ${robotConfig>/status/who}}"/>
+				</fo:content>
+			</fo:SimpleForm>
+		</u:headerContent>
+		<u:sections>
+			<u:ObjectPageSection title="{i18n>batteryConfig}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<fo:SimpleForm editable="true" layout="ResponsiveGridLayout" labelSpanXL="2" labelSpanL="2" labelSpanM="2" labelSpanS="12"
+							adjustLabelSpan="false" emptySpanXL="6" emptySpanL="6" emptySpanM="6" emptySpanS="6" columnsXL="1" columnsL="1" columnsM="1"
+							singleContainerFullSize="false">
+							<fo:content>
+								<Label text="{i18n>batteryIdle}"/>
+								<Input value="{robotConfig>/batteryIdle}"/>
+								<Label text="{i18n>batteryMin}"/>
+								<Input value="{robotConfig>/batteryMin}"></Input>
+								<Label text="{i18n>batteryOk}"/>
+								<Input value="{robotConfig>/batteryOk}"></Input>
+							</fo:content>
+						</fo:SimpleForm>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+			<u:ObjectPageSection title="{i18n>robotConfig}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<fo:SimpleForm editable="true" layout="ResponsiveGridLayout" labelSpanXL="2" labelSpanL="2" labelSpanM="2" labelSpanS="12"
+							adjustLabelSpan="false" emptySpanXL="6" emptySpanL="6" emptySpanM="6" emptySpanS="6" columnsXL="1" columnsL="1" columnsM="1"
+							singleContainerFullSize="false">
+							<fo:content>
+								<Label text="{i18n>lgnum}"/>
+								<Input value="{robotConfig>/lgnum}"/>
+								<Label text="{i18n>rsrcgrp}"/>
+								<Input value="{robotConfig>/rsrcgrp}"></Input>
+								<Label text="{i18n>rsrctype}"/>
+								<Input value="{robotConfig>/rsrctype}"></Input>
+							</fo:content>
+						</fo:SimpleForm>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+			<u:ObjectPageSection title="{i18n>chargers}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<Table id="idChargers" inset="false" items="{ path: 'robotConfig>/chargers' }">
+							<columns>
+								<Column>
+									<Text text="{i18n>charger}"/>
+								</Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{robotConfig>}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+		</u:sections>
+	</u:ObjectPageLayout>
+</core:FragmentDefinition>

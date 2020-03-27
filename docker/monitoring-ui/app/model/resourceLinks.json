@@ -1,0 +1,5 @@
+{
+	"robots": "/ewm-monitoring-ui/robots",
+	"robotConfigurations": "/ewm-monitoring-ui/robotconfigurations",
+	"warehouseOrders": "/ewm-monitoring-ui/warehouseorders"
+}

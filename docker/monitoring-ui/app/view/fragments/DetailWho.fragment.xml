@@ -1,0 +1,175 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:fo="sap.ui.layout.form" xmlns:u="sap.uxap" xmlns:mvc="sap.ui.core.mvc">
+	<u:ObjectPageLayout preserveHeaderStateOnScroll="false" visible="{viewType>/who}">
+		<u:headerTitle>
+			<u:ObjectPageDynamicHeaderTitle>
+				<u:expandedHeading>
+					<Title text="{whoDetail>/who}" wrapping="true"/>
+				</u:expandedHeading>
+				<u:actions>
+					<OverflowToolbarButton icon="sap-icon://decline" press="handleClose" tooltip="{i18n>close}"/>
+					<OverflowToolbarButton icon="{= ${viewType>/layout} === 'MidColumnFullScreen' ? 'sap-icon://exit-full-screen' : 'sap-icon://full-screen'}" press="handleWhoFullscreen" tooltip="{i18n>fullscreen}"/>
+				</u:actions>
+			</u:ObjectPageDynamicHeaderTitle>
+		</u:headerTitle>
+		<u:headerContent>
+			<fo:SimpleForm editable="false" layout="ResponsiveGridLayout" labelSpanXL="4" labelSpanL="4" labelSpanM="4" labelSpanS="12"
+				adjustLabelSpan="false" emptySpanXL="1" emptySpanL="1" emptySpanM="1" emptySpanS="1" columnsXL="2" columnsL="2" columnsM="2"
+				singleContainerFullSize="false">
+				<fo:content>
+					<core:Title text="{i18n>whoDetail}"/>
+					<Label text="{i18n>who}"/>
+					<Text text="{= ${whoDetail>/who} === '' ? '---' : ${whoDetail>/who}}"/>
+					<Label text="{i18n>areawho}"/>
+					<Text text="{= ${whoDetail>/areawho} === '' ? '---' : ${whoDetail>/areawho}}"/>
+					<Label text="{i18n>flgto}"/>
+					<Text text="{= ${whoDetail>/flgto} === '' ? '---' : ${whoDetail>/flgto}}"/>
+					<Label text="{i18n>flgwho}"/>
+					<Text text="{= ${whoDetail>/flgwho} === '' ? '---' : ${whoDetail>/flgwho}}"/>
+					<Label text="{i18n>lgnum}"/>
+					<Text text="{= ${whoDetail>/lgnum} === '' ? '---' : ${whoDetail>/lgnum}}"/>
+					<Label text="{i18n>lgtyp}"/>
+					<Text text="{= ${whoDetail>/lgtyp} === '' ? '---' : ${whoDetail>/lgtyp}}"/>
+					<core:Title text="{i18n>robotDetail}"/>
+					<Label text="{i18n>lsd}"/>
+					<Text text="{= ${whoDetail>/lsd} === '' ? '---' : ${whoDetail>/lsd}}"/>
+					<Label text="{i18n>queue}"/>
+					<Text text="{= ${whoDetail>/queue} === '' ? '---' : ${whoDetail>/queue}}"/>
+					<Label text="{i18n>refwhoid}"/>
+					<Text text="{= ${whoDetail>/refwhoid} === '' ? '---' : ${whoDetail>/refwhoid}}"/>
+					<Label text="{i18n>rsrc}"/>
+					<Text text="{= ${whoDetail>/rsrc} === '' ? '---' : ${whoDetail>/rsrc}}"/>
+					<Label text="{i18n>status}"/>
+					<Text text="{= ${whoDetail>/status} === '' ? '---' : ${whoDetail>/status}}"/>
+					<Label text="{i18n>topwhoid}"/>
+					<Text text="{= ${whoDetail>/topwhoid} === '' ? '---' : ${whoDetail>/topwhoid}}"/>
+				</fo:content>
+			</fo:SimpleForm>
+		</u:headerContent>
+		<u:sections>
+			<u:ObjectPageSection title="{i18n>whoTasks}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<Table inset="false" items="{ path: 'whoDetail>/warehousetasks' }" alternateRowColors="true">
+							<columns>
+								<Column demandPopin="true">
+									<Text text="{i18n>tanum}"/>
+								</Column>
+								<Column demandPopin="true">
+									<Text text="{i18n>lgnum}"/>
+								</Column>
+								<Column demandPopin="true">
+									<Text text="{i18n>nlber}"/>
+								</Column>
+								<Column demandPopin="true">
+									<Text text="{i18n>nlenr}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>nlpla}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>nltyp}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>meins}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>priority}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>volum}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>weight}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Desktop">
+									<Text text="{i18n>vlber}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Desktop">
+									<Text text="{i18n>vlenr}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Desktop">
+									<Text text="{i18n>vlpla}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Desktop">
+									<Text text="{i18n>vltyp}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Desktop">
+									<Text text="{i18n>vsolm}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Desktop">
+									<Text text="{i18n>flghuto}"/>
+								</Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{= ${whoDetail>tanum} === '' ? '---' : ${whoDetail>tanum}}"/>
+										<Text text="{= ${whoDetail>lgnum} === '' ? '---' : ${whoDetail>lgnum}}"/>
+										<Text text="{= ${whoDetail>nlber} === '' ? '---' : ${whoDetail>nlber}}"/>
+										<Text text="{= ${whoDetail>nlenr} === '' ? '---' : ${whoDetail>nlenr}}"/>
+										<Text text="{= ${whoDetail>nlpla} === '' ? '---' : ${whoDetail>nlpla}}"/>
+										<Text text="{= ${whoDetail>nltyp} === '' ? '---' : ${whoDetail>nltyp}}"/>
+										<Text text="{= ${whoDetail>meins} === '' ? '---' : ${whoDetail>meins}}"/>
+										<Text text="{= ${whoDetail>priority} === '' ? '---' : ${whoDetail>priority}}"/>
+										<Text text="{= ${whoDetail>volum} === '' ? '---' : ${whoDetail>volum}} {= ${whoDetail>volum} === '' ? '' : ${whoDetail>unitv}}"/>
+										<Text text="{= ${whoDetail>weight} === '' ? '---' : ${whoDetail>weight}} {= ${whoDetail>weight} === '' ? '' : ${whoDetail>unitw}}"/>
+										<Text text="{= ${whoDetail>vlber} === '' ? '---' : ${whoDetail>vlber}}"/>
+										<Text text="{= ${whoDetail>vlenr} === '' ? '---' : ${whoDetail>vlenr}}"/>
+										<Text text="{= ${whoDetail>vlpla} === '' ? '---' : ${whoDetail>vlpla}}"/>
+										<Text text="{= ${whoDetail>vltyp} === '' ? '---' : ${whoDetail>vltyp}}"/>
+										<Text text="{= ${whoDetail>vsolm} === '' ? '---' : ${whoDetail>vsolm}}"/>
+										<Text text="{= ${whoDetail>flghuto} === '' ? '---' : ${whoDetail>flghuto}}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+			<u:ObjectPageSection title="{i18n>processStatus}">
+				<u:subSections>
+					<u:ObjectPageSubSection>
+						<Table inset="false" items="{ path: 'whoDetail>/process_status' }" alternateRowColors="true">
+							<columns>
+								<Column>
+									<Text text="{i18n>confirmationdate}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>confirmationnumber}"/>
+								</Column>
+								<Column>
+									<Text text="{i18n>confirmationtype}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>lgnum}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>rsrc}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>tanum}"/>
+								</Column>
+								<Column demandPopin="true" minScreenWidth="Tablet">
+									<Text text="{i18n>who}"/>
+								</Column>
+							</columns>
+							<items>
+								<ColumnListItem>
+									<cells>
+										<Text text="{path: 'whoDetail>confirmationdate', formatter: '.formatter.toDateTime'}"/>
+										<Text text="{whoDetail>confirmationnumber}"/>
+										<Text text="{whoDetail>confirmationtype}"/>
+										<Text text="{whoDetail>lgnum}"/>
+										<Text text="{whoDetail>rsrc}"/>
+										<Text text="{whoDetail>tanum}"/>
+										<Text text="{whoDetail>who}"/>
+									</cells>
+								</ColumnListItem>
+							</items>
+						</Table>
+					</u:ObjectPageSubSection>
+				</u:subSections>
+			</u:ObjectPageSection>
+		</u:sections>
+	</u:ObjectPageLayout>
+</core:FragmentDefinition>
