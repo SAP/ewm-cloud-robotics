@@ -30,12 +30,24 @@ data:
        }
        location /robots/ {
            proxy_pass http://localhost:8001/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/;
+           proxy_set_header Accept-Encoding "";
+           sub_filter_once off;
+           sub_filter_types *;
+           sub_filter '/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default' '{{ $.Values.nginxpath }}';
        }
        location /warehouseorders/ {
            proxy_pass http://localhost:8002/apis/ewm.sap.com/v1alpha1/namespaces/default/warehouseorders/;
+           proxy_set_header Accept-Encoding "";
+           sub_filter_once off;
+           sub_filter_types *;
+           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/default' '{{ $.Values.nginxpath }}';
        }
        location /robotconfigurations/ {
            proxy_pass http://localhost:8003/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/;
+           proxy_set_header Accept-Encoding "";
+           sub_filter_once off;
+           sub_filter_types *;
+           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/default' '{{ $.Values.nginxpath }}';
        }
        include /odata/location.conf;
     }
