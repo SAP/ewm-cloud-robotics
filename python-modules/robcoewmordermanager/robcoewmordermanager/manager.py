@@ -240,10 +240,7 @@ class EWMOrderManager:
                     'Warehouse order %s was confirmed, notifying robot "%s"',
                     request.notifywhocompletion, robotident.rsrc)
                 # Warehouse orders are completed in EWM, thus ensure that they are marked PROCESSED
-                self.ordercontroller.cleanup_who(unstructure(
-                    WarehouseOrder(lgnum=robotident.lgnum, who=request.notifywhocompletion)))
-                self.msg_mem.delete_who_from_memory(
-                    WhoIdentifier(robotident.lgnum, request.notifywhocompletion))
+                self.cleanup_who(WhoIdentifier(robotident.lgnum, request.notifywhocompletion))
 
         # Check if warehouse task was completed
         if request.notifywhtcompletion and not status.notifywhtcompletion:
@@ -356,8 +353,7 @@ class EWMOrderManager:
 
                 # Cleanup warehouse order if there are no warehouse tasks
                 if not who.warehousetasks:
-                    self.ordercontroller.cleanup_who(unstructure(who))
-                    self.msg_mem.delete_who_from_memory(WhoIdentifier(whtask.lgnum, whtask.who))
+                    self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
 
         # ERROR Messages
         elif whtask.confirmationtype == ConfirmWarehouseTask.CONF_ERROR:
@@ -391,8 +387,7 @@ class EWMOrderManager:
 
                 # In case of an error in warehouse order processing always clean up because the
                 # order is moved to a different queue
-                self.ordercontroller.cleanup_who(unstructure(who))
-                self.msg_mem.delete_who_from_memory(WhoIdentifier(whtask.lgnum, whtask.who))
+                self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
 
     def get_and_send_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = True,
@@ -487,6 +482,17 @@ class EWMOrderManager:
                     who.lgnum, who.who, openwarehousetasks=True)
 
         return whos
+
+    def cleanup_who(self, whoident: WhoIdentifier) -> None:
+        """Cleanup warehouse order in Cloud Robotics when it is done."""
+        try:
+            who = self.ewmwho.get_warehouseorder(whoident.lgnum, whoident.who)
+        except NotFoundError:
+            _LOGGER.warning('Warehouse order %s not found in EWM during CR cleanup', whoident)
+            who = WarehouseOrder(lgnum=whoident.lgnum, who=whoident.who)
+
+        self.ordercontroller.cleanup_who(unstructure(who))
+        self.msg_mem.delete_who_from_memory(whoident)
 
     def send_robot_whos(self, robotident: RobotIdentifier, whos: List[WarehouseOrder]) -> bool:
         """
@@ -587,9 +593,7 @@ class EWMOrderManager:
 
             if processed:
                 # Cleanup warehouse order CRs
-                self.ordercontroller.cleanup_who(unstructure(who_spec.data))
-                self.msg_mem.delete_who_from_memory(
-                    WhoIdentifier(who_spec.data.lgnum, who_spec.data.who))
+                self.cleanup_who(WhoIdentifier(who_spec.data.lgnum, who_spec.data.who))
 
     def _get_who_confirmations(self, custom_res: Dict) -> List:
         """Get Warehouse Order confirmations to be processed."""

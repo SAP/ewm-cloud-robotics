@@ -200,7 +200,7 @@ class OrderController(K8sCRHandler):
         # Delete warehouse order
         name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
         to_be_closed.append(name)
-        spec_order_processed = {'order_status': WarehouseOrderCRDSpec.STATE_PROCESSED}
+        spec_order_processed = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_PROCESSED}
 
         if self.check_cr_exists(name):
             self.update_cr_spec(name, spec_order_processed)
