@@ -11,12 +11,12 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig"
+	"golang.org/x/oauth2/clientcredentials"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"os/exec"
 	"os/signal"
@@ -43,63 +43,11 @@ type odataOAuth struct {
 	clientSecret  string
 }
 
-type odataOAuthReturn struct {
-	AccessToken string `json:"access_token"`
-	TokenType   string `json:"token_type"`
-	ExpiresIn   int    `json:"expires_in"`
-	Scope       string `json:"scope,omitempty"`
-}
-
 const (
 	filename string = "/odata/location.conf"
 )
 
 var log = zerologconfig.GetGlobalLogger()
-
-func createOAuthHeader(auth *odataOAuth) (string, time.Duration, error) {
-	// Create OAuth header with access_token from token endpoint
-	// HTTP Request to token endpoint
-	c := &http.Client{Timeout: time.Second * 5}
-
-	req, err := http.NewRequest("POST", auth.tokenEndpoint, nil)
-	if err != nil {
-		log.Fatal().Err(err).Msgf("Unable to create HTTP POST request to token endpoint %s", auth.tokenEndpoint)
-	}
-	req.SetBasicAuth(auth.clientID, auth.clientSecret)
-	req.Header.Add("Accept", "application/json")
-
-	resp, err := c.Do(req)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error performing HTTP request to token endpoint %s: %v", auth.tokenEndpoint, err)
-	}
-
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return "", 0, fmt.Errorf("HTTP request to token endpoint %s returned status %v", auth.tokenEndpoint, resp.StatusCode)
-	}
-
-	// Unmarshal json response
-	var tokenEndpointBody odataOAuthReturn
-	bodyBytes, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return "", 0, fmt.Errorf("Error reading body of HTTP POST to token endpoint %s: %v", auth.tokenEndpoint, err)
-	}
-	log.Debug().Msgf("Endpoint registry reply: %v", string(bodyBytes))
-	err = json.Unmarshal(bodyBytes, &tokenEndpointBody)
-
-	if err != nil {
-		return "", 0, fmt.Errorf("Error decoding JSON body of HTTP POST to token endpoint %s: %v", auth.tokenEndpoint, err)
-	}
-
-	// Create auth header and duration for token refresh
-	authHeader := fmt.Sprintf("%s %s", tokenEndpointBody.TokenType, tokenEndpointBody.AccessToken)
-	// Refresh token 60 seconds before it expires
-	refreshIn := time.Duration(tokenEndpointBody.ExpiresIn-60) * time.Second
-
-	return authHeader, refreshIn, nil
-
-}
 
 func createODataConfig(endpoint *odataEndpoint, authHeader string) string {
 	// Create nginx config for OData proxy including authorization header
@@ -148,15 +96,19 @@ func updateBasicAuthConfig(endpoint *odataEndpoint, auth *odataBasicAuth) {
 	log.Info().Msg("Basic Auth nginx configuration created successfully")
 }
 
-func updateOAuthConfig(endpoint *odataEndpoint, auth *odataOAuth) <-chan time.Time {
+func updateOAuthConfig(ctx context.Context, endpoint *odataEndpoint, auth *clientcredentials.Config) <-chan time.Time {
 	// Creating nginx OData proxy config for OAuth authorization case
 	log.Info().Msg("Refreshing OAuth token")
 	// Get auth header from token endpoint
-	authHeader, refreshIn, err := createOAuthHeader(auth)
+
+	token, err := auth.Token(ctx)
 	if err != nil {
 		log.Error().Err(err).Msg("Error refreshing OAuth token, retrying in 1 second")
 		return time.After(time.Second * 1)
 	}
+
+	// Create auth header
+	authHeader := fmt.Sprintf("%s %s", token.TokenType, token.AccessToken)
 
 	// Create OData config
 	odataConfig := createODataConfig(endpoint, authHeader)
@@ -171,10 +123,11 @@ func updateOAuthConfig(endpoint *odataEndpoint, auth *odataOAuth) <-chan time.Ti
 	// Reload nginx
 	reloadNginx()
 
-	log.Info().Msgf("OAuth token refresh successfull, next token refresh scheduled in %v minutes", refreshIn.Minutes())
+	refresh := token.Expiry.Sub(time.Now()) - time.Duration(time.Minute*1)
+	log.Info().Msgf("OAuth token refresh successfull, next token refresh scheduled in %v minutes", refresh.Minutes())
 
 	// Return channel which is called when token expires
-	return time.After(refreshIn)
+	return time.After(refresh)
 }
 
 func reloadNginx() {
@@ -207,6 +160,9 @@ func main() {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
+	// Context
+	ctx := context.Background()
+
 	// Channel to trigger OAuth Token refresh
 	var refreshTokenChan <-chan time.Time
 
@@ -218,7 +174,7 @@ func main() {
 	// Read environment variables
 	endpoint := &odataEndpoint{}
 	basicAuth := &odataBasicAuth{}
-	oAuth := &odataOAuth{}
+	oAuth := &clientcredentials.Config{}
 
 	endpoint.newHost = os.Getenv("CLOUD_ROBOTICS_DOMAIN")
 	if endpoint.newHost == "" {
@@ -268,27 +224,27 @@ func main() {
 
 	} else if odataAuth == "OAuth" {
 		log.Info().Msg("Using OAuth Authorization for OData")
-		oAuth.tokenEndpoint = os.Getenv("ODATA_TOKENENDPOINT")
-		if oAuth.tokenEndpoint == "" {
+		oAuth.TokenURL = os.Getenv("ODATA_TOKENENDPOINT")
+		if oAuth.TokenURL == "" {
 			log.Fatal().Msg("Environment variable ODATA_TOKENENDPOINT is not set")
 		} else {
-			log.Info().Msgf("ODATA_TOKENENDPOINT is %s", oAuth.tokenEndpoint)
+			log.Info().Msgf("ODATA_TOKENENDPOINT is %s", oAuth.TokenURL)
 		}
-		oAuth.clientID = os.Getenv("ODATA_CLIENTID")
-		if oAuth.clientID == "" {
+		oAuth.ClientID = os.Getenv("ODATA_CLIENTID")
+		if oAuth.ClientID == "" {
 			log.Fatal().Msg("Environment variable ODATA_CLIENTID is not set")
 		} else {
-			log.Info().Msgf("ODATA_CLIENTID is %s", oAuth.clientID)
+			log.Info().Msgf("ODATA_CLIENTID is %s", oAuth.ClientID)
 		}
-		oAuth.clientSecret = os.Getenv("ODATA_CLIENTSECRET")
-		if oAuth.clientSecret == "" {
+		oAuth.ClientSecret = os.Getenv("ODATA_CLIENTSECRET")
+		if oAuth.ClientSecret == "" {
 			log.Fatal().Msg("Environment variable ODATA_CLIENTSECRET is not set")
 		} else {
 			log.Info().Msg("ODATA_CLIENTSECRET is set")
 		}
 
 		// OAuth case
-		refreshTokenChan = updateOAuthConfig(endpoint, oAuth)
+		refreshTokenChan = updateOAuthConfig(ctx, endpoint, oAuth)
 
 	} else {
 		log.Fatal().Msgf("Authentication %s is not supported", odataAuth)
@@ -302,10 +258,10 @@ func main() {
 			running = false
 		case <-refreshTokenChan:
 			// Update nginx config with new authorization header when OAuth token expires
-			if oAuth.tokenEndpoint == "" {
+			if oAuth.TokenURL == "" {
 				log.Fatal().Msg("Try to refresh OAuth token with no token endpoint set")
 			}
-			refreshTokenChan = updateOAuthConfig(endpoint, oAuth)
+			refreshTokenChan = updateOAuthConfig(ctx, endpoint, oAuth)
 		}
 	}
 
