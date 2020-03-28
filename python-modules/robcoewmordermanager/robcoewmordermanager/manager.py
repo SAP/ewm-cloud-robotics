@@ -798,23 +798,23 @@ class EWMOrderManager:
             reserved = status.warehouseorders.copy()
             connection_error = False
 
-            for ordas in spec.orderassignments:
-                whoident = WarehouseOrderIdent(ordas.lgnum, ordas.who)
+            for ord_as in spec.orderassignments:
+                whoident = WarehouseOrderIdent(ord_as.lgnum, ord_as.who)
                 if whoident not in reserved:
                     _LOGGER.error(
                         'Warehouse order %s.%s is not in reservation list - skipping',
-                        ordas.lgnum, ordas.who)
+                        ord_as.lgnum, ord_as.who)
                     continue
-                if ordas in status.orderassignments:
+                if ord_as in status.orderassignments:
                     _LOGGER.info(
-                        'Warehouse order %s.%s already assigned before - skipping', ordas.lgnum,
-                        ordas.who)
+                        'Warehouse order %s.%s already assigned before - skipping', ord_as.lgnum,
+                        ord_as.who)
                     if whoident in reserved:
                         reserved.remove(whoident)
                     continue
                 # Assign warehouse order to robot
                 try:
-                    self.ewmwho.assign_robot_warehouseorder(ordas.lgnum, ordas.rsrc, ordas.who)
+                    self.ewmwho.assign_robot_warehouseorder(ord_as.lgnum, ord_as.rsrc, ord_as.who)
                 except (ConnectionError, TimeoutError, IOError) as err:
                     _LOGGER.error(
                         'Error connecting to SAP EWM Backend: "%s" - try again later', err)
@@ -822,18 +822,18 @@ class EWMOrderManager:
                 except (NoOrderFoundError, RobotNotFoundError, WarehouseOrderAssignedError,
                         WarehouseTaskAssignedError) as err:
                     _LOGGER.error(
-                        'Unable to assign warehouse order %s.%s to robot %s: %s', ordas.lgnum,
-                        ordas.who, ordas.rsrc, err)
+                        'Unable to assign warehouse order %s.%s to robot %s: %s', ord_as.lgnum,
+                        ord_as.who, ord_as.rsrc, err)
                 else:
                     if whoident in reserved:
                         reserved.remove(whoident)
                     _LOGGER.info(
-                        'Warehouse order %s.%s assigned to robot %s', ordas.lgnum, ordas.who,
-                        ordas.rsrc)
+                        'Warehouse order %s.%s assigned to robot %s', ord_as.lgnum, ord_as.who,
+                        ord_as.rsrc)
                     # Append assignment to status
-                    status.orderassignments.append(ordas)
+                    status.orderassignments.append(ord_as)
                     # Send warehouse order to robot
-                    robotident = RobotIdentifier(ordas.lgnum, ordas.rsrc)
+                    robotident = RobotIdentifier(ord_as.lgnum, ord_as.rsrc)
                     try:
                         self.get_and_send_robot_whos(
                             robotident, firstrequest=False, newwho=False, onlynewwho=False)
@@ -858,12 +858,10 @@ class EWMOrderManager:
                         _LOGGER.error(
                             'Error connecting to SAP EWM Backend: "%s" - try again later', err)
                         connection_error = True
-                    else:
+
+                    if not connection_error:
                         # Cleanup warehouse order CRs
-                        self.ordercontroller.cleanup_who(
-                            unstructure(WarehouseOrder(lgnum=whoident.lgnum, who=whoident.who)))
-                        self.msg_mem.delete_who_from_memory(
-                            WhoIdentifier(whoident.lgnum, whoident.who))
+                        self.cleanup_who(WhoIdentifier(whoident.lgnum, whoident.who))
 
             # CR is processed in this status, until there was no connection error to EWM
             if not connection_error:
@@ -887,12 +885,10 @@ class EWMOrderManager:
                     _LOGGER.error(
                         'Error connecting to SAP EWM Backend: "%s" - try again later', err)
                     connection_error = True
-                else:
+
+                if not connection_error:
                     # Cleanup warehouse order CRs
-                    self.ordercontroller.cleanup_who(
-                        unstructure(WarehouseOrder(lgnum=whoident.lgnum, who=whoident.who)))
-                    self.msg_mem.delete_who_from_memory(
-                        WhoIdentifier(whoident.lgnum, whoident.who))
+                    self.cleanup_who(WhoIdentifier(whoident.lgnum, whoident.who))
 
             # CR is processed in this status, until there was no connection error to EWM
             if not connection_error:
