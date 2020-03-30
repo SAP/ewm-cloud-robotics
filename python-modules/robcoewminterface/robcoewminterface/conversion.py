@@ -19,7 +19,7 @@ Examples of data classes could be found in module robcoewmtypes.warehouseorder.
 """
 
 import logging
-from typing import Any
+from typing import Any, Dict
 import attr
 
 from robcoewmtypes import ODATA_TYPE_MAP
@@ -27,7 +27,7 @@ from robcoewmtypes import ODATA_TYPE_MAP
 _LOGGER = logging.getLogger(__name__)
 
 
-def odata_to_attr(odata: dict) -> Any:
+def odata_to_attr(odata: Dict) -> Any:
     """Convert OData json response to RobCo types."""
     # Check if data segment is existing
     if 'd' not in odata:
@@ -47,7 +47,7 @@ def odata_to_attr(odata: dict) -> Any:
         return return_obj
 
 
-def split_odata_set(odata: dict) -> Any:
+def split_odata_set(odata: Dict) -> Any:
     """Split OData data set to list or single entry."""
     if 'results' in odata:
         # List of entries
@@ -62,7 +62,7 @@ def split_odata_set(odata: dict) -> Any:
         return return_obj
 
 
-def map_single_odata_entry(odata: dict) -> Any:
+def map_single_odata_entry(odata: Dict) -> Any:
     """Map single OData set to RobCo type and return it."""
     # Complex data types have their method name on the first level.
     # This level has to be removed. Test for __metadata too, if there is an
