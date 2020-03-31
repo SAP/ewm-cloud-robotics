@@ -585,7 +585,9 @@ class EWMOrderManager:
                     'Warehouse order %s not found in EWM but in status RUNNING, setting to '
                     'PROCESSED', name)
             else:
-                if who.status != 'D':
+                if who.status == 'D' or (who.status == '' and who.rsrc != ''):
+                    processed = False
+                else:
                     processed = True
                     _LOGGER.warning(
                         'Warehouse order %s in status %s in EWM but RUNNING in Cloud Robotics, '
