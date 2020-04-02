@@ -36,11 +36,11 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 					<Label text="{i18n>ewmStatus}"/>
 					<Text text="{= ${robotConfig>/status/statemachine} === '' ? '---' : ${robotConfig>/status/statemachine}}"/>
 					<core:Title text="{i18n>currentOrders}"/>
-					<Label text="{i18n>subwho}"/>
+					<Label text="{odata>/#WarehouseOrder/Refwhoid/@sap:label}"/>
 					<Text text="{= ${robotConfig>/status/subwho} === '' ? '---' : ${robotConfig>/status/subwho}}"/>
 					<Label text="{odata>/#OpenWarehouseTask/Tanum/@sap:label}"/>
 					<Text text="{= ${robotConfig>/status/tanum} === '' ? '---' : ${robotConfig>/status/tanum}}"/>
-					<Label text="{i18n>who}"/>
+					<Label text="{odata>/#WarehouseOrder/Who/@sap:label}"/>
 					<Text text="{= ${robotConfig>/status/who} === '' ? '---' : ${robotConfig>/status/who}}"/>
 				</fo:content>
 			</fo:SimpleForm>
@@ -75,7 +75,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 								<Input value="{robotConfig>/maxIdleTime}" type="Number"/>
 								<Label text="{i18n>recoverFromRobotError}"/>
 								<CheckBox selected="{robotConfig>/recoverFromRobotError}"/>
-								<Label text="{i18n>lgnum}"/>
+								<Label text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
 								<Input value="{robotConfig>/lgnum}"/>
 								<Label text="{i18n>rsrcgrp}"/>
 								<Input value="{robotConfig>/rsrcgrp}"></Input>
