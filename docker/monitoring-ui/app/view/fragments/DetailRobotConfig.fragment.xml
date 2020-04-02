@@ -1,3 +1,13 @@
+<!--
+Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+
+This file is part of ewm-cloud-robotics
+(see https://github.com/SAP/ewm-cloud-robotics).
+
+This file is licensed under the Apache Software License, v. 2 except as noted
+otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+-->
+
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:fo="sap.ui.layout.form" xmlns:u="sap.uxap" xmlns:mvc="sap.ui.core.mvc">
 	<u:ObjectPageLayout preserveHeaderStateOnScroll="false" visible="{viewType>/robot}">
 		<u:headerTitle>
@@ -8,7 +18,8 @@
 				<u:actions>
 					<Button icon="sap-icon://save" press="handleSave" text="{i18n>saveInput}" type="Success" class="sapUiSmallMarginEnd"/>
 					<OverflowToolbarButton icon="sap-icon://decline" press="handleClose" tooltip="{i18n>close}"/>
-					<OverflowToolbarButton icon="{= ${viewType>/layout} === 'MidColumnFullScreen' ? 'sap-icon://exit-full-screen' : 'sap-icon://full-screen'}" press="handleRobotFullscreen" tooltip="{i18n>fullscreen}"/>
+					<OverflowToolbarButton icon="{= ${viewType>/layout} === 'MidColumnFullScreen' ? 'sap-icon://exit-full-screen' : 'sap-icon://full-screen'}"
+						press="handleRobotFullscreen" tooltip="{i18n>fullscreen}"/>
 				</u:actions>
 			</u:ObjectPageDynamicHeaderTitle>
 		</u:headerTitle>
@@ -18,16 +29,16 @@
 				singleContainerFullSize="false">
 				<fo:content>
 					<core:Title text="{i18n>currentStatus}"/>
-					<Label text="{i18n>lgnum}"/>
+					<Label text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
 					<Text text="{= ${robotConfig>/status/lgnum} === '' ? '---' : ${robotConfig>/status/lgnum}}"/>
 					<Label text="{i18n>mission}"/>
 					<Text text="{= ${robotConfig>/status/mission} === '' ? '---' : ${robotConfig>/status/mission}}"/>
-					<Label text="{i18n>stateMachine}"/>
+					<Label text="{i18n>ewmStatus}"/>
 					<Text text="{= ${robotConfig>/status/statemachine} === '' ? '---' : ${robotConfig>/status/statemachine}}"/>
 					<core:Title text="{i18n>currentOrders}"/>
 					<Label text="{i18n>subwho}"/>
 					<Text text="{= ${robotConfig>/status/subwho} === '' ? '---' : ${robotConfig>/status/subwho}}"/>
-					<Label text="{i18n>tanum}"/>
+					<Label text="{odata>/#OpenWarehouseTask/Tanum/@sap:label}"/>
 					<Text text="{= ${robotConfig>/status/tanum} === '' ? '---' : ${robotConfig>/status/tanum}}"/>
 					<Label text="{i18n>who}"/>
 					<Text text="{= ${robotConfig>/status/who} === '' ? '---' : ${robotConfig>/status/who}}"/>
@@ -43,11 +54,11 @@
 							singleContainerFullSize="false">
 							<fo:content>
 								<Label text="{i18n>batteryIdle}"/>
-								<Input value="{robotConfig>/batteryIdle}"/>
+								<Input value="{robotConfig>/batteryIdle}" type="Number"/>
 								<Label text="{i18n>batteryMin}"/>
-								<Input value="{robotConfig>/batteryMin}"></Input>
+								<Input value="{robotConfig>/batteryMin}" type="Number"></Input>
 								<Label text="{i18n>batteryOk}"/>
-								<Input value="{robotConfig>/batteryOk}"></Input>
+								<Input value="{robotConfig>/batteryOk}" type="Number"></Input>
 							</fo:content>
 						</fo:SimpleForm>
 					</u:ObjectPageSubSection>
@@ -60,6 +71,10 @@
 							adjustLabelSpan="false" emptySpanXL="6" emptySpanL="6" emptySpanM="6" emptySpanS="6" columnsXL="1" columnsL="1" columnsM="1"
 							singleContainerFullSize="false">
 							<fo:content>
+								<Label text="{i18n>maxIdleTime}"/>
+								<Input value="{robotConfig>/maxIdleTime}" type="Number"/>
+								<Label text="{i18n>recoverFromRobotError}"/>
+								<CheckBox selected="{robotConfig>/recoverFromRobotError}"/>
 								<Label text="{i18n>lgnum}"/>
 								<Input value="{robotConfig>/lgnum}"/>
 								<Label text="{i18n>rsrcgrp}"/>
@@ -74,16 +89,23 @@
 			<u:ObjectPageSection title="{i18n>chargers}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idChargers" inset="false" items="{ path: 'robotConfig>/chargers' }">
+						<Table id="idChargers" inset="false" items="{ path: 'robotConfig>/chargers' }" mode="MultiSelect">
+							<headerToolbar>
+								<OverflowToolbar>
+									<ToolbarSpacer/>
+									<Button text="{i18n>addCharger}" icon="sap-icon://add" type="Accept" press="handleChargerAdd"/>
+									<Button text="{i18n>removeCharger}" icon="sap-icon://delete" type="Reject" press="handleChargerRemove" class="sapUiTinyMarginBegin"/>
+								</OverflowToolbar>
+							</headerToolbar>
 							<columns>
 								<Column>
-									<Text text="{i18n>charger}"/>
+									<Text text="{i18n>chargerDesc}"/>
 								</Column>
 							</columns>
 							<items>
 								<ColumnListItem>
 									<cells>
-										<Text text="{robotConfig>}"/>
+										<Input value="{robotConfig>}"/>
 									</cells>
 								</ColumnListItem>
 							</items>

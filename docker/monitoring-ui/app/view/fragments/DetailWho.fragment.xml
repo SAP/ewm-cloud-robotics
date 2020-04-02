@@ -1,3 +1,13 @@
+<!--
+Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+
+This file is part of ewm-cloud-robotics
+(see https://github.com/SAP/ewm-cloud-robotics).
+
+This file is licensed under the Apache Software License, v. 2 except as noted
+otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+-->
+
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core" xmlns:fo="sap.ui.layout.form" xmlns:u="sap.uxap" xmlns:mvc="sap.ui.core.mvc">
 	<u:ObjectPageLayout preserveHeaderStateOnScroll="false" visible="{viewType>/who}">
 		<u:headerTitle>
@@ -16,31 +26,31 @@
 				adjustLabelSpan="false" emptySpanXL="1" emptySpanL="1" emptySpanM="1" emptySpanS="1" columnsXL="2" columnsL="2" columnsM="2"
 				singleContainerFullSize="false">
 				<fo:content>
-					<core:Title text="{i18n>whoDetail}"/>
-					<Label text="{i18n>who}"/>
+					<core:Title text="{i18n>whoDetail1}"/>
+					<Label text="{odata>/#WarehouseOrder/Who/@sap:label}"/>
 					<Text text="{= ${whoDetail>/who} === '' ? '---' : ${whoDetail>/who}}"/>
-					<Label text="{i18n>areawho}"/>
+					<Label text="{odata>/#WarehouseOrder/Areawho/@sap:label}"/>
 					<Text text="{= ${whoDetail>/areawho} === '' ? '---' : ${whoDetail>/areawho}}"/>
-					<Label text="{i18n>flgto}"/>
+					<Label text="{odata>/#WarehouseOrder/Flgto/@sap:label}"/>
 					<Text text="{= ${whoDetail>/flgto} === '' ? '---' : ${whoDetail>/flgto}}"/>
-					<Label text="{i18n>flgwho}"/>
+					<Label text="{odata>/#WarehouseOrder/Flgwho/@sap:label}"/>
 					<Text text="{= ${whoDetail>/flgwho} === '' ? '---' : ${whoDetail>/flgwho}}"/>
-					<Label text="{i18n>lgnum}"/>
+					<Label text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
 					<Text text="{= ${whoDetail>/lgnum} === '' ? '---' : ${whoDetail>/lgnum}}"/>
-					<Label text="{i18n>lgtyp}"/>
+					<Label text="{odata>/#WarehouseOrder/Lgtyp/@sap:label}"/>
 					<Text text="{= ${whoDetail>/lgtyp} === '' ? '---' : ${whoDetail>/lgtyp}}"/>
-					<core:Title text="{i18n>robotDetail}"/>
-					<Label text="{i18n>lsd}"/>
+					<core:Title text="{i18n>whoDetail2}"/>
+					<Label text="{odata>/#WarehouseOrder/Lsd/@sap:label}"/>
 					<Text text="{= ${whoDetail>/lsd} === '' ? '---' : ${whoDetail>/lsd}}"/>
-					<Label text="{i18n>queue}"/>
+					<Label text="{odata>/#WarehouseOrder/Queue/@sap:label}"/>
 					<Text text="{= ${whoDetail>/queue} === '' ? '---' : ${whoDetail>/queue}}"/>
-					<Label text="{i18n>refwhoid}"/>
+					<Label text="{odata>/#WarehouseOrder/Refwhoid/@sap:label}"/>
 					<Text text="{= ${whoDetail>/refwhoid} === '' ? '---' : ${whoDetail>/refwhoid}}"/>
-					<Label text="{i18n>rsrc}"/>
+					<Label text="{odata>/#WarehouseOrder/Rsrc/@sap:label}"/>
 					<Text text="{= ${whoDetail>/rsrc} === '' ? '---' : ${whoDetail>/rsrc}}"/>
 					<Label text="{i18n>status}"/>
 					<Text text="{= ${whoDetail>/status} === '' ? '---' : ${whoDetail>/status}}"/>
-					<Label text="{i18n>topwhoid}"/>
+					<Label text="{odata>/#WarehouseOrder/Topwhoid/@sap:label}"/>
 					<Text text="{= ${whoDetail>/topwhoid} === '' ? '---' : ${whoDetail>/topwhoid}}"/>
 				</fo:content>
 			</fo:SimpleForm>
@@ -52,52 +62,52 @@
 						<Table inset="false" items="{ path: 'whoDetail>/warehousetasks' }" alternateRowColors="true">
 							<columns>
 								<Column demandPopin="true">
-									<Text text="{i18n>tanum}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Tanum/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true">
-									<Text text="{i18n>lgnum}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Lgnum/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true">
-									<Text text="{i18n>nlber}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Nlber/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true">
-									<Text text="{i18n>nlenr}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Nlenr/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>nlpla}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Nlpla/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>nltyp}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Nltyp/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>meins}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Meins/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>priority}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Priority/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>volum}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Volum/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>weight}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Weight/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{i18n>vlber}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Vlber/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{i18n>vlenr}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Vlenr/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{i18n>vlpla}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Vlpla/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{i18n>vltyp}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Vltyp/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{i18n>vsolm}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Vsolm/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{i18n>flghuto}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Flghuto/@sap:label}"/>
 								</Column>
 							</columns>
 							<items>
@@ -141,16 +151,16 @@
 									<Text text="{i18n>confirmationtype}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>lgnum}"/>
+									<Text text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>rsrc}"/>
+									<Text text="{odata>/#WarehouseOrder/Rsrc/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>tanum}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Tanum/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{i18n>who}"/>
+									<Text text="{odata>/#WarehouseOrder/Areawho/@sap:label}"/>
 								</Column>
 							</columns>
 							<items>

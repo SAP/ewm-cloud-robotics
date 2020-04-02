@@ -1,3 +1,12 @@
+<!--
+Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+
+This file is part of ewm-cloud-robotics
+(see https://github.com/SAP/ewm-cloud-robotics).
+
+This file is licensed under the Apache Software License, v. 2 except as noted
+otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+-->
 <mvc:View controllerName="monitoring.controller.Master" xmlns="sap.m" xmlns:f="sap.f" xmlns:mvc="sap.ui.core.mvc" xmlns:u="sap.uxap">
 	<u:ObjectPageLayout id="ObjectPageLayout" alwaysShowContentHeader="true">
 		<u:headerTitle>
@@ -25,7 +34,10 @@
 									<Text text="{i18n>lastStateChangeTime}"/>
 								</Column>
 								<Column width="{= ${masterLayout>/mediumExpanded} ? '12em' : '4em'}">
-									<Text text="{i18n>state}"/>
+									<Text text="{i18n>robotStatus}"/>
+								</Column>
+								<Column width="{= ${masterLayout>/mediumExpanded} ? '12em' : '4em'}">
+									<Text text="{i18n>ewmStatus}"/>
 								</Column>
 								<Column visible="{masterLayout>/mediumExpanded}">
 									<Text text="{i18n>creationTimestamp}"/>
@@ -44,8 +56,11 @@
 											displayValue="{path:'robots>batteryPercentage', formatter: '.formatter.toInt'}%" showValue="true"
 											state="{= ${robots>batteryPercentage} > 50 ? 'Success' : (${robots>batteryPercentage} > 25 ? 'Warning' : 'Error')}"/>
 										<Text text="{path: 'robots>lastStateChangeTime', formatter: '.formatter.toDateTime'}"/>
-										<ObjectStatus text="{= ${masterLayout>/mediumExpanded} ? ${robots>state} : ''}" state="{= ${robots>state} > 'AVAILABLE' ? 'Success' : 'Error'}"
-											icon="{= ${robots>state} === 'sap-icon://status-positive' ? 'Success' : 'sap-icon://status-negative'}"/>
+										<ObjectStatus text="{= ${masterLayout>/mediumExpanded} ? ${robots>state} : ''}"
+											state="{= ${robots>state} === 'AVAILABLE' ? 'Success' : 'Error'}"
+											icon="{= ${robots>state} === 'AVAILABLE' ? 'sap-icon://status-positive' : 'sap-icon://status-negative'}"/>
+										<ObjectStatus text="{= ${masterLayout>/mediumExpanded} ? ${robots>statemachine} : ''}" state="{robots>statemachine_uistate}"
+											icon="{= ${robots>statemachine_uistate} === 'Success' ? 'sap-icon://status-positive' : 'sap-icon://status-negative'}"/>
 										<Text text="{path: 'robots>creationTimestamp', formatter: '.formatter.toDateTime'}"/>
 										<Text text="{robots>uid}"/>
 									</cells>
@@ -58,44 +73,57 @@
 			<u:ObjectPageSection title="{i18n>warehouseOrders}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: { path: 'whos>areawho', descending: 'false'} }"
+						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: { path: 'order_status', descending: 'true'} }"
 							growing="true" growingScrollToLoad="false">
+							<headerToolbar>
+								<OverflowToolbar>
+									<ToolbarSpacer/>
+									<Button tooltip="{i18n>column}" icon="sap-icon://table-view" press="handleColumnPressed"/>
+									<Button tooltip="{i18n>sort}" icon="sap-icon://sort" press="handleSortPressed"/>
+									<Button tooltip="{i18n>filter}" icon="sap-icon://filter" press="handleFilterPressed"/>
+								</OverflowToolbar>
+							</headerToolbar>
+							<infoToolbar>
+								<OverflowToolbar id="vsdFilterBar" visible="false">
+									<Text id="vsdFilterLabel"/>
+								</OverflowToolbar>
+							</infoToolbar>
 							<columns>
-								<Column>
-									<Text text="{i18n>who}"/>
+								<Column visible="{who>/columns/who/visible}">
+									<Text text="{odata>/#WarehouseOrder/Who/@sap:label}"/>
 								</Column>
-								<Column>
-									<Text text="{i18n>areawho}"/>
+								<Column visible="{who>/columns/areawho/visible}">
+									<Text text="{odata>/#WarehouseOrder/Areawho/@sap:label}"/>
 								</Column>
-								<Column visible="{masterLayout>/expanded}" width="5em">
-									<Text text="{i18n>flgto}"/>
+								<Column visible="{= ${masterLayout>/expanded} &amp;&amp; ${who>/columns/flgto/visible}}" width="5em">
+									<Text text="{odata>/#WarehouseOrder/Flgto/@sap:label}"/>
 								</Column>
-								<Column visible="{masterLayout>/expanded}" width="5em">
-									<Text text="{i18n>flgwho}"/>
+								<Column visible="{= ${masterLayout>/expanded} &amp;&amp; ${who>/columns/flgwho/visible}}" width="5em">
+									<Text text="{odata>/#WarehouseOrder/Flgwho/@sap:label}"/>
 								</Column>
-								<Column>
-									<Text text="{i18n>lgnum}"/>
+								<Column visible="{who>/columns/lgnum/visible}">
+									<Text text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
 								</Column>
-								<Column visible="{masterLayout>/mediumExpanded}">
-									<Text text="{i18n>lgtyp}"/>
-								</Column>
-								<Column visible="{masterLayout>/expanded}">
-									<Text text="{i18n>lsd}"/>
-								</Column>
-								<Column visible="{masterLayout>/mediumExpanded}">
-									<Text text="{i18n>queue}"/>
-								</Column>
-								<Column visible="{masterLayout>/expanded}">
-									<Text text="{i18n>refwhoid}"/>
-								</Column>
-								<Column visible="{masterLayout>/mediumExpanded}">
-									<Text text="{i18n>rsrc}"/>
-								</Column>
-								<Column>
+								<Column visible="{who>/columns/order_status/visible}">
 									<Text text="{i18n>status}"/>
 								</Column>
-								<Column visible="{masterLayout>/expanded}">
-									<Text text="{i18n>topwhoid}"/>
+								<Column visible="{= ${masterLayout>/mediumExpanded} &amp;&amp; ${who>/columns/lgtyp/visible}}">
+									<Text text="{odata>/#WarehouseOrder/Lgtyp/@sap:label}"/>
+								</Column>
+								<Column visible="{= ${masterLayout>/expanded} &amp;&amp; ${who>/columns/lsd/visible}}">
+									<Text text="{odata>/#WarehouseOrder/Lsd/@sap:label}"/>
+								</Column>
+								<Column visible="{= ${masterLayout>/mediumExpanded} &amp;&amp; ${who>/columns/queue/visible}}">
+									<Text text="{odata>/#WarehouseOrder/Queue/@sap:label}"/>
+								</Column>
+								<Column visible="{= ${masterLayout>/expanded} &amp;&amp; ${who>/columns/refwhoid/visible}}">
+									<Text text="{odata>/#WarehouseOrder/Refwhoid/@sap:label}"/>
+								</Column>
+								<Column visible="{= ${masterLayout>/mediumExpanded} &amp;&amp; ${who>/columns/rsrc/visible}}">
+									<Text text="{odata>/#WarehouseOrder/Rsrc/@sap:label}"/>
+								</Column>
+								<Column visible="{= ${masterLayout>/expanded} &amp;&amp; ${who>/columns/topwhoid/visible}}">
+									<Text text="{odata>/#WarehouseOrder/Topwhoid/@sap:label}"/>
 								</Column>
 							</columns>
 							<items>
@@ -106,12 +134,13 @@
 										<Text text="{who>flgto}"/>
 										<Text text="{who>flgwho}"/>
 										<Text text="{who>lgnum}"/>
+										<ObjectStatus text="{who>order_status}" state="{= ${who>order_status} === 'PROCESSED' ? 'Success' : 'Warning'}"
+											icon="{= ${who>order_status} === 'PROCESSED' ? 'sap-icon://status-positive' : 'sap-icon://physical-activity'}"/>
 										<Text text="{who>lgtyp}"/>
 										<Text text="{who>lsd}"/>
 										<Text text="{who>queue}"/>
 										<Text text="{who>refwhoid}"/>
 										<Text text="{who>rsrc}"/>
-										<Text text="{who>status}"/>
 										<Text text="{who>topwhoid}"/>
 									</cells>
 								</ColumnListItem>

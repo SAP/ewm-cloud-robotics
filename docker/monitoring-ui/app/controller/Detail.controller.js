@@ -1,3 +1,13 @@
+/*
+Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+
+This file is part of ewm-cloud-robotics
+(see https://github.com/SAP/ewm-cloud-robotics).
+
+This file is licensed under the Apache Software License, v. 2 except as noted
+otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+*/
+
 sap.ui.define([
 	"sap/ui/core/mvc/Controller",
 	"sap/ui/model/json/JSONModel",
@@ -104,10 +114,12 @@ sap.ui.define([
 			var configData = this.getOwnerComponent().getModel("robotConfig").getData();
 			var patchData = {};
 			patchData["spec"] = {};
-			patchDaat.spec["batteryIdle"] = parseInt(configData.batteryIdle);
+			patchData.spec["batteryIdle"] = parseInt(configData.batteryIdle);
 			patchData.spec["batteryMin"] = parseInt(configData.batteryMin);
 			patchData.spec["batteryOk"] = parseInt(configData.batteryOk);
+			patchData.spec["chargers"] = configData.chargers;
 			patchData.spec["maxIdleTime"] = parseInt(configData.maxIdleTime);
+			patchData.spec["recoverFromRobotError"] = configData.recoverFromRobotError;
 			patchData.spec["lgnum"] = configData.lgnum;
 			patchData.spec["rsrcgrp"] = configData.rsrcgrp;
 			patchData.spec["rsrctype"] = configData.rsrctype;
@@ -125,6 +137,23 @@ sap.ui.define([
 					MessageToast.show(that.getOwnerComponent().getModel("i18n").getResourceBundle().getText("errorPatch"));
 			   }
 			});
+		},
+		
+		handleChargerAdd: function() {
+			var chargers = this.getOwnerComponent().getModel("robotConfig").getProperty("/chargers");
+			chargers.push("");
+			this.getOwnerComponent().getModel("robotConfig").setProperty("/chargers", chargers);
+		},
+		
+		handleChargerRemove: function() {
+			var chargers = this.getOwnerComponent().getModel("robotConfig").getProperty("/chargers");
+			var selections = this.getView().byId("idChargers").getSelectedItems();
+			var binding;
+			for(var i=0; i<selections.length; ++i) {
+				binding = selections[i].getBindingContextPath().split("/"); //last index of contains the index of object in json model
+				chargers.splice(binding[binding.length-1],1);
+			}
+			this.getOwnerComponent().getModel("robotConfig").setProperty("/chargers", chargers);
 		},
 		
 		handleClose: function() {
