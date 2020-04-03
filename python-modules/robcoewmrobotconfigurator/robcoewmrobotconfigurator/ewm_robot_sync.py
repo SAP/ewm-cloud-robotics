@@ -102,7 +102,7 @@ class EWMRobotSync:
         """Run EWM resource check."""
         try:
             self.create_ewm_resource(
-                name, custom_res['spec']['lgnum'], custom_res['spec']['rsrctype'],
+                name.upper(), custom_res['spec']['lgnum'], custom_res['spec']['rsrctype'],
                 custom_res['spec']['rsrcgrp'])
         except Exception:  # pylint: disable=broad-except
             exc_info = sys.exc_info()
