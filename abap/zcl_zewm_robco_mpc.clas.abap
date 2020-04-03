@@ -93,9 +93,9 @@ public section.
     end of TS_UNSETWAREHOUSEORDERINPROCES .
   types:
     begin of TS_GETINPROCESSWAREHOUSEORDERS,
-        RSRC_TYPE type C length 4,
-        RSRC_GRP type C length 4,
         LGNUM type C length 4,
+        RSRC_GRP type C length 4,
+        RSRC_TYPE type C length 4,
     end of TS_GETINPROCESSWAREHOUSEORDERS .
   types:
      TS_WAREHOUSEORDER type /SCWM/WHO .
@@ -121,10 +121,30 @@ TT_ROBOT type standard table of TS_ROBOT .
      TS_OPENWAREHOUSETASK type /SCWM/ORDIM_O .
   types:
 TT_OPENWAREHOUSETASK type standard table of TS_OPENWAREHOUSETASK .
+  types:
+     TS_ROBOTRESOURCETYPE type ZEWM_TRSRC_TYP .
+  types:
+TT_ROBOTRESOURCETYPE type standard table of TS_ROBOTRESOURCETYPE .
+  types:
+     TS_RESOURCETYPEDESCRIPTION type /SCWM/TRSRC_TYPT .
+  types:
+TT_RESOURCETYPEDESCRIPTION type standard table of TS_RESOURCETYPEDESCRIPTION .
+  types:
+     TS_RESOURCEGROUP type /SCWM/TRSRC_GRP .
+  types:
+TT_RESOURCEGROUP type standard table of TS_RESOURCEGROUP .
+  types:
+     TS_RESOURCEGROUPDESCRIPTION type /SCWM/TRSRC_GRPT .
+  types:
+TT_RESOURCEGROUPDESCRIPTION type standard table of TS_RESOURCEGROUPDESCRIPTION .
 
   constants GC_NEWWAREHOUSEORDER type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'NewWarehouseOrder' ##NO_TEXT.
   constants GC_OPENWAREHOUSETASK type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'OpenWarehouseTask' ##NO_TEXT.
+  constants GC_RESOURCEGROUP type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'ResourceGroup' ##NO_TEXT.
+  constants GC_RESOURCEGROUPDESCRIPTION type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'ResourceGroupDescription' ##NO_TEXT.
+  constants GC_RESOURCETYPEDESCRIPTION type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'ResourceTypeDescription' ##NO_TEXT.
   constants GC_ROBOT type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'Robot' ##NO_TEXT.
+  constants GC_ROBOTRESOURCETYPE type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'RobotResourceType' ##NO_TEXT.
   constants GC_STORAGEBIN type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'StorageBin' ##NO_TEXT.
   constants GC_WAREHOUSEDESCRIPTION type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'WarehouseDescription' ##NO_TEXT.
   constants GC_WAREHOUSENUMBER type /IWBEP/IF_MGW_MED_ODATA_TYPES=>TY_E_MED_ENTITY_NAME value 'WarehouseNumber' ##NO_TEXT.
@@ -168,6 +188,18 @@ private section.
   methods DEFINE_OPENWAREHOUSETASK
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_ROBOTRESOURCETYPE
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_RESOURCETYPEDESCRIPTION
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_RESOURCEGROUP
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
+  methods DEFINE_RESOURCEGROUPDESCRIPTIO
+    raising
+      /IWBEP/CX_MGW_MED_EXCEPTION .
   methods DEFINE_ASSOCIATIONS
     raising
       /IWBEP/CX_MGW_MED_EXCEPTION .
@@ -199,6 +231,10 @@ define_warehousedescription( ).
 define_storagebin( ).
 define_robot( ).
 define_openwarehousetask( ).
+define_robotresourcetype( ).
+define_resourcetypedescription( ).
+define_resourcegroup( ).
+define_resourcegroupdescriptio( ).
 define_associations( ).
 define_actions( ).
   endmethod.
@@ -588,16 +624,16 @@ lo_action->set_return_multiplicity( 'N' ). "#EC NOTEXT
 * Parameters
 ***********************************************************************************************************************************
 
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'RsrcType'    iv_abap_fieldname = 'RSRC_TYPE' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '059' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '061' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'RsrcGrp'    iv_abap_fieldname = 'RSRC_GRP' ). "#EC NOTEXT
 lo_parameter->set_label_from_text_element( iv_text_element_symbol = '060' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
-lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'Lgnum'    iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
-lo_parameter->set_label_from_text_element( iv_text_element_symbol = '061' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
+lo_parameter = lo_action->create_input_parameter( iv_parameter_name = 'RsrcType'    iv_abap_fieldname = 'RSRC_TYPE' ). "#EC NOTEXT
+lo_parameter->set_label_from_text_element( iv_text_element_symbol = '059' iv_text_element_container = gc_incl_name ). "#EC NOTEXT
 lo_parameter->/iwbep/if_mgw_odata_property~set_type_edm_string( ).
 lo_parameter->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
 lo_action->bind_input_structure( iv_structure_name  = 'ZCL_ZEWM_ROBCO_MPC=>TS_GETINPROCESSWAREHOUSEORDERS' ). "#EC NOTEXT
@@ -704,6 +740,100 @@ lo_assoc_set = model->create_association_set( iv_association_set_name  = 'Wareho
                                               iv_right_entity_set_name = 'OpenWarehouseTaskSet'             "#EC NOTEXT
                                               iv_association_name      = 'WarehouseOrderToOpenWarehouseTask' ).                                 "#EC NOTEXT
 
+ lo_association = model->create_association(
+                            iv_association_name = 'RobotResourceTypeToRobot' "#EC NOTEXT
+                            iv_left_type        = 'RobotResourceType' "#EC NOTEXT
+                            iv_right_type       = 'Robot' "#EC NOTEXT
+                            iv_right_card       = 'M' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - RobotResourceTypeToRobot
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'RsrcType'   iv_dependent_property = 'RsrcType' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'RobotResourceTypeToRobotSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'RobotResourceTypeSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'RobotSet'             "#EC NOTEXT
+                                              iv_association_name      = 'RobotResourceTypeToRobot' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'RobotResourceTypeToDescription' "#EC NOTEXT
+                            iv_left_type        = 'RobotResourceType' "#EC NOTEXT
+                            iv_right_type       = 'ResourceTypeDescription' "#EC NOTEXT
+                            iv_right_card       = 'N' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - RobotResourceTypeToDescription
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'RsrcType'   iv_dependent_property = 'RsrcType' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'RobotResourceTypeToDescriptionSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'RobotResourceTypeSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'ResourceTypeDescriptionSet'             "#EC NOTEXT
+                                              iv_association_name      = 'RobotResourceTypeToDescription' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'ResourceGroupToRobot' "#EC NOTEXT
+                            iv_left_type        = 'ResourceGroup' "#EC NOTEXT
+                            iv_right_type       = 'Robot' "#EC NOTEXT
+                            iv_right_card       = 'M' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - ResourceGroupToRobot
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'RsrcGrp'   iv_dependent_property = 'RsrcGrp' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'ResourceGroupToRobotSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'ResourceGroupSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'RobotSet'             "#EC NOTEXT
+                                              iv_association_name      = 'ResourceGroupToRobot' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'ResourceGroupToDescription' "#EC NOTEXT
+                            iv_left_type        = 'ResourceGroup' "#EC NOTEXT
+                            iv_right_type       = 'ResourceGroupDescription' "#EC NOTEXT
+                            iv_right_card       = 'N' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - ResourceGroupToDescription
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'RsrcGrp'   iv_dependent_property = 'RsrcGrp' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'ResourceGroupToDescriptionSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'ResourceGroupSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'ResourceGroupDescriptionSet'             "#EC NOTEXT
+                                              iv_association_name      = 'ResourceGroupToDescription' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'WarehouseNumberToRobotResourceType' "#EC NOTEXT
+                            iv_left_type        = 'WarehouseNumber' "#EC NOTEXT
+                            iv_right_type       = 'RobotResourceType' "#EC NOTEXT
+                            iv_right_card       = 'M' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - WarehouseNumberToRobotResourceType
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'WarehouseNumberToRobotResourceTypeSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'WarehouseNumberSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'RobotResourceTypeSet'             "#EC NOTEXT
+                                              iv_association_name      = 'WarehouseNumberToRobotResourceType' ).                                 "#EC NOTEXT
+
+ lo_association = model->create_association(
+                            iv_association_name = 'WarehouseNumberToResourceGroup' "#EC NOTEXT
+                            iv_left_type        = 'WarehouseNumber' "#EC NOTEXT
+                            iv_right_type       = 'ResourceGroup' "#EC NOTEXT
+                            iv_right_card       = 'M' "#EC NOTEXT
+                            iv_left_card        = '1'  "#EC NOTEXT
+                            iv_def_assoc_set    = abap_false ). "#EC NOTEXT
+* Referential constraint for association - WarehouseNumberToResourceGroup
+lo_ref_constraint = lo_association->create_ref_constraint( ).
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
+lo_assoc_set = model->create_association_set( iv_association_set_name  = 'WarehouseNumberToResourceGroupSet'                         "#EC NOTEXT
+                                              iv_left_entity_set_name  = 'WarehouseNumberSet'              "#EC NOTEXT
+                                              iv_right_entity_set_name = 'ResourceGroupSet'             "#EC NOTEXT
+                                              iv_association_name      = 'WarehouseNumberToResourceGroup' ).                                 "#EC NOTEXT
+
 
 ***********************************************************************************************************************************
 *   NAVIGATION PROPERTIES
@@ -728,6 +858,28 @@ lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  
 lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'Robots' "#EC NOTEXT
                                                               iv_abap_fieldname = 'ROBOT' "#EC NOTEXT
                                                               iv_association_name = 'WarehouseNumberToRobot' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'RobotResourceTypes' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'ROBOTRESOURCETYPE' "#EC NOTEXT
+                                                              iv_association_name = 'WarehouseNumberToRobotResourceType' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ResourceGroups' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'RESOURCEGROUP' "#EC NOTEXT
+                                                              iv_association_name = 'WarehouseNumberToResourceGroup' ). "#EC NOTEXT
+* Navigation Properties for entity - RobotResourceType
+lo_entity_type = model->get_entity_type( iv_entity_name = 'RobotResourceType' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'Robots' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'ROBOT' "#EC NOTEXT
+                                                              iv_association_name = 'RobotResourceTypeToRobot' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ResourceTypeDescriptions' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'RESOURCETYPEDESCRIPTION' "#EC NOTEXT
+                                                              iv_association_name = 'RobotResourceTypeToDescription' ). "#EC NOTEXT
+* Navigation Properties for entity - ResourceGroup
+lo_entity_type = model->get_entity_type( iv_entity_name = 'ResourceGroup' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'Robots' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'ROBOT' "#EC NOTEXT
+                                                              iv_association_name = 'ResourceGroupToRobot' ). "#EC NOTEXT
+lo_nav_property = lo_entity_type->create_navigation_property( iv_property_name  = 'ResourceGroupDescriptions' "#EC NOTEXT
+                                                              iv_abap_fieldname = 'RESOURCEGROUPDESCRIPTION' "#EC NOTEXT
+                                                              iv_association_name = 'ResourceGroupToDescription' ). "#EC NOTEXT
   endmethod.
 
 
@@ -1201,6 +1353,295 @@ lo_entity_set->set_filter_required( abap_false ).
   endmethod.
 
 
+  method DEFINE_RESOURCEGROUP.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - ResourceGroup
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'ResourceGroup' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'RsrcGrp' iv_abap_fieldname = 'RSRC_GRP' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'ZewmErrorQueue' iv_abap_fieldname = 'ZEWM_ERROR_QUEUE' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name   = '/SCWM/TRSRC_GRP'
+                                iv_bind_conversions = 'X' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'ResourceGroupSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_true ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_RESOURCEGROUPDESCRIPTIO.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - ResourceGroupDescription
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'ResourceGroupDescription' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Langu' iv_abap_fieldname = 'LANGU' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 2 ). "#EC NOTEXT
+lo_property->set_conversion_exit( 'ISOLA' ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'RsrcGrp' iv_abap_fieldname = 'RSRC_GRP' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Text' iv_abap_fieldname = 'TEXT' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 40 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name   = '/SCWM/TRSRC_GRPT'
+                                iv_bind_conversions = 'X' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'ResourceGroupDescriptionSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_true ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_RESOURCETYPEDESCRIPTION.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - ResourceTypeDescription
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'ResourceTypeDescription' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Langu' iv_abap_fieldname = 'LANGU' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 2 ). "#EC NOTEXT
+lo_property->set_conversion_exit( 'ISOLA' ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'RsrcType' iv_abap_fieldname = 'RSRC_TYPE' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Text' iv_abap_fieldname = 'TEXT' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 40 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name   = '/SCWM/TRSRC_TYPT'
+                                iv_bind_conversions = 'X' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'ResourceTypeDescriptionSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_true ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
   method DEFINE_ROBOT.
 *&---------------------------------------------------------------------*
 *&           Generated code for the MODEL PROVIDER BASE CLASS         &*
@@ -1326,6 +1767,105 @@ lo_entity_set = lo_entity_type->create_entity_set( 'RobotSet' ). "#EC NOTEXT
 
 lo_entity_set->set_creatable( abap_true ).
 lo_entity_set->set_updatable( abap_true ).
+lo_entity_set->set_deletable( abap_false ).
+
+lo_entity_set->set_pageable( abap_false ).
+lo_entity_set->set_addressable( abap_true ).
+lo_entity_set->set_has_ftxt_search( abap_false ).
+lo_entity_set->set_subscribable( abap_false ).
+lo_entity_set->set_filter_required( abap_false ).
+  endmethod.
+
+
+  method DEFINE_ROBOTRESOURCETYPE.
+*&---------------------------------------------------------------------*
+*&           Generated code for the MODEL PROVIDER BASE CLASS         &*
+*&                                                                     &*
+*&  !!!NEVER MODIFY THIS CLASS. IN CASE YOU WANT TO CHANGE THE MODEL  &*
+*&        DO THIS IN THE MODEL PROVIDER SUBCLASS!!!                   &*
+*&                                                                     &*
+*&---------------------------------------------------------------------*
+
+
+  data:
+        lo_annotation     type ref to /iwbep/if_mgw_odata_annotation,                "#EC NEEDED
+        lo_entity_type    type ref to /iwbep/if_mgw_odata_entity_typ,                "#EC NEEDED
+        lo_complex_type   type ref to /iwbep/if_mgw_odata_cmplx_type,                "#EC NEEDED
+        lo_property       type ref to /iwbep/if_mgw_odata_property,                  "#EC NEEDED
+        lo_entity_set     type ref to /iwbep/if_mgw_odata_entity_set.                "#EC NEEDED
+
+***********************************************************************************************************************************
+*   ENTITY - RobotResourceType
+***********************************************************************************************************************************
+
+lo_entity_type = model->create_entity_type( iv_entity_type_name = 'RobotResourceType' iv_def_entity_set = abap_false ). "#EC NOTEXT
+
+***********************************************************************************************************************************
+*Properties
+***********************************************************************************************************************************
+
+lo_property = lo_entity_type->create_property( iv_property_name = 'Lgnum' iv_abap_fieldname = 'LGNUM' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'RsrcType' iv_abap_fieldname = 'RSRC_TYPE' ). "#EC NOTEXT
+lo_property->set_is_key( ).
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'RobotType' iv_abap_fieldname = 'ROBOT_TYPE' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'ErrorQueue' iv_abap_fieldname = 'ERROR_QUEUE' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
+
+lo_entity_type->bind_structure( iv_structure_name   = 'ZEWM_TRSRC_TYP'
+                                iv_bind_conversions = 'X' ). "#EC NOTEXT
+
+
+***********************************************************************************************************************************
+*   ENTITY SETS
+***********************************************************************************************************************************
+lo_entity_set = lo_entity_type->create_entity_set( 'RobotResourceTypeSet' ). "#EC NOTEXT
+
+lo_entity_set->set_creatable( abap_false ).
+lo_entity_set->set_updatable( abap_false ).
 lo_entity_set->set_deletable( abap_false ).
 
 lo_entity_set->set_pageable( abap_false ).
@@ -1514,7 +2054,7 @@ lo_entity_type->bind_structure( iv_structure_name   = '/SCWM/LAGP'
 lo_entity_set = lo_entity_type->create_entity_set( 'StorageBinSet' ). "#EC NOTEXT
 
 lo_entity_set->set_creatable( abap_false ).
-lo_entity_set->set_updatable( abap_true ).
+lo_entity_set->set_updatable( abap_false ).
 lo_entity_set->set_deletable( abap_false ).
 
 lo_entity_set->set_pageable( abap_false ).
@@ -1894,7 +2434,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20200309090332'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20200403100859'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.
@@ -2241,11 +2781,11 @@ ls_text_element-text_symbol            = '057'.                            "#EC 
 APPEND ls_text_element TO rt_text_elements.
 
 clear ls_text_element.
-ls_text_element-artifact_name          = 'RsrcType'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'GetInProcessWarehouseOrders'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '059'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '061'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
 ls_text_element-artifact_name          = 'RsrcGrp'.                               "#EC NOTEXT
@@ -2255,11 +2795,11 @@ ls_text_element-parent_artifact_name   = 'GetInProcessWarehouseOrders'.         
 ls_text_element-text_symbol            = '060'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
 clear ls_text_element.
-ls_text_element-artifact_name          = 'Lgnum'.                               "#EC NOTEXT
+ls_text_element-artifact_name          = 'RsrcType'.                               "#EC NOTEXT
 ls_text_element-artifact_type          = 'FIPA'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_type   = 'FIMP'.                                                "#EC NOTEXT
 ls_text_element-parent_artifact_name   = 'GetInProcessWarehouseOrders'.                                      "#EC NOTEXT
-ls_text_element-text_symbol            = '061'.                            "#EC NOTEXT
+ls_text_element-text_symbol            = '059'.                            "#EC NOTEXT
 APPEND ls_text_element TO rt_text_elements.
   endmethod.
 ENDCLASS.
