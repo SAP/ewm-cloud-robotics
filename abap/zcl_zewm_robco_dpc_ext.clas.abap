@@ -79,6 +79,8 @@ protected section.
   methods ROBOTRESOURCETYP_GET_ENTITYSET
     redefinition .
 private section.
+
+  data GC_ERROR_FLK type STRING value 'FOREIGN_LOCK' ##NO_TEXT.
 ENDCLASS.
 
 
@@ -1730,6 +1732,12 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           textid   = /iwbep/cx_mgw_busi_exception=>business_error
           msg_code = gc_error_rnf
           message  = text-001.
+    elseif sy-subrc = 4.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid   = /iwbep/cx_mgw_busi_exception=>business_error
+          msg_code = gc_error_flk
+          message  = text-025.
     else.
       raise exception type /iwbep/cx_mgw_busi_exception
         exporting

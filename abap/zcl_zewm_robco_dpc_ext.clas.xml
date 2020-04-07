@@ -156,6 +156,12 @@
      <ENTRY>Warehouse Order status not updated.</ENTRY>
      <LENGTH>70</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>025</KEY>
+     <ENTRY>Foreign lock.</ENTRY>
+     <LENGTH>23</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
@@ -169,6 +175,12 @@
      <CMPNAME>GC_ERROR_ECP</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Error Code: Error creating Pick HU for Robot Resource</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_FLK</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: Foreign lock.</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
