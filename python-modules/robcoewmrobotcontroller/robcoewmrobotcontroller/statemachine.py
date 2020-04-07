@@ -307,7 +307,8 @@ class RobotEWMMachine(Machine):
 
     def warehouseorder_deleted_cb(self, name: str, data: Dict) -> None:
         """Delete warehouse order from queue."""
-        name_split = name.split('.')
+        # Objects from EWM have upper case names
+        name_split = name.upper().split('.')
         if len(name_split) == 2:
             who = WhoIdentifier(name_split[0], name_split[1])
             if who in self.warehouseorders:

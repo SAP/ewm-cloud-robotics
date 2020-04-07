@@ -182,9 +182,9 @@ class OrderController(K8sCRHandler):
             self, robotident: RobotIdentifier, dtype: str, who: Dict) -> None:
         """Send the warehouse order to a robot."""
         labels = {}
-        # Robot name must be lower case
+        # Robot name and warehouse order CR names must be lower case
         labels['cloudrobotics.com/robot-name'] = robotident.rsrc.lower()
-        name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
+        name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who']).lower()
         spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
         if self.check_cr_exists(name):
             _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)
@@ -198,7 +198,8 @@ class OrderController(K8sCRHandler):
         # Warehouse orders to be deleted
         to_be_closed = []
         # Delete warehouse order
-        name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
+        # Warehouse order CR name must be lower case
+        name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who']).lower()
         to_be_closed.append(name)
         spec_order_processed = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_PROCESSED}
 
@@ -221,8 +222,9 @@ class OrderController(K8sCRHandler):
                 # was deleted in this step
                 if (spec['data']['topwhoid'] == who['who']
                         and spec['data']['lgnum'] == who['lgnum']):
+                    # Warehouse order CR name must be lower case
                     name = '{lgnum}.{who}'.format(
-                        lgnum=spec['data']['lgnum'], who=spec['data']['who'])
+                        lgnum=spec['data']['lgnum'], who=spec['data']['who']).lower()
                     to_be_closed.append(name)
                     if self.check_cr_exists(name):
                         self.update_cr_spec(name, spec_order_processed)
@@ -238,7 +240,7 @@ class OrderController(K8sCRHandler):
         self._deleted_orders[name] = True
         if self._processed_orders.get(name):
             with self._processed_orders_lock:
-                # When warehouse order cr was deleted remove it from ordered dictionary
+                # When warehouse order CR was deleted remove it from ordered dictionary
                 self._processed_orders.pop(name, None)
 
     def save_processed_status(self, name: str, custom_res: Dict) -> None:

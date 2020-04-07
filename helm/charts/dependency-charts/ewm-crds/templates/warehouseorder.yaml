@@ -147,11 +147,11 @@ spec:
                       vltyp:
                         type: string
                       volum:
-                        type: integer
+                        type: number
                       vsolm:
-                        type: integer
+                        type: number
                       weight:
-                        type: integer
+                        type: number
                       who:
                         type: string
             process_status:

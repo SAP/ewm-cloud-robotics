@@ -26,6 +26,7 @@ from .robco_mission_api import RobCoMissionAPI
 from .robotconfigcontroller import RobotConfigurationController
 from .robotrequestcontroller import RobotRequestController
 from .statemachine import RobotEWMMachine, WhoIdentifier
+from .statemachine_config import RobotEWMConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -154,6 +155,12 @@ class EWMRobot:
                     is_valid = False
                 else:
                     valid_state.sub_warehouseorder = sub_warehouseorder
+            if (state_restore.mission == ''
+                    and state_restore.statemachine not in RobotEWMConfig.idle_states):
+                _LOGGER.error(
+                    'State machine is state %s which is not an idle state, but does not have a '
+                    'running mission', state_restore.statemachine)
+                is_valid = False
         else:
             is_valid = False
 

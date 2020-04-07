@@ -142,7 +142,8 @@ class OrderController(K8sCRHandler):
 
     def confirm_wht(self, dtype: str, wht: Dict) -> None:
         """Notify order manager about current status of who + tasks."""
-        name = '{lgnum}.{who}'.format(lgnum=wht['lgnum'], who=wht['who'])
+        # Warehouse order CR name must be lower case
+        name = '{lgnum}.{who}'.format(lgnum=wht['lgnum'], who=wht['who']).lower()
         # Get current status from custom resource of the warehouse order
         custom_res = self.get_cr(name)
         status = custom_res.get('status') if isinstance(custom_res.get('status'), dict) else {}
@@ -160,7 +161,8 @@ class OrderController(K8sCRHandler):
     def get_warehouseorder(
             self, lgnum: str, who: str) -> Optional[WarehouseOrder]:
         """Get a warehouse order from CR."""
-        name = '{}.{}'.format(lgnum, who)
+        # Warehouse order CR name must be lower case
+        name = '{}.{}'.format(lgnum, who).lower()
 
         if self.check_cr_exists(name):
             custom_res = self.get_cr(name)
@@ -173,14 +175,16 @@ class OrderController(K8sCRHandler):
 
     def add_who_finalizer(self, lgnum: str, who: str) -> None:
         """Add a finalizer to warehouse order CR."""
-        name = '{}.{}'.format(lgnum, who)
+        # Warehouse order CR name must be lower case
+        name = '{}.{}'.format(lgnum, who).lower()
 
         if self.add_finalizer(name):
             _LOGGER.info('Added finalizer %s to warehouse order CR %s', self.finalizer, name)
 
     def remove_who_finalizer(self, lgnum: str, who: str) -> None:
         """Add a finalizer from warehouse order CR."""
-        name = '{}.{}'.format(lgnum, who)
+        # Warehouse order CR name must be lower case
+        name = '{}.{}'.format(lgnum, who).lower()
 
         if self.remove_finalizer(name):
             _LOGGER.info('Removed finalizer %s from warehouse order CR %s', self.finalizer, name)
