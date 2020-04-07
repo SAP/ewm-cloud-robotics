@@ -12,6 +12,8 @@
 
 """Robot related data types."""
 
+from typing import List
+
 import attr
 
 from .helper import strstrip, validate_annotation
@@ -167,6 +169,25 @@ class RobotMission:
     status: str = attr.ib(default=STATE_UNKNOWN, validator=attr.validators.instance_of(str))
     active_action: str = attr.ib(
         default=ACTION_UNKNOWN, validator=attr.validators.instance_of(str))
+
+
+@attr.s
+class RobotConfigurationSpec:
+    """Current spec of warehouse robots state machine."""
+
+    # pylint: disable=invalid-name
+    lgnum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    rsrctype: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    rsrcgrp: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    batteryMin: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    batteryOk: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    batteryIdle: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    maxIdleTime: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    recoverFromRobotError: bool = attr.ib(default=False, validator=validate_annotation)
+    chargers: List[str] = attr.ib(
+        default=attr.Factory(list), validator=attr.validators.deep_iterable(
+            member_validator=attr.validators.instance_of(str),
+            iterable_validator=attr.validators.instance_of(list)))
 
 
 @attr.s

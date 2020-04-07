@@ -44,7 +44,8 @@ ODATA_ERROR_CODES = {
     'QUEUE_NOT_CHANGED': 'Queue not changed.',
     'WAREHOUSE_TASK_ALREADY_CONFIRMED': 'Warehouse Task is confirmed already.',
     'URL_PARAM_BODY_INCONSISTENT': 'URL parameters and POST body inconsistent.',
-    'WAREHOUSE_ORDER_STATUS_NOT_UPDATED': 'Warehouse Order status not updated.'
+    'WAREHOUSE_ORDER_STATUS_NOT_UPDATED': 'Warehouse Order status not updated.',
+    'FOREIGN_LOCK': 'Foreign lock.'
 }
 
 ODATA_ERROR_REVERSE = {v: k for k, v in ODATA_ERROR_CODES.items()}
@@ -131,11 +132,18 @@ class RobotStatusNotSetError(ODataAPIException):
     ERROR_CODE = 'ROBOT_STATUS_NOT_SET'
 
 
-class ResourceTypeIsNoRobot(ODataAPIException):
-    """No warehouse order was found."""
+class ResourceTypeIsNoRobotError(ODataAPIException):
+    """Resource type is not a robot type."""
 
     # OData error code this exception class should be used to.
     ERROR_CODE = 'RESOURCE_TYPE_IS_NO_ROBOT'
+
+
+class ResourceGroupNotExistingError(ODataAPIException):
+    """Resource group is not existing."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'RESOURCE_GROUP_NOT_EXISTING'
 
 
 class InternalError(ODataAPIException):
@@ -143,6 +151,20 @@ class InternalError(ODataAPIException):
 
     # OData error code this exception class should be used to.
     ERROR_CODE = 'INTERNAL_ERROR'
+
+
+class InternalServerError(ODataAPIException):
+    """Internal server error."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'INTERNAL_SERVER_ERROR'
+
+
+class ForeignLockError(ODataAPIException):
+    """Foreign lock error."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'FOREIGN_LOCK'
 
 
 class AuthorizationError(ODataAPIException):

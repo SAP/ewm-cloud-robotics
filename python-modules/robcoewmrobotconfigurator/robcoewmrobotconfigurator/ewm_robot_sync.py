@@ -17,18 +17,23 @@ import os
 import sys
 import traceback
 import logging
-import threading
 
+from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
 
+from cattr import structure, unstructure
 from retrying import retry
 
 from robcoewminterface.types import ODataConfig
 from robcoewminterface.odata import ODataHandler
 from robcoewminterface.ewm import RobotOData
-from robcoewminterface.exceptions import ODataAPIException
+from robcoewminterface.exceptions import (
+    ODataAPIException, RobotNotFoundError, InternalError, InternalServerError,
+    ForeignLockError)
+from robcoewmtypes.robot import RobotConfigurationSpec
 
 from .helper import retry_on_connection_error
+from .robotconfigcontroller import RobotConfigurationController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -36,7 +41,7 @@ _LOGGER = logging.getLogger(__name__)
 class EWMRobotSync:
     """Sync robots with SAP EWM."""
 
-    def __init__(self) -> None:
+    def __init__(self, robot_config: RobotConfigurationController) -> None:
         """Construct."""
         self.init_odata_fromenv()
 
@@ -44,10 +49,14 @@ class EWMRobotSync:
         self.odatahandler = ODataHandler(self.odataconfig)
         # SAP EWM OData APIs
         self.ewmrobot = RobotOData(self.odatahandler)
+        # Robot config controller
+        self.robot_config = robot_config
         # Existing robots
-        self.existing_robots: Dict[str, bool] = {}
+        self.existing_robots: Dict[str, RobotConfigurationSpec] = {}
         # Running robot checks
-        self.running_robot_checks: Dict[str, threading.Thread] = {}
+        self.running_robot_checks: Dict[str, bool] = {}
+        # Thread Pool Executor
+        self.executor = ThreadPoolExecutor(max_workers=1)
 
     def init_odata_fromenv(self) -> None:
         """Initialize OData interface from environment variables."""
@@ -94,16 +103,16 @@ class EWMRobotSync:
         """Process robot configuration CR."""
         # Create new thread to check EWM resources if not running yet
         if name not in self.running_robot_checks:
-            self.running_robot_checks[name] = threading.Thread(
-                target=self.ewm_resource_check, args=(name, custom_res))
-            self.running_robot_checks[name].start()
+            self.running_robot_checks[name] = True
+            self.executor.submit(
+                self.ewm_resource_check, name, structure(
+                    custom_res['spec'], RobotConfigurationSpec))
 
-    def ewm_resource_check(self, name: str, custom_res: Dict) -> None:
+    def ewm_resource_check(self, name: str, config_spec: RobotConfigurationSpec) -> None:
         """Run EWM resource check."""
         try:
-            self.create_ewm_resource(
-                name.upper(), custom_res['spec']['lgnum'], custom_res['spec']['rsrctype'],
-                custom_res['spec']['rsrcgrp'])
+            self.create_ewm_resource(name.upper(), config_spec)
+            self.update_ewm_resource(name.upper(), config_spec)
         except Exception:  # pylint: disable=broad-except
             exc_info = sys.exc_info()
             _LOGGER.error(
@@ -113,26 +122,66 @@ class EWMRobotSync:
             self.running_robot_checks.pop(name, None)
 
     @retry(wait_fixed=10000, retry_on_exception=retry_on_connection_error)
-    def create_ewm_resource(self, name: str, lgnum: str, rsrc_type: str, rsrc_grp: str) -> None:
+    def create_ewm_resource(self, rsrc: str, config_spec: RobotConfigurationSpec) -> None:
         """Create a new EWM resource if it does not exist yet."""
         # check if robot exists
-        robots_key = '{}-{}'.format(lgnum, name)
-        if self.existing_robots.get(robots_key) is True:
+        robots_key = '{}.{}'.format(config_spec.lgnum, rsrc)
+        if self.existing_robots.get(robots_key) is not None:
             _LOGGER.debug(
-                'Resource "%s" exists in EWM warehouse "%s"', name, lgnum)
+                'Resource "%s" exists in EWM warehouse "%s"', rsrc, config_spec.lgnum)
+            return
+
+        try:
+            ewm_robot = self.ewmrobot.get_robot(config_spec.lgnum, rsrc)
+        except ODataAPIException:
+            _LOGGER.info(
+                'Resource "%s" not found in EWM warehouse "%s". Create it', rsrc,
+                config_spec.lgnum)
+            ewm_robot = self.ewmrobot.create_robot(
+                config_spec.lgnum, rsrc, config_spec.rsrctype, config_spec.rsrcgrp)
+            self.existing_robots[robots_key] = config_spec
+            _LOGGER.info(
+                'Robot "%s" in EWM warehouse "%s" created with resource type "%s" and resource '
+                'group "%s"', ewm_robot.rsrc, ewm_robot.lgnum, ewm_robot.rsrctype,
+                ewm_robot.rsrcgrp)
         else:
-            try:
-                ewm_robot = self.ewmrobot.get_robot(lgnum, name)
-            except ODataAPIException:
-                _LOGGER.info(
-                    'Resource "%s" not found in EWM warehouse "%s". Create it', name, lgnum)
-                ewm_robot = self.ewmrobot.create_robot(lgnum, name, rsrc_type, rsrc_grp)
-                self.existing_robots[robots_key] = True
-                _LOGGER.info(
-                    'Robot "%s" in EWM warehouse "%s" created with resource type "%s" and resource'
-                    ' group "%s"', ewm_robot.rsrc, ewm_robot.lgnum, ewm_robot.rsrctype,
-                    ewm_robot.rsrcgrp)
-            else:
-                self.existing_robots[robots_key] = True
-                _LOGGER.info(
-                    'Resource "%s" exists in EWM warehouse "%s"', ewm_robot.rsrc, ewm_robot.lgnum)
+            self.existing_robots[robots_key] = config_spec
+            _LOGGER.info(
+                'Resource "%s" exists in EWM warehouse "%s"', ewm_robot.rsrc, ewm_robot.lgnum)
+
+    @retry(wait_fixed=10000, retry_on_exception=retry_on_connection_error)
+    def update_ewm_resource(self, rsrc: str, config_spec: RobotConfigurationSpec) -> None:
+        """Update an existing EWM resource."""
+        # check if robot exists
+        robots_key = '{}.{}'.format(config_spec.lgnum, rsrc)
+        if self.existing_robots.get(robots_key) is None:
+            _LOGGER.error(
+                'Resource "%s" does not exist in EWM warehouse "%s" yet', rsrc, config_spec.lgnum)
+            return
+
+        if self.existing_robots.get(robots_key) == config_spec:
+            _LOGGER.debug('Resource "%s" did not change', rsrc)
+            return
+
+        try:
+            self.ewmrobot.change_robot(
+                config_spec.lgnum, rsrc, rsrctype=config_spec.rsrctype,
+                rsrcgrp=config_spec.rsrcgrp)
+        except RobotNotFoundError:
+            _LOGGER.error(
+                'Robot resource %s not found in EWM warehouse %s - recreating on next run', rsrc,
+                config_spec.lgnum)
+            self.existing_robots.pop(robots_key, None)
+        except (InternalError, InternalServerError, ForeignLockError) as err:
+            _LOGGER.error(
+                'Updating Robot resource %s in EWM warehouse %s failed: %s - trying again', rsrc,
+                config_spec.lgnum, err)
+        except ODataAPIException as err:
+            _LOGGER.error('%s: restoring previous version of CR %s', err, rsrc.lower())
+            self.robot_config.update_cr_spec(
+                rsrc.lower(), unstructure(self.existing_robots.get(robots_key)))
+        else:
+            self.existing_robots[robots_key] = config_spec
+            _LOGGER.info(
+                'EWM robot resource %s in warehouse %s updated to resource type %s and resource '
+                'group %s', rsrc, config_spec.lgnum, config_spec.rsrctype, config_spec.rsrcgrp)

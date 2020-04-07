@@ -15,12 +15,12 @@
 import os
 import logging
 
-from typing import Dict, Optional, List
+from typing import Dict, Optional
 
 from cattr import structure, unstructure
 
 from robcoewmtypes.helper import get_sample_cr
-from robcoewmtypes.robot import RobotConfigurationStatus
+from robcoewmtypes.robot import RobotConfigurationStatus, RobotConfigurationSpec
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
 _LOGGER = logging.getLogger(__name__)
@@ -34,15 +34,7 @@ class RobotConfigurationController(K8sCRHandler):
         self.init_robot_fromenv()
 
         # Robot configuration attributes
-        self.lgnum = ''
-        self.rsrctype = ''
-        self.rsrcgrp = ''
-        self.max_idle_time = 0.0
-        self.battery_min = 0.0
-        self.battery_ok = 0.0
-        self.battery_idle = 0.0
-        self.chargers: List[str] = []
-        self.recover_from_robot_error = False
+        self.conf = RobotConfigurationSpec()
 
         template_cr = get_sample_cr('robotconfiguration')
 
@@ -76,15 +68,7 @@ class RobotConfigurationController(K8sCRHandler):
 
     def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
         """Process robot configuration CR."""
-        self.lgnum = custom_res['spec']['lgnum']
-        self.rsrctype = custom_res['spec']['rsrctype']
-        self.rsrcgrp = custom_res['spec']['rsrcgrp']
-        self.max_idle_time = float(custom_res['spec']['maxIdleTime'])
-        self.battery_min = float(custom_res['spec']['batteryMin'])
-        self.battery_ok = float(custom_res['spec']['batteryOk'])
-        self.battery_idle = float(custom_res['spec']['batteryIdle'])
-        self.chargers = custom_res['spec']['chargers']
-        self.recover_from_robot_error = custom_res['spec']['recoverFromRobotError']
+        self.conf = structure(custom_res['spec'], RobotConfigurationSpec)
 
     def get_robot_state(self) -> Optional[RobotConfigurationStatus]:
         """Get current state of robot's state machine from CR."""

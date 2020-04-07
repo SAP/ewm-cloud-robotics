@@ -62,7 +62,7 @@ def run_robotconfigurator():
     k8s_rc = RobotConfigurationController()
 
     # Create EWM robot syncer instance
-    robotsync = EWMRobotSync()
+    robotsync = EWMRobotSync(k8s_rc)
 
     # Register callback functions
     k8s_rb.register_callback('ConfigurationController', ['ADDED'], k8s_rc.robco_robot_cb)
@@ -102,6 +102,8 @@ def run_robotconfigurator():
         _LOGGER.info('Stopping K8S CR watchers')
         k8s_rb.stop_watcher()
         k8s_rc.stop_watcher()
+        # Shutdown threadpool executor
+        robotsync.executor.shutdown()
 
 
 if __name__ == '__main__':

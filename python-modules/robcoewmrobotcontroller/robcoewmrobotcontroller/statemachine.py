@@ -171,8 +171,8 @@ class RobotEWMMachine(Machine):
             robot=self.robot_config.robco_robot_name, state=self.state).observe(retention_time)
 
         # Update timeout depending on max_idle_time
-        if self.states.get('noWork') and self.robot_config.max_idle_time > 0:
-            self.states['noWork'].timeout = self.robot_config.max_idle_time
+        if self.states.get('noWork') and self.robot_config.conf.maxIdleTime > 0:
+            self.states['noWork'].timeout = self.robot_config.conf.maxIdleTime
 
     def _run_after_state_change(self, event: EventData) -> None:
         """Run these methods after state changed."""
@@ -220,11 +220,11 @@ class RobotEWMMachine(Machine):
             # Check if the robot is running out of battery when it is at staging area
             if self.state == 'atStaging':
                 battery_percentage = status['robot'].get('batteryPercentage', 100.0)
-                if battery_percentage < self.robot_config.battery_idle:
+                if battery_percentage < self.robot_config.conf.batteryIdle:
                     self.charge_battery()
             elif self.state == 'charging':
                 battery_percentage = status['robot'].get('batteryPercentage', 0.0)
-                if self.warehouseorders and battery_percentage > self.robot_config.battery_min:
+                if self.warehouseorders and battery_percentage > self.robot_config.conf.batteryMin:
                     _LOGGER.info(
                         'Warehouse order in queue and battery status is over minimum (%s %%) start'
                         ' processing', battery_percentage)
@@ -330,7 +330,7 @@ class RobotEWMMachine(Machine):
         """Update a warehouse order of this state machine."""
         warehouseorder = event.kwargs.get('warehouseorder')
 
-        if (warehouseorder.lgnum == self.robot_config.lgnum
+        if (warehouseorder.lgnum == self.robot_config.conf.lgnum
                 and warehouseorder.rsrc == self.robot_config.rsrc):
             _LOGGER.debug(
                 'Start updating warehouse order "%s" directly assigned to the robot',
@@ -361,7 +361,7 @@ class RobotEWMMachine(Machine):
                 # Process warehouse order
                 self.process_warehouseorder(warehouseorder=warehouseorder)
             elif (self.state == 'charging'
-                  and self.mission_api.battery_percentage >= self.robot_config.battery_min):
+                  and self.mission_api.battery_percentage >= self.robot_config.conf.batteryMin):
                 _LOGGER.info(
                     'New warehouse order %s received while robot is charging. Battery percentage '
                     'over minimum, cancel charging and start processing', warehouseorder.who)
@@ -635,11 +635,11 @@ class RobotEWMMachine(Machine):
         if self.conf.is_new_work_state(event.state.name):
             _LOGGER.info('Requesting new warehouse order from order manager')
             request = RequestFromRobot(
-                self.robot_config.lgnum, self.robot_config.rsrc, requestnewwho=True)
+                self.robot_config.conf.lgnum, self.robot_config.rsrc, requestnewwho=True)
         else:
             _LOGGER.info('Requesting warehouse order from order manager')
             request = RequestFromRobot(
-                self.robot_config.lgnum, self.robot_config.rsrc, requestwork=True)
+                self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
 
         dtype = create_robcoewmtype_str(request)
         self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
@@ -652,7 +652,7 @@ class RobotEWMMachine(Machine):
         """
         if isinstance(self.active_who, WarehouseOrder):
             request = RequestFromRobot(
-                self.robot_config.lgnum, self.robot_config.rsrc,
+                self.robot_config.conf.lgnum, self.robot_config.rsrc,
                 notifywhocompletion=self.active_who.who)
 
             dtype = create_robcoewmtype_str(request)
@@ -672,7 +672,7 @@ class RobotEWMMachine(Machine):
         """
         if isinstance(self.active_wht, WarehouseTask):
             request = RequestFromRobot(
-                self.robot_config.lgnum, self.robot_config.rsrc,
+                self.robot_config.conf.lgnum, self.robot_config.rsrc,
                 notifywhtcompletion=self.active_wht.tanum)
 
             dtype = create_robcoewmtype_str(request)
@@ -689,10 +689,10 @@ class RobotEWMMachine(Machine):
         if self.warehouseorders:
             _LOGGER.info('Warehouse order in queue, start processing')
             self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
-        elif self.mission_api.battery_percentage < self.robot_config.battery_min:
+        elif self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
             _LOGGER.info(
                 'Battery level %s is below minimum of %s, start charging',
-                self.mission_api.battery_percentage, self.robot_config.battery_min)
+                self.mission_api.battery_percentage, self.robot_config.conf.batteryMin)
             if self.active_mission:
                 self._cancel_active_mission(event)
             self.charge_battery()
