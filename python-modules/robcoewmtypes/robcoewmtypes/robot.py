@@ -41,6 +41,68 @@ class Robot:
         default='', validator=validate_annotation, converter=strstrip)
 
 
+@attr.s
+class RobotResourceType:
+    """SAP EWM Robot Resource Type."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrctype: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    robottype: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+    errorqueue: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class ResourceTypeDescription:
+    """SAP EWM Resource Type description type."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrctype: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    langu: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    text: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class ResourceGroup:
+    """SAP EWM Resource Group."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrcgrp: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    zewmerrorqueue: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class ResourceGroupDescription:
+    """SAP EWM Resource Group description type."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrcgrp: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    langu: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    text: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
 # Non SAP OData Types are starting here
 
 @attr.s
