@@ -915,7 +915,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 **
 
     data: lv_lgnum      type /scwm/lgnum,
-          lv_spras      type spras,
+          lv_langu      type spras,
           lv_rsrc_grp   type /scwm/de_rsrc_grp,
           ls_trsrc_grpt type zcl_zewm_robco_mpc=>ts_resourcegroupdescription.
 
@@ -927,8 +927,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lv_lgnum = <ls_key>-value.
         when 'RsrcGrp'.
           lv_rsrc_grp = <ls_key>-value.
-        when 'Spras'.
-          lv_spras = <ls_key>-value.
+        when 'Langu'.
+          lv_langu = <ls_key>-value.
       endcase.
     endloop.
 
@@ -936,7 +936,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       into corresponding fields of @ls_trsrc_grpt
         where lgnum = @lv_lgnum
           and rsrc_grp = @lv_rsrc_grp
-          and langu = @lv_spras.
+          and langu = @lv_langu.
     if sy-subrc = 0.
       er_entity = ls_trsrc_grpt.
     endif.
@@ -1138,7 +1138,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 **
 
     data: lv_lgnum      type /scwm/lgnum,
-          lv_spras      type spras,
+          lv_langu      type spras,
           lv_rsrc_type  type /scwm/de_rsrc_type,
           ls_trsrc_typt type zcl_zewm_robco_mpc=>ts_resourcetypedescription.
 
@@ -1150,8 +1150,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lv_lgnum = <ls_key>-value.
         when 'RsrcType'.
           lv_rsrc_type = <ls_key>-value.
-        when 'Spras'.
-          lv_spras = <ls_key>-value.
+        when 'Langu'.
+          lv_langu = <ls_key>-value.
       endcase.
     endloop.
 
@@ -1159,7 +1159,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       into corresponding fields of @ls_trsrc_typt
         where lgnum = @lv_lgnum
           and rsrc_type = @lv_rsrc_type
-          and langu = @lv_spras.
+          and langu = @lv_langu.
     if sy-subrc = 0.
       er_entity = ls_trsrc_typt.
     endif.
