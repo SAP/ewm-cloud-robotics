@@ -964,6 +964,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
+
 * OData keys from associations
     loop at it_key_tab assigning <ls_key>.
       clear: ls_selopt, lt_selopt.
@@ -981,10 +983,17 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       endcase.
     endloop.
 
-    select * from /scwm/trsrc_grpt
-      into corresponding fields of table @lt_trsrc_grpt
-      where lgnum in @s_lgnum
-        and rsrc_grp in @s_rsrc_grp.
+    if lv_where is not initial.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_grp in @s_rsrc_grp'.
+      select * from /scwm/trsrc_grpt
+        into corresponding fields of table @lt_trsrc_grpt
+        where (lv_where).
+    else.
+      select * from /scwm/trsrc_grpt
+        into corresponding fields of table @lt_trsrc_grpt
+        where lgnum in @s_lgnum
+          and rsrc_grp in @s_rsrc_grp.
+    endif.  "if lv_where is not initial.
 
     if sy-subrc = 0.
       et_entityset = lt_trsrc_grpt.
@@ -1187,6 +1196,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
+
 * OData keys from associations
     loop at it_key_tab assigning <ls_key>.
       clear: ls_selopt, lt_selopt.
@@ -1204,10 +1215,16 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       endcase.
     endloop.
 
-    select * from /scwm/trsrc_typt
-      into corresponding fields of table @lt_trsrc_typt
-      where lgnum in @s_lgnum
-        and rsrc_type in @s_rsrc_type.
+    if lv_where is not initial.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_type in @s_rsrc_type'.
+      select * from /scwm/trsrc_typt
+        into corresponding fields of table @lt_trsrc_typt
+        where (lv_where).
+    else.
+      select * from /scwm/trsrc_typt
+        into corresponding fields of table @lt_trsrc_typt
+        where lgnum in @s_lgnum and rsrc_type in @s_rsrc_type.
+    endif.  "if lv_where is not initial.
 
     if sy-subrc = 0.
       et_entityset = lt_trsrc_typt.
@@ -1899,6 +1916,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1907,10 +1926,20 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     endloop.
 
     if lv_lgnum is not initial.
-      select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription
-        where lgnum = @lv_lgnum.
+      if lv_where is not initial.
+        lv_where = 'lgnum = @lv_lgnum and ' && lv_where.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription
+          where (lv_where).
+      else.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription
+          where lgnum = @lv_lgnum.
+      endif.  "if lv_where is not initial.
     else.
-      select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription.
+      if lv_where is not initial.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription where (lv_where).
+      else.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription.
+      endif.  "if lv_where is not initial.
     endif.  "if lv_lgnum is not initial.
 
     if sy-subrc = 0.
