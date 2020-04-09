@@ -80,10 +80,10 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 									<Text text="{odata>/#OpenWarehouseTask/Nltyp/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{odata>/#OpenWarehouseTask/Meins/@sap:label}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Priority/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
-									<Text text="{odata>/#OpenWarehouseTask/Priority/@sap:label}"/>
+									<Text text="{odata>/#OpenWarehouseTask/Procty/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Tablet">
 									<Text text="{odata>/#OpenWarehouseTask/Volum/@sap:label}"/>
@@ -104,9 +104,6 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 									<Text text="{odata>/#OpenWarehouseTask/Vltyp/@sap:label}"/>
 								</Column>
 								<Column demandPopin="true" minScreenWidth="Desktop">
-									<Text text="{odata>/#OpenWarehouseTask/Vsolm/@sap:label}"/>
-								</Column>
-								<Column demandPopin="true" minScreenWidth="Desktop">
 									<Text text="{odata>/#OpenWarehouseTask/Flghuto/@sap:label}"/>
 								</Column>
 							</columns>
@@ -119,15 +116,14 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 										<Text text="{= ${whoDetail>nlenr} === '' ? '---' : ${whoDetail>nlenr}}"/>
 										<Text text="{= ${whoDetail>nlpla} === '' ? '---' : ${whoDetail>nlpla}}"/>
 										<Text text="{= ${whoDetail>nltyp} === '' ? '---' : ${whoDetail>nltyp}}"/>
-										<Text text="{= ${whoDetail>meins} === '' ? '---' : ${whoDetail>meins}}"/>
 										<Text text="{= ${whoDetail>priority} === '' ? '---' : ${whoDetail>priority}}"/>
+										<Text text="{= ${whoDetail>procty} === '' ? '---' : ${whoDetail>procty}}"/>
 										<Text text="{= ${whoDetail>volum} === '' ? '---' : ${whoDetail>volum}} {= ${whoDetail>volum} === '' ? '' : ${whoDetail>unitv}}"/>
 										<Text text="{= ${whoDetail>weight} === '' ? '---' : ${whoDetail>weight}} {= ${whoDetail>weight} === '' ? '' : ${whoDetail>unitw}}"/>
 										<Text text="{= ${whoDetail>vlber} === '' ? '---' : ${whoDetail>vlber}}"/>
 										<Text text="{= ${whoDetail>vlenr} === '' ? '---' : ${whoDetail>vlenr}}"/>
 										<Text text="{= ${whoDetail>vlpla} === '' ? '---' : ${whoDetail>vlpla}}"/>
 										<Text text="{= ${whoDetail>vltyp} === '' ? '---' : ${whoDetail>vltyp}}"/>
-										<Text text="{= ${whoDetail>vsolm} === '' ? '---' : ${whoDetail>vsolm}}"/>
 										<Text text="{= ${whoDetail>flghuto} === '' ? '---' : ${whoDetail>flghuto}}"/>
 									</cells>
 								</ColumnListItem>

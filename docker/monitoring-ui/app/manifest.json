@@ -7,10 +7,11 @@
 				"type": "JSON"
 			},
 			"zewm_robco_srv": {
-				"uri": "./ZEWM_ROBCO_SRV",
+				"uri": "/ewm-monitoring-ui/ZEWM_ROBCO_SRV/",
 				"type": "OData",
 				"settings": {
-					"odataVersion": "2.0"
+					"odataVersion": "2.0",
+					"localUri": "mockServer/localService/metadata.xml"
 				}
 			}
 		},
@@ -21,7 +22,6 @@
 			"version": "1.0.0"
 		}
 	},
-	
 	"sap.ui": {
 		"fullWidth": true,
 		"technology": "UI5",
@@ -134,7 +134,10 @@
 		},
 		"models": {
 			"odata": {
-				"dataSource": "zewm_robco_srv"
+				"dataSource": "zewm_robco_srv",
+				"settings": {
+					"useBatch": false
+				}
 			},
 			"i18n": {
 				"type": "sap.ui.model.resource.ResourceModel",

@@ -1,0 +1,150 @@
+[
+	{
+	"__metadata": {
+		"id": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')",
+		"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')",
+		"type": "ZEWM_ROBCO_SRV.WarehouseNumber"
+	},
+	"Lgnum": "0001",
+	"WarehouseDescriptions": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/WarehouseDescriptions"
+		}
+	},
+	"WarehouseOrders": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/WarehouseOrders"
+		}
+	},
+	"StorageBins": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/StorageBins"
+		}
+	},
+	"Robots": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/Robots"
+		}
+	},
+	"RobotResourceTypes": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/RobotResourceTypes"
+		}
+	},
+	"ResourceGroups": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('0001')/ResourceGroups"
+		}
+	}
+}, {
+	"__metadata": {
+		"id": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')",
+		"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')",
+		"type": "ZEWM_ROBCO_SRV.WarehouseNumber"
+	},
+	"Lgnum": "1010",
+	"WarehouseDescriptions": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/WarehouseDescriptions"
+		}
+	},
+	"WarehouseOrders": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/WarehouseOrders"
+		}
+	},
+	"StorageBins": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/StorageBins"
+		}
+	},
+	"Robots": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/Robots"
+		}
+	},
+	"RobotResourceTypes": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/RobotResourceTypes"
+		}
+	},
+	"ResourceGroups": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1010')/ResourceGroups"
+		}
+	}
+}, {
+	"__metadata": {
+		"id": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')",
+		"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')",
+		"type": "ZEWM_ROBCO_SRV.WarehouseNumber"
+	},
+	"Lgnum": "1710",
+	"WarehouseDescriptions": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/WarehouseDescriptions"
+		}
+	},
+	"WarehouseOrders": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/WarehouseOrders"
+		}
+	},
+	"StorageBins": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/StorageBins"
+		}
+	},
+	"Robots": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/Robots"
+		}
+	},
+	"RobotResourceTypes": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/RobotResourceTypes"
+		}
+	},
+	"ResourceGroups": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1710')/ResourceGroups"
+		}
+	}
+}, {
+	"__metadata": {
+		"id": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')",
+		"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')",
+		"type": "ZEWM_ROBCO_SRV.WarehouseNumber"
+	},
+	"Lgnum": "1810",
+	"WarehouseDescriptions": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')/WarehouseDescriptions"
+		}
+	},
+	"WarehouseOrders": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')/WarehouseOrders"
+		}
+	},
+	"StorageBins": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')/StorageBins"
+		}
+	},
+	"Robots": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')/Robots"
+		}
+	},
+	"RobotResourceTypes": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')/RobotResourceTypes"
+		}
+	},
+	"ResourceGroups": {
+		"__deferred": {
+			"uri": "https://www.endpoints.sap-asimov-master.cloud.goog:443/ewm-monitoring-ui/ZEWM_ROBCO_SRV/WarehouseNumberSet('1810')/ResourceGroups"
+		}
+	}
+}]

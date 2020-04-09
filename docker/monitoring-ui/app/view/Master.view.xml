@@ -16,7 +16,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 			<u:ObjectPageSection title="{i18n>robots}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'robots>updateTime', descending: 'true'} }">
+						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'updateTime', descending: 'true'} }">
 							<columns>
 								<Column visible="{masterLayout>/mediumExpanded}">
 									<Text text="{i18n>updateTime}"/>
@@ -39,7 +39,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 								<Column width="{= ${masterLayout>/mediumExpanded} ? '12em' : '4em'}">
 									<Text text="{i18n>ewmStatus}"/>
 								</Column>
-								<Column visible="{masterLayout>/mediumExpanded}">
+								<Column visible="false">
 									<Text text="{i18n>creationTimestamp}"/>
 								</Column>
 								<Column visible="false">

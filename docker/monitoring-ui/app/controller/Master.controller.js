@@ -109,17 +109,17 @@ sap.ui.define([
 					"rows": [],
 					"columns": {
 						"who": {"visible": true},
-						"flgto": {"visible": true},
+						"flgto": {"visible": false},
 						"areawho": {"visible": true},
-						"flgwho": {"visible": true},
+						"flgwho": {"visible": false},
 						"lgnum": {"visible": true},
-						"lgtyp": {"visible": true},
+						"lgtyp": {"visible": false},
 						"lsd": {"visible": true},
 						"queue": {"visible": true},
-						"refwhoid": {"visible": true},
+						"refwhoid": {"visible": false},
 						"rsrc": {"visible": true},
 						"order_status": {"visible": true},
-						"topwhoid": {"visible": true}
+						"topwhoid": {"visible": false}
 					}
 				};
 				for (var i = 0; i < data.items.length; ++i) {

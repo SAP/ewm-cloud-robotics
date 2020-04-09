@@ -1,0 +1,21 @@
+<!DOCTYPE HTML>
+<html style="height: 100%">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Mock Server</title>
+	<script id="sap-ui-bootstrap"
+		src="https://sapui5.hana.ondemand.com/resources/sap-ui-core.js"
+		data-sap-ui-theme="sap_fiori_3"
+		data-sap-ui-resourceroots='{
+			"monitoring": "./"
+		}'
+		data-sap-ui-oninit="module:monitoring/mockServer/initMockServer"
+		data-sap-ui-compatVersion="edge"
+		data-sap-ui-async="true">
+	</script>
+</head>
+<body class="sapUiBody">
+	<div data-sap-ui-component data-name="monitoring" data-id="container" data-height="100%" data-settings='{"id" : "fiori2"}' style="height: 100%"></div>
+</body>
+</html>

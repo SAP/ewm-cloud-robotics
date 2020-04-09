@@ -10,9 +10,11 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
 	<SelectDialog multiSelect="true" title="{i18n>column}" rememberSelections="true">
+		<StandardListItem title="{odata>/#WarehouseOrder/Areawho/@sap:label}" selected="{who>/columns/areawho/visible}"/>
 		<StandardListItem title="{odata>/#WarehouseOrder/Flgto/@sap:label}" selected="{who>/columns/flgto/visible}"/>
 		<StandardListItem title="{odata>/#WarehouseOrder/Flgwho/@sap:label}" selected="{who>/columns/flgwho/visible}"/>
 		<StandardListItem title="{odata>/#WarehouseOrder/Lgnum/@sap:label}" selected="{who>/columns/lgnum/visible}"/>
+		<StandardListItem title="{odata>/#WarehouseOrder/Lgtyp/@sap:label}" selected="{who>/columns/lgtyp/visible}"/>
 		<StandardListItem title="{odata>/#WarehouseOrder/Lsd/@sap:label}" selected="{who>/columns/lsd/visible}"/>
 		<StandardListItem title="{odata>/#WarehouseOrder/Queue/@sap:label}" selected="{who>/columns/queue/visible}"/>
 		<StandardListItem title="{odata>/#WarehouseOrder/Refwhoid/@sap:label}" selected="{who>/columns/refwhoid/visible}"/>
