@@ -16,7 +16,7 @@ from typing import List
 import attr
 
 from .helper import strstrip, validate_annotation, datetime_now_iso
-from .warehouseorder import WarehouseOrderIdent
+from .warehouseorder import WarehouseOrder
 
 
 @attr.s
@@ -70,9 +70,9 @@ class AuctioneerRequestStatus:
         factory=datetime_now_iso, validator=validate_annotation, converter=strstrip)
     message: str = attr.ib(
         default='', validator=validate_annotation, converter=strstrip)
-    warehouseorders: List[WarehouseOrderIdent] = attr.ib(
+    warehouseorders: List[WarehouseOrder] = attr.ib(
         default=attr.Factory(list), validator=attr.validators.deep_iterable(
-            member_validator=attr.validators.instance_of(WarehouseOrderIdent),
+            member_validator=attr.validators.instance_of(WarehouseOrder),
             iterable_validator=attr.validators.instance_of(list)))
     orderassignments: List[OrderAssignment] = attr.ib(
         default=attr.Factory(list), validator=attr.validators.deep_iterable(

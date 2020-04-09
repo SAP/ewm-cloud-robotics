@@ -15,6 +15,7 @@
 import os
 import logging
 
+from concurrent.futures import Future, ThreadPoolExecutor
 from datetime import datetime, timezone, timedelta
 from typing import Dict, Tuple, List, Union
 
@@ -730,17 +731,13 @@ class EWMOrderManager:
                 return
 
         if whos:
-            whoidents = []
-            for who in whos:
-                whoident = WarehouseOrderIdent(who.lgnum, who.who)
-                whoidents.append(whoident)
             # Attach the warehouse order list to CR status
-            status.warehouseorders = whoidents
+            status.warehouseorders = whos
             status.status = AuctioneerRequestStatus.STATUS_ACCEPTED
             self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
             _LOGGER.info(
                 'Reserved %s warehouse orders in warehouse %s for resource type %s, group %s '
-                'with auctioneer request %s until %s', len(whoidents), spec.orderrequest.lgnum,
+                'with auctioneer request %s until %s', len(whos), spec.orderrequest.lgnum,
                 spec.orderrequest.rsrctype, spec.orderrequest.rsrcgrp, name, status.validuntil)
         else:
             msg = 'No warehouse orders found for auctioneer request {}. Trying again'.format(name)
@@ -755,24 +752,28 @@ class EWMOrderManager:
         if status.status != AuctioneerRequestStatus.STATUS_ACCEPTED:
             return
 
-        # Init warehouse order list
-        whos: List[WarehouseOrder] = []
-
         # Get warehouse orders with open warehouse tasks from EWM
-        for whoident in status.warehouseorders:
-            try:
-                whos.append(self.ewmwho.get_warehouseorder(
-                    whoident.lgnum, whoident.who, openwarehousetasks=True))
-            except (ConnectionError, TimeoutError, IOError) as err:
-                _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
-                return
+        connection_error = False
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            who_futures: Dict[Future, int] = {}
+            for i, who in enumerate(status.warehouseorders):
+                # Only get warehouse orders which do not include warehouse tasks yet
+                if not who.warehousetasks:
+                    who_futures[executor.submit(
+                        self.ewmwho.get_warehouseorder, who.lgnum, who.who,
+                        openwarehousetasks=True)] = i
 
-        # Save warehouse order CRs
-        for who in whos:
-            self.ordercontroller.save_who(unstructure(who))
+            for future, i in who_futures.items():
+                try:
+                    status.warehouseorders[i] = future.result()
+                except (ConnectionError, TimeoutError, IOError) as err:
+                    _LOGGER.error(
+                        'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
 
         # Update CR status
-        status.status = AuctioneerRequestStatus.STATUS_RESERVATIONS
+        if not connection_error:
+            status.status = AuctioneerRequestStatus.STATUS_RESERVATIONS
         status.validuntil = self._datetime_reservation_timeout_iso()
         self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
 
@@ -795,7 +796,10 @@ class EWMOrderManager:
                 'Found %s warehouse order assignments to robots in auctioneer request %s',
                 len(spec.orderassignments), name)
             msg = 'All warehouse orders assigned to robots'
-            reserved = status.warehouseorders.copy()
+            reserved: List[WarehouseOrderIdent] = []
+            for who in status.warehouseorders:
+                whoident = WarehouseOrderIdent(who.lgnum, who.who)
+                reserved.append(whoident)
             connection_error = False
 
             for ord_as in spec.orderassignments:
@@ -843,7 +847,7 @@ class EWMOrderManager:
                         connection_error = True
 
             if reserved and not connection_error:
-                msg = 'Not all warehouse orders assigned to robots, cancel those reservations'
+                msg = 'Not all warehouse orders assigned to robots, cancel remaining reservations'
                 _LOGGER.info(msg)
                 for whoident in reserved:
                     # Unset in process status for non assigned orders to cancel reservation
@@ -859,10 +863,6 @@ class EWMOrderManager:
                             'Error connecting to SAP EWM Backend: "%s" - try again later', err)
                         connection_error = True
 
-                    if not connection_error:
-                        # Cleanup warehouse order CRs
-                        self.cleanup_who(WhoIdentifier(whoident.lgnum, whoident.who))
-
             # CR is processed in this status, until there was no connection error to EWM
             if not connection_error:
                 status.status = AuctioneerRequestStatus.STATUS_SUCCEEDED
@@ -874,21 +874,17 @@ class EWMOrderManager:
             _LOGGER.info(msg)
             connection_error = False
 
-            for whoident in status.warehouseorders:
+            for who in status.warehouseorders:
                 try:
-                    self.ewmwho.unset_warehouseorder_in_process(whoident.lgnum, whoident.who)
+                    self.ewmwho.unset_warehouseorder_in_process(who.lgnum, who.who)
                 except NoOrderFoundError:
                     _LOGGER.warning(
                         'Warehouse order %s.%s not found. Continuing anyway',
-                        whoident.lgnum, whoident.who)
+                        who.lgnum, who.who)
                 except (ConnectionError, TimeoutError, IOError) as err:
                     _LOGGER.error(
                         'Error connecting to SAP EWM Backend: "%s" - try again later', err)
                     connection_error = True
-
-                if not connection_error:
-                    # Cleanup warehouse order CRs
-                    self.cleanup_who(WhoIdentifier(whoident.lgnum, whoident.who))
 
             # CR is processed in this status, until there was no connection error to EWM
             if not connection_error:

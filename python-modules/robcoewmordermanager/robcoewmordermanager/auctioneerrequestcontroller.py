@@ -35,8 +35,8 @@ class AuctioneerRequestController(K8sCRHandler):
         template_cr = get_sample_cr('auctioneerrequest')
 
         super().__init__(
-            'sap.com',
-            'v1',
+            'ewm.sap.com',
+            'v1alpha1',
             'auctioneerrequests',
             'default',
             template_cr,
@@ -58,6 +58,8 @@ class AuctioneerRequestController(K8sCRHandler):
                 if status.status not in AuctioneerRequestStatus.IN_PROCESS_STATUS:
                     continue
                 # Append warehouse order idents to list
-                reserved_whos.extend(status.warehouseorders)
+                for who in status.warehouseorders:
+                    who_ident = WarehouseOrderIdent(lgnum=who.lgnum, who=who.who)
+                    reserved_whos.append(who_ident)
 
         return reserved_whos
