@@ -30,16 +30,14 @@ class WarehouseTask:
     tanum: str = attr.ib(
         validator=attr.validators.instance_of(str), converter=strstrip)
     # SAP values
+    procty: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
     flghuto: bool = attr.ib(
         default=False, validator=validate_annotation, converter=bool)
     tostat: str = attr.ib(
         default='', validator=validate_annotation, converter=strstrip)
     priority: int = attr.ib(
         default=0, validator=validate_annotation, converter=int)
-    meins: str = attr.ib(
-        default='', validator=validate_annotation, converter=strstrip)
-    vsolm: float = attr.ib(
-        default=0.0, validator=validate_annotation, converter=float)
     weight: float = attr.ib(
         default=0.0, validator=validate_annotation, converter=float)
     unitw: str = attr.ib(
