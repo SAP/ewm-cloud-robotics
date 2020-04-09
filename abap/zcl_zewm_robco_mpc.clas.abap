@@ -749,8 +749,8 @@ lo_assoc_set = model->create_association_set( iv_association_set_name  = 'Wareho
                             iv_def_assoc_set    = abap_false ). "#EC NOTEXT
 * Referential constraint for association - RobotResourceTypeToRobot
 lo_ref_constraint = lo_association->create_ref_constraint( ).
-lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_ref_constraint->add_property( iv_principal_property = 'RsrcType'   iv_dependent_property = 'RsrcType' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_assoc_set = model->create_association_set( iv_association_set_name  = 'RobotResourceTypeToRobotSet'                         "#EC NOTEXT
                                               iv_left_entity_set_name  = 'RobotResourceTypeSet'              "#EC NOTEXT
                                               iv_right_entity_set_name = 'RobotSet'             "#EC NOTEXT
@@ -765,8 +765,8 @@ lo_assoc_set = model->create_association_set( iv_association_set_name  = 'RobotR
                             iv_def_assoc_set    = abap_false ). "#EC NOTEXT
 * Referential constraint for association - RobotResourceTypeToDescription
 lo_ref_constraint = lo_association->create_ref_constraint( ).
-lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_ref_constraint->add_property( iv_principal_property = 'RsrcType'   iv_dependent_property = 'RsrcType' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_assoc_set = model->create_association_set( iv_association_set_name  = 'RobotResourceTypeToDescriptionSet'                         "#EC NOTEXT
                                               iv_left_entity_set_name  = 'RobotResourceTypeSet'              "#EC NOTEXT
                                               iv_right_entity_set_name = 'ResourceTypeDescriptionSet'             "#EC NOTEXT
@@ -781,8 +781,8 @@ lo_assoc_set = model->create_association_set( iv_association_set_name  = 'RobotR
                             iv_def_assoc_set    = abap_false ). "#EC NOTEXT
 * Referential constraint for association - ResourceGroupToRobot
 lo_ref_constraint = lo_association->create_ref_constraint( ).
-lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_ref_constraint->add_property( iv_principal_property = 'RsrcGrp'   iv_dependent_property = 'RsrcGrp' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_assoc_set = model->create_association_set( iv_association_set_name  = 'ResourceGroupToRobotSet'                         "#EC NOTEXT
                                               iv_left_entity_set_name  = 'ResourceGroupSet'              "#EC NOTEXT
                                               iv_right_entity_set_name = 'RobotSet'             "#EC NOTEXT
@@ -797,8 +797,8 @@ lo_assoc_set = model->create_association_set( iv_association_set_name  = 'Resour
                             iv_def_assoc_set    = abap_false ). "#EC NOTEXT
 * Referential constraint for association - ResourceGroupToDescription
 lo_ref_constraint = lo_association->create_ref_constraint( ).
-lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_ref_constraint->add_property( iv_principal_property = 'RsrcGrp'   iv_dependent_property = 'RsrcGrp' ). "#EC NOTEXT
+lo_ref_constraint->add_property( iv_principal_property = 'Lgnum'   iv_dependent_property = 'Lgnum' ). "#EC NOTEXT
 lo_assoc_set = model->create_association_set( iv_association_set_name  = 'ResourceGroupToDescriptionSet'                         "#EC NOTEXT
                                               iv_left_entity_set_name  = 'ResourceGroupSet'              "#EC NOTEXT
                                               iv_right_entity_set_name = 'ResourceGroupDescriptionSet'             "#EC NOTEXT
@@ -1106,6 +1106,18 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
       EXPORTING
         iv_key      = 'unicode'
         iv_value    = 'false' ).
+lo_property = lo_entity_type->create_property( iv_property_name = 'Procty' iv_abap_fieldname = 'PROCTY' ). "#EC NOTEXT
+lo_property->set_type_edm_string( ).
+lo_property->set_maxlength( iv_max_length = 4 ). "#EC NOTEXT
+lo_property->set_creatable( abap_false ).
+lo_property->set_updatable( abap_false ).
+lo_property->set_sortable( abap_false ).
+lo_property->set_nullable( abap_false ).
+lo_property->set_filterable( abap_false ).
+lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
+      EXPORTING
+        iv_key      = 'unicode'
+        iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'Flghuto' iv_abap_fieldname = 'FLGHUTO' ). "#EC NOTEXT
 lo_property->set_type_edm_boolean( ).
 lo_property->set_creatable( abap_false ).
@@ -1131,32 +1143,6 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
         iv_value    = 'false' ).
 lo_property = lo_entity_type->create_property( iv_property_name = 'Priority' iv_abap_fieldname = 'PRIORITY' ). "#EC NOTEXT
 lo_property->set_type_edm_byte( ).
-lo_property->set_creatable( abap_false ).
-lo_property->set_updatable( abap_false ).
-lo_property->set_sortable( abap_false ).
-lo_property->set_nullable( abap_false ).
-lo_property->set_filterable( abap_false ).
-lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
-      EXPORTING
-        iv_key      = 'unicode'
-        iv_value    = 'false' ).
-lo_property = lo_entity_type->create_property( iv_property_name = 'Meins' iv_abap_fieldname = 'MEINS' ). "#EC NOTEXT
-lo_property->set_type_edm_string( ).
-lo_property->set_maxlength( iv_max_length = 3 ). "#EC NOTEXT
-lo_property->set_conversion_exit( 'CUNIT' ). "#EC NOTEXT
-lo_property->set_creatable( abap_false ).
-lo_property->set_updatable( abap_false ).
-lo_property->set_sortable( abap_false ).
-lo_property->set_nullable( abap_false ).
-lo_property->set_filterable( abap_false ).
-lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
-      EXPORTING
-        iv_key      = 'unicode'
-        iv_value    = 'false' ).
-lo_property = lo_entity_type->create_property( iv_property_name = 'Vsolm' iv_abap_fieldname = 'VSOLM' ). "#EC NOTEXT
-lo_property->set_type_edm_decimal( ).
-lo_property->set_precison( iv_precision = 14 ). "#EC NOTEXT
-lo_property->set_maxlength( iv_max_length = 31 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
@@ -1669,9 +1655,9 @@ lo_entity_type = model->create_entity_type( iv_entity_type_name = 'Robot' iv_def
 *Properties
 ***********************************************************************************************************************************
 
-lo_property = lo_entity_type->create_property( iv_property_name = 'ActualBin' iv_abap_fieldname = 'ACTUAL_BIN' ). "#EC NOTEXT
+lo_property = lo_entity_type->create_property( iv_property_name = 'ActQueue' iv_abap_fieldname = 'ACT_QUEUE' ). "#EC NOTEXT
 lo_property->set_type_edm_string( ).
-lo_property->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
+lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
@@ -1681,9 +1667,9 @@ lo_property->/iwbep/if_mgw_odata_annotatabl~create_annotation( 'sap' )->add(
       EXPORTING
         iv_key      = 'unicode'
         iv_value    = 'false' ).
-lo_property = lo_entity_type->create_property( iv_property_name = 'ActQueue' iv_abap_fieldname = 'ACT_QUEUE' ). "#EC NOTEXT
+lo_property = lo_entity_type->create_property( iv_property_name = 'ActualBin' iv_abap_fieldname = 'ACTUAL_BIN' ). "#EC NOTEXT
 lo_property->set_type_edm_string( ).
-lo_property->set_maxlength( iv_max_length = 10 ). "#EC NOTEXT
+lo_property->set_maxlength( iv_max_length = 18 ). "#EC NOTEXT
 lo_property->set_creatable( abap_false ).
 lo_property->set_updatable( abap_false ).
 lo_property->set_sortable( abap_false ).
@@ -2434,7 +2420,7 @@ lo_entity_set->set_filter_required( abap_false ).
 *&---------------------------------------------------------------------*
 
 
-  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20200403100859'.                  "#EC NOTEXT
+  CONSTANTS: lc_gen_date_time TYPE timestamp VALUE '20200409081049'.                  "#EC NOTEXT
   rv_last_modified = super->get_last_modified( ).
   IF rv_last_modified LT lc_gen_date_time.
     rv_last_modified = lc_gen_date_time.
