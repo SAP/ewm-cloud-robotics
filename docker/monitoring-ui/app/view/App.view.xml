@@ -1,0 +1,22 @@
+<!--
+Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+
+This file is part of ewm-cloud-robotics
+(see https://github.com/SAP/ewm-cloud-robotics).
+
+This file is licensed under the Apache Software License, v. 2 except as noted
+otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+-->
+
+<mvc:View controllerName="monitoring.controller.App" displayBlock="true" height="100%" xmlns="sap.f" xmlns:mvc="sap.ui.core.mvc">
+	<FlexibleColumnLayout id="flexibleColumnLayout"
+		stateChange=".onStateChanged"
+		layout="{/layout}">
+		<!--beginColumnPages>
+			<mvc:XMLView id="beginView" viewName="monitoring.view.Master"/>
+		</beginColumnPages>
+		<midColumnPages>
+			<mvc:XMLView id="detailView" viewName="monitoring.view.Detail"/>
+		</midColumnPages-->
+	</FlexibleColumnLayout>
+</mvc:View>

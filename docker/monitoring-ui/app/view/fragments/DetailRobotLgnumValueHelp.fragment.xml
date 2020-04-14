@@ -1,0 +1,6 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<SelectDialog title="{odata>/#WarehouseOrder/Lgnum/@sap:label}" class="sapUiPopupWithPadding" items="{odata>/WarehouseDescriptionSet}" search="handleValueHelpLgnumSearch"
+		confirm="handleValueHelpLgnumConfirm">
+		<StandardListItem title="{odata>Lgnum}" description="{odata>Lnumt}"/>
+	</SelectDialog>
+</core:FragmentDefinition>

@@ -65,7 +65,7 @@ class RobCoMissionAPI(K8sCRHandler):
         self.trolley_attached = False
 
         # Set active charger
-        self._chargers = self.robot_config.chargers.copy()
+        self._chargers = self.robot_config.conf.chargers.copy()
         self._chargers_generator = self._iterate_chargers()
         self.charger = next(self._chargers_generator, '')
         _LOGGER.info('Using chargers: %s', self._chargers)
@@ -274,8 +274,8 @@ class RobCoMissionAPI(K8sCRHandler):
         """Charge robot at the charging position."""
         # Get relevant parameters
         action = {'charge': {'chargerName': self.charger,
-                             'thresholdBatteryPercent': self.robot_config.battery_idle,
-                             'targetBatteryPercent': self.robot_config.battery_ok}}
+                             'thresholdBatteryPercent': self.robot_config.conf.batteryIdle,
+                             'targetBatteryPercent': self.robot_config.conf.batteryOk}}
         spec = {'actions': [action]}
         # Create mission
         return self._create_mission(spec)
@@ -283,8 +283,8 @@ class RobCoMissionAPI(K8sCRHandler):
     def api_set_next_charger(self) -> None:
         """Switch to next charger of configuration."""
         # Check if chargers changed in the meantime
-        if self._chargers != self.robot_config.chargers:
-            self._chargers = self.robot_config.chargers.copy()
+        if self._chargers != self.robot_config.conf.chargers:
+            self._chargers = self.robot_config.conf.chargers.copy()
             self._chargers_generator = self._iterate_chargers()
             _LOGGER.info('Available chargers changed to: %s', self._chargers)
         # Get next charger from generator

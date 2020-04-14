@@ -17,7 +17,10 @@ import logging
 
 from typing import Dict
 
+from cattr import unstructure
+
 from robcoewmtypes.helper import get_sample_cr
+from robcoewmtypes.robot import RobotConfigurationSpec
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
 _LOGGER = logging.getLogger(__name__)
@@ -65,24 +68,27 @@ class RobotConfigurationController(K8sCRHandler):
         envvar['EWM_BATTERY_IDLE'] = os.environ.get('EWM_BATTERY_IDLE')
         envvar['MAX_IDLE_TIME'] = os.environ.get('MAX_IDLE_TIME')
 
-        self.lgnum = envvar['EWM_LGNUM']
-        self.rsrc_type = envvar['EWM_RSRC_TYPE']
-        self.rsrc_grp = envvar['EWM_RSRC_GRP']
+        self.config_spec = RobotConfigurationSpec()
+
+        self.config_spec.lgnum = envvar['EWM_LGNUM']
+        self.config_spec.rsrctype = envvar['EWM_RSRC_TYPE']
+        self.config_spec.rsrcgrp = envvar['EWM_RSRC_GRP']
 
         # List of chargers
-        self.chargers = [x.strip() for x in envvar['CHARGER_LIST'].split(',')]  # type: ignore
+        self.config_spec.chargers = [
+            x.strip() for x in envvar['CHARGER_LIST'].split(',')]  # type: ignore
 
         # Battery levels in %
-        self.battery_min = float(
-            envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10  # type: ignore
-        self.battery_ok = float(
-            envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 80  # type: ignore
-        self.battery_idle = float(
-            envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 40  # type: ignore
+        self.config_spec.batteryMin = float(
+            envvar['EWM_BATTERY_MIN']) if envvar['EWM_BATTERY_MIN'] else 10.0  # type: ignore
+        self.config_spec.batteryOk = float(
+            envvar['EWM_BATTERY_OK']) if envvar['EWM_BATTERY_OK'] else 80.0  # type: ignore
+        self.config_spec.batteryIdle = float(
+            envvar['EWM_BATTERY_IDLE']) if envvar['EWM_BATTERY_IDLE'] else 40.0  # type: ignore
 
         # Max idle time until robot moves to staging area
-        self.max_idle_time = float(
-            envvar['MAX_IDLE_TIME']) if envvar['MAX_IDLE_TIME'] else 30  # type: ignore
+        self.config_spec.maxIdleTime = float(
+            envvar['MAX_IDLE_TIME']) if envvar['MAX_IDLE_TIME'] else 30.0  # type: ignore
 
     def robco_robot_cb(self, name: str, custom_res: Dict) -> None:
         """Process Cloud Robotics robot CR."""
@@ -90,20 +96,9 @@ class RobotConfigurationController(K8sCRHandler):
         if not self.check_cr_exists(name):
             labels = {}
             labels['cloudrobotics.com/robot-name'] = name
-            spec = {
-                'batteryIdle': self.battery_idle,
-                'batteryMin': self.battery_min,
-                'batteryOk': self.battery_ok,
-                'lgnum': self.lgnum,
-                'rsrcgrp': self.rsrc_grp,
-                'rsrctype': self.rsrc_type,
-                'maxIdleTime': self.max_idle_time,
-                'chargers': self.chargers,
-                'recoverFromRobotError': False
-                }
 
             # Create CR
-            self.create_cr(name, labels, spec)
+            self.create_cr(name, labels, unstructure(self.config_spec))
 
     def reset_recovery_flag_cb(self, name: str, custom_res: Dict) -> None:
         """Reset recovery flag of robots if they are not in robotError state anymore."""

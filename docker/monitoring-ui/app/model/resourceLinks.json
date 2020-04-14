@@ -1,0 +1,8 @@
+{
+	"_robots": "/app/json/robots.json",
+	"_robotConfigurations": "/app/json/robotConfigurations.json",
+	"_warehouseOrders": "/app/json/warehouseOrders.json",
+	"robots": "/ewm-monitoring-ui/robots",
+	"robotConfigurations": "/ewm-monitoring-ui/robotconfigurations",
+	"warehouseOrders": "/ewm-monitoring-ui/warehouseorders"
+}

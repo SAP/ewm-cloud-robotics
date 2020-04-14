@@ -38,6 +38,20 @@ protected section.
     redefinition .
   methods OPENWAREHOUSETAS_GET_ENTITYSET
     redefinition .
+  methods RESOURCEGROUPDES_GET_ENTITY
+    redefinition .
+  methods RESOURCEGROUPDES_GET_ENTITYSET
+    redefinition .
+  methods RESOURCEGROUPSET_GET_ENTITY
+    redefinition .
+  methods RESOURCEGROUPSET_GET_ENTITYSET
+    redefinition .
+  methods RESOURCETYPEDESC_GET_ENTITY
+    redefinition .
+  methods RESOURCETYPEDESC_GET_ENTITYSET
+    redefinition .
+  methods ROBOTRESOURCETYP_GET_ENTITY
+    redefinition .
   methods ROBOTSET_CREATE_ENTITY
     redefinition .
   methods ROBOTSET_GET_ENTITY
@@ -62,7 +76,11 @@ protected section.
     redefinition .
   methods WAREHOUSEORDERSE_GET_ENTITYSET
     redefinition .
+  methods ROBOTRESOURCETYP_GET_ENTITYSET
+    redefinition .
 private section.
+
+  data GC_ERROR_FLK type STRING value 'FOREIGN_LOCK' ##NO_TEXT.
 ENDCLASS.
 
 
@@ -114,30 +132,24 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       case <ls_parameter>-name.
         when 'EXCCODE'.
           lv_exccode = <ls_parameter>-value.
-          translate lv_exccode to upper case.
         when 'LGNUM'.
           lv_lgnum = <ls_parameter>-value.
         when 'NO_WHO'.
           lv_no_who = <ls_parameter>-value.
         when 'RSRC'.
           lv_rsrc = <ls_parameter>-value.
-          translate lv_rsrc to upper case.
         when 'RSRC_GRP'.
           lv_rsrc_group = <ls_parameter>-value.
-          translate lv_rsrc_group to upper case.
         when 'RSRC_TYPE'.
           lv_rsrc_type = <ls_parameter>-value.
-          translate lv_rsrc_type to upper case.
         when 'TANUM'.
           lv_tanum = <ls_parameter>-value.
         when 'NISTA'.
           lv_nista = <ls_parameter>-value.
         when 'ALTME'.
           lv_altme = <ls_parameter>-value.
-          translate lv_altme to upper case.
         when 'NLPLA'.
           lv_nlpla = <ls_parameter>-value.
-          translate lv_nlpla to upper case.
         when 'NLENR'.
           lv_nlenr = <ls_parameter>-value.
         when 'PARTI'.
@@ -147,7 +159,6 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
         when 'CONF_EXC'.
 * Only one Exception code per message supported
           lv_conf_exc_str = <ls_parameter>-value.
-          translate lv_conf_exc_str to upper case.
       endcase.  "case <ls_parameter>-name.
     endloop.
 
@@ -793,6 +804,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 **
 ** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 **
+
     data: lv_lgnum         type /scwm/lgnum,
           lv_tanum         type /scwm/tanum,
           ls_warehousetask type zcl_zewm_robco_mpc=>ts_openwarehousetask.
@@ -827,6 +839,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 **
 ** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 **
+
     data: lv_lgnum         type /scwm/lgnum,
           lv_who           type /scwm/de_who,
           lt_warehousetask type zcl_zewm_robco_mpc=>tt_openwarehousetask.
@@ -857,6 +870,501 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
         et_entityset = lt_warehousetask.
       endif.
     endif.
+
+    if et_entityset is not initial.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if et_entityset is not initial.
+
+  endmethod.
+
+
+  method resourcegroupdes_get_entity.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: lv_lgnum      type /scwm/lgnum,
+          lv_langu      type spras,
+          lv_rsrc_grp   type /scwm/de_rsrc_grp,
+          ls_trsrc_grpt type zcl_zewm_robco_mpc=>ts_resourcegroupdescription.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+    loop at it_key_tab assigning <ls_key>.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          lv_lgnum = <ls_key>-value.
+        when 'RsrcGrp'.
+          lv_rsrc_grp = <ls_key>-value.
+        when 'Langu'.
+          lv_langu = <ls_key>-value.
+      endcase.
+    endloop.
+
+    select single * from /scwm/trsrc_grpt
+      into corresponding fields of @ls_trsrc_grpt
+        where lgnum = @lv_lgnum
+          and rsrc_grp = @lv_rsrc_grp
+          and langu = @lv_langu.
+    if sy-subrc = 0.
+      er_entity = ls_trsrc_grpt.
+    endif.
+
+  endmethod.
+
+
+  method resourcegroupdes_get_entityset.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: s_lgnum       type range of /scwm/lgnum,
+          s_rsrc_grp    type range of /scwm/de_rsrc_grp,
+          ls_selopt     type /iwbep/s_cod_select_option,
+          lt_selopt     type /iwbep/t_cod_select_options,
+          lt_trsrc_grpt type zcl_zewm_robco_mpc=>tt_resourcegroupdescription.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+    data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
+
+* OData keys from associations
+    loop at it_key_tab assigning <ls_key>.
+      clear: ls_selopt, lt_selopt.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_lgnum[].
+        when 'RsrcGrp'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_rsrc_grp[].
+      endcase.
+    endloop.
+
+    if lv_where is not initial.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_grp in @s_rsrc_grp'.
+      select * from /scwm/trsrc_grpt
+        into corresponding fields of table @lt_trsrc_grpt
+        where (lv_where).
+    else.
+      select * from /scwm/trsrc_grpt
+        into corresponding fields of table @lt_trsrc_grpt
+        where lgnum in @s_lgnum
+          and rsrc_grp in @s_rsrc_grp.
+    endif.  "if lv_where is not initial.
+
+    if sy-subrc = 0.
+      et_entityset = lt_trsrc_grpt.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
+
+  endmethod.
+
+
+  method resourcegroupset_get_entity.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: lv_lgnum     type /scwm/lgnum,
+          lv_spras     type spras,
+          lv_rsrc_grp  type /scwm/de_rsrc_grp,
+          ls_trsrc_grp type zcl_zewm_robco_mpc=>ts_resourcegroup.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+    loop at it_key_tab assigning <ls_key>.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          lv_lgnum = <ls_key>-value.
+        when 'RsrcGrp'.
+          lv_rsrc_grp = <ls_key>-value.
+      endcase.
+    endloop.
+
+    select single * from /scwm/trsrc_grp
+      into corresponding fields of @ls_trsrc_grp
+        where lgnum = @lv_lgnum
+          and rsrc_grp = @lv_rsrc_grp.
+    if sy-subrc = 0.
+      er_entity = ls_trsrc_grp.
+    endif.
+
+  endmethod.
+
+
+  method resourcegroupset_get_entityset.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: s_lgnum      type range of /scwm/lgnum,
+          ls_selopt    type /iwbep/s_cod_select_option,
+          lt_selopt    type /iwbep/t_cod_select_options,
+          lt_trsrc_grp type zcl_zewm_robco_mpc=>tt_resourcegroup.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+* OData keys from associations
+    loop at it_key_tab assigning <ls_key>.
+      clear: ls_selopt, lt_selopt.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_lgnum[].
+      endcase.
+    endloop.
+
+    select * from /scwm/trsrc_grp
+      into corresponding fields of table @lt_trsrc_grp
+      where lgnum in @s_lgnum.
+
+    if sy-subrc = 0.
+      et_entityset = lt_trsrc_grp.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
+
+  endmethod.
+
+
+  method resourcetypedesc_get_entity.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: lv_lgnum      type /scwm/lgnum,
+          lv_langu      type spras,
+          lv_rsrc_type  type /scwm/de_rsrc_type,
+          ls_trsrc_typt type zcl_zewm_robco_mpc=>ts_resourcetypedescription.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+    loop at it_key_tab assigning <ls_key>.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          lv_lgnum = <ls_key>-value.
+        when 'RsrcType'.
+          lv_rsrc_type = <ls_key>-value.
+        when 'Langu'.
+          lv_langu = <ls_key>-value.
+      endcase.
+    endloop.
+
+    select single * from /scwm/trsrc_typt
+      into corresponding fields of @ls_trsrc_typt
+        where lgnum = @lv_lgnum
+          and rsrc_type = @lv_rsrc_type
+          and langu = @lv_langu.
+    if sy-subrc = 0.
+      er_entity = ls_trsrc_typt.
+    endif.
+
+  endmethod.
+
+
+  method resourcetypedesc_get_entityset.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: s_lgnum       type range of /scwm/lgnum,
+          s_rsrc_type   type range of /scwm/de_rsrc_grp,
+          ls_selopt     type /iwbep/s_cod_select_option,
+          lt_selopt     type /iwbep/t_cod_select_options,
+          lt_trsrc_typt type zcl_zewm_robco_mpc=>tt_resourcetypedescription.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+    data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
+
+* OData keys from associations
+    loop at it_key_tab assigning <ls_key>.
+      clear: ls_selopt, lt_selopt.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_lgnum[].
+        when 'RsrcType'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_rsrc_type[].
+      endcase.
+    endloop.
+
+    if lv_where is not initial.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_type in @s_rsrc_type'.
+      select * from /scwm/trsrc_typt
+        into corresponding fields of table @lt_trsrc_typt
+        where (lv_where).
+    else.
+      select * from /scwm/trsrc_typt
+        into corresponding fields of table @lt_trsrc_typt
+        where lgnum in @s_lgnum and rsrc_type in @s_rsrc_type.
+    endif.  "if lv_where is not initial.
+
+    if sy-subrc = 0.
+      et_entityset = lt_trsrc_typt.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
+
+  endmethod.
+
+
+  method robotresourcetyp_get_entity.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: lv_lgnum             type /scwm/lgnum,
+          lv_spras             type spras,
+          lv_rsrc_type         type /scwm/de_rsrc_type,
+          ls_robotresourcetype type zcl_zewm_robco_mpc=>ts_robotresourcetype.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+    loop at it_key_tab assigning <ls_key>.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          lv_lgnum = <ls_key>-value.
+        when 'RsrcType'.
+          lv_rsrc_type = <ls_key>-value.
+      endcase.
+    endloop.
+
+    select single * from zewm_trsrc_typ
+      into corresponding fields of @ls_robotresourcetype
+        where lgnum = @lv_lgnum
+          and rsrc_type = @lv_rsrc_type.
+    if sy-subrc = 0.
+      er_entity = ls_robotresourcetype.
+    endif.
+
+  endmethod.
+
+
+  method robotresourcetyp_get_entityset.
+**
+** Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+**
+** This file is part of ewm-cloud-robotics
+** (see https://github.com/SAP/ewm-cloud-robotics).
+**
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+**
+
+    data: s_lgnum              type range of /scwm/lgnum,
+          ls_selopt            type /iwbep/s_cod_select_option,
+          lt_selopt            type /iwbep/t_cod_select_options,
+          lt_robotresourcetype type zcl_zewm_robco_mpc=>tt_robotresourcetype.
+
+    field-symbols: <ls_key> like line of it_key_tab.
+
+* OData keys from associations
+    loop at it_key_tab assigning <ls_key>.
+      clear: ls_selopt, lt_selopt.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
+      case <ls_key>-name.
+        when 'Lgnum'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_lgnum[].
+      endcase.
+    endloop.
+
+    select * from zewm_trsrc_typ
+      into corresponding fields of table @lt_robotresourcetype
+      where lgnum in @s_lgnum.
+
+    if sy-subrc = 0.
+      et_entityset =  lt_robotresourcetype.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
 
   endmethod.
 
@@ -991,7 +1499,6 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lv_lgnum = <ls_key>-value.
         when 'Rsrc'.
           lv_rsrc = <ls_key>-value.
-          translate lv_rsrc to upper case.
       endcase.
     endloop.
 
@@ -1019,36 +1526,77 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 **
 
-    data: lv_lgnum type /scwm/lgnum,
-          lt_robot type zcl_zewm_robco_mpc=>tt_robot.
+    data: s_lgnum     type range of /scwm/lgnum,
+          s_rsrc_type type range of /scwm/rsrc-rsrc_type,
+          s_rsrc_grp  type range of /scwm/rsrc-rsrc_grp,
+          ls_selopt   type /iwbep/s_cod_select_option,
+          lt_selopt   type /iwbep/t_cod_select_options,
+          lt_robot    type zcl_zewm_robco_mpc=>tt_robot.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+* OData keys from associations
     loop at it_key_tab assigning <ls_key>.
+      clear: ls_selopt, lt_selopt.
+      ls_selopt-sign = 'I'.
+      ls_selopt-option = 'EQ'.
       case <ls_key>-name.
         when 'Lgnum'.
-          lv_lgnum = <ls_key>-value.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_lgnum[].
+        when 'RsrcType'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_rsrc_type[].
+        when 'RsrcGrp'.
+          ls_selopt-low = <ls_key>-value.
+          append ls_selopt to lt_selopt.
+          move-corresponding lt_selopt[] to s_rsrc_grp[].
       endcase.
     endloop.
 
-    if lv_lgnum is not initial.
-      select * from /scwm/rsrc as r
-        inner join zewm_trsrc_typ as z
-          on r~lgnum = z~lgnum
-            and r~rsrc_type = z~rsrc_type
-        into corresponding fields of table @lt_robot
-        where r~lgnum = @lv_lgnum.
-    else.
-      select * from /scwm/rsrc as r
-        inner join zewm_trsrc_typ as z
-          on r~lgnum = z~lgnum
-            and r~rsrc_type = z~rsrc_type
-        into corresponding fields of table @lt_robot.
-    endif.  "if lv_lgnum is not initial.
+    select * from /scwm/rsrc as r
+      inner join zewm_trsrc_typ as z
+        on r~lgnum = z~lgnum
+          and r~rsrc_type = z~rsrc_type
+      into corresponding fields of table @lt_robot
+      where r~lgnum in @s_lgnum
+        and r~rsrc_type in @s_rsrc_type
+        and r~rsrc_grp in @s_rsrc_grp.
 
     if sy-subrc = 0.
       et_entityset = lt_robot.
-    endif.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
 
   endmethod.
 
@@ -1201,6 +1749,12 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           textid   = /iwbep/cx_mgw_busi_exception=>business_error
           msg_code = gc_error_rnf
           message  = text-001.
+    elseif sy-subrc = 4.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid   = /iwbep/cx_mgw_busi_exception=>business_error
+          msg_code = gc_error_flk
+          message  = text-025.
     else.
       raise exception type /iwbep/cx_mgw_busi_exception
         exporting
@@ -1234,7 +1788,6 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lv_lgnum = <ls_key>-value.
         when 'Lgpla'.
           lv_lgpla = <ls_key>-value.
-          translate lv_lgpla to upper case.
       endcase.
     endloop.
 
@@ -1279,7 +1832,36 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     if sy-subrc = 0.
       et_entityset = lt_storagebin.
-    endif.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
 
   endmethod.
 
@@ -1306,7 +1888,6 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lv_lgnum = <ls_key>-value.
         when 'Spras'.
           lv_spras = <ls_key>-value.
-          translate lv_spras to upper case.
       endcase.
     endloop.
 
@@ -1335,6 +1916,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1343,15 +1926,54 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     endloop.
 
     if lv_lgnum is not initial.
-      select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription
-        where lgnum = @lv_lgnum.
+      if lv_where is not initial.
+        lv_where = 'lgnum = @lv_lgnum and ' && lv_where.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription
+          where (lv_where).
+      else.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription
+          where lgnum = @lv_lgnum.
+      endif.  "if lv_where is not initial.
     else.
-      select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription.
+      if lv_where is not initial.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription where (lv_where).
+      else.
+        select * from /scwm/t300t into corresponding fields of table @lt_warehousedescription.
+      endif.  "if lv_where is not initial.
     endif.  "if lv_lgnum is not initial.
 
     if sy-subrc = 0.
       et_entityset = lt_warehousedescription.
-    endif.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
 
   endmethod.
 
@@ -1402,7 +2024,36 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     select * from /scwm/t300 into corresponding fields of table @lt_warehousenumber.
     if sy-subrc = 0.
       et_entityset = lt_warehousenumber.
-    endif.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
 
   endmethod.
 
@@ -1501,7 +2152,36 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     if sy-subrc = 0.
       et_entityset = lt_warehouseorder.
-    endif.
+
+* Apply $inlinecount query option
+      if io_tech_request_context->has_inlinecount( ) = abap_true.
+        describe table et_entityset lines es_response_context-inlinecount.
+      else.
+        clear es_response_context-inlinecount.
+      endif.
+
+* Apply $filter query option
+      call method /iwbep/cl_mgw_data_util=>filtering
+        exporting
+          it_select_options = it_filter_select_options
+        changing
+          ct_data           = et_entityset.
+
+* Apply $top and $skip query options
+      call method /iwbep/cl_mgw_data_util=>paging
+        exporting
+          is_paging = is_paging
+        changing
+          ct_data   = et_entityset.
+
+* Apply $orderby query option
+      call method /iwbep/cl_mgw_data_util=>orderby
+        exporting
+          it_order = it_order
+        changing
+          ct_data  = et_entityset.
+
+    endif.  " if sy-subrc = 0.
 
   endmethod.
 ENDCLASS.

@@ -1,0 +1,29 @@
+<!--
+Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+
+This file is part of ewm-cloud-robotics
+(see https://github.com/SAP/ewm-cloud-robotics).
+
+This file is licensed under the Apache Software License, v. 2 except as noted
+otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+-->
+
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<ViewSettingsDialog confirm="handleSortDialogConfirm">
+		<sortItems>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Who/@sap:label}" key="who" selected="true"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Areawho/@sap:label}" key="areawho"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Flgto/@sap:label}" key="flgto"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Flgwho/@sap:label}" key="flgwho"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Lgnum/@sap:label}" key="lgnum"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Lgtyp/@sap:label}" key="lgtyp"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Lsd/@sap:label}" key="lsd"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Queue/@sap:label}" key="queue"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Refwhoid/@sap:label}" key="refwhoid"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Rsrc/@sap:label}" key="rsrc"/>
+			<ViewSettingsItem text="{i18n>status}" key="order_status"/>
+			<ViewSettingsItem text="{odata>/#WarehouseOrder/Topwhoid/@sap:label}" key="topwhoid"/>
+		</sortItems>
+	</ViewSettingsDialog>
+</core:FragmentDefinition>
+

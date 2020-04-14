@@ -1,0 +1,29 @@
+<core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
+	<TableSelectDialog search="handleValueHelpRsrcgrpSearch" confirm="handleValueHelpRsrcgrpConfirm"
+		items="{path: 'odata>/ResourceGroupDescriptionSet', sorter:{path: 'Lgnum'} }">
+		<ColumnListItem>
+			<cells>
+				<ObjectIdentifier title="{odata>RsrcGrp}"/>
+				<Text text="{odata>Lgnum}"/>
+				<Text text="{odata>Text}"/>
+			</cells>
+		</ColumnListItem>
+		<columns>
+			<Column>
+				<header>
+					<Text text="{odata>/#ResourceGroupDescription/RsrcGrp/@sap:label}"/>
+				</header>
+			</Column>
+			<Column minScreenWidth="Tablet" demandPopin="true">
+				<header>
+					<Text text="{odata>/#ResourceGroupDescription/Lgnum/@sap:label}"/>
+				</header>
+			</Column>
+			<Column minScreenWidth="Desktop" demandPopin="true">
+				<header>
+					<Text text="{odata>/#ResourceGroupDescription/Text/@sap:label}"/>
+				</header>
+			</Column>
+		</columns>
+	</TableSelectDialog>
+</core:FragmentDefinition>

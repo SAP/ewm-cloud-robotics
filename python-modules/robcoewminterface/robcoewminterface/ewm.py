@@ -19,7 +19,8 @@ from requests import Response
 from robcoewmtypes.warehouse import Warehouse, WarehouseDescription, StorageBin
 from robcoewmtypes.warehouseorder import (
     WarehouseOrder, WarehouseTask, WarehouseTaskConfirmation, ConfirmWarehouseTask)
-from robcoewmtypes.robot import Robot
+from robcoewmtypes.robot import (
+    Robot, RobotResourceType, ResourceGroup, ResourceTypeDescription, ResourceGroupDescription)
 
 from .conversion import odata_to_attr
 from .exceptions import ODataAPIException, get_exception_class
@@ -28,7 +29,7 @@ from .odata import ODataHandler
 _LOGGER = logging.getLogger(__name__)
 
 HTTP_SUCCESS = [200, 201, 202, 203, 204, 205, 206, 207, 208, 226]
-HTTP_BUS_EXCEPTION = [404]
+HTTP_BUS_EXCEPTION = [404, 500]
 
 STATE_SUCCEEDED = 'SUCCEEDED'
 
@@ -88,7 +89,7 @@ class WarehouseOData(EWMOdata):
     def get_warehouse(
             self, lgnum: str, descriptions: bool = False, storagebins: bool = False) -> Warehouse:
         """
-        Get data from one warehouse.
+        Get data of one warehouse.
 
         Optionally expand descriptions and storage bins.
         """
@@ -116,7 +117,7 @@ class WarehouseOData(EWMOdata):
     def get_warehouses(self, descriptions: bool = False,
                        storagebins: bool = False) -> Optional[List[Warehouse]]:
         """
-        Get data from all warehouses.
+        Get data of all warehouses.
 
         Optionally expand descriptions and storage bins.
         """
@@ -139,7 +140,7 @@ class WarehouseOData(EWMOdata):
         return self.handle_http_response(endpoint, http_resp)
 
     def get_whdescription(self, lgnum: str, spras: str) -> WarehouseDescription:
-        """Get description from one warehouse in a language."""
+        """Get description of one warehouse in a language."""
         # define endpoint
         endpoint = '/WarehouseDescriptionSet'
 
@@ -153,7 +154,7 @@ class WarehouseOData(EWMOdata):
 
     def get_whdescriptions(self, lgnum: Optional[str] = None) -> List[WarehouseDescription]:
         """
-        Get descriptions from warehouses in all languages.
+        Get descriptions of warehouses in all languages.
 
         Optionally filter by warehouse.
         """
@@ -229,7 +230,7 @@ class WarehouseOrderOData(EWMOdata):
     def get_warehouseorder(
             self, lgnum: str, who: str, openwarehousetasks: bool = False) -> WarehouseOrder:
         """
-        Get data from one warehouse order.
+        Get data of one warehouse order.
 
         Optionally expand warehouse tasks.
         """
@@ -255,7 +256,7 @@ class WarehouseOrderOData(EWMOdata):
             self, lgnum: Optional[str] = None, topwhoid: Optional[str] = None,
             openwarehousetasks: bool = False) -> List[WarehouseOrder]:
         """
-        Get data from all warehouse orders.
+        Get data of all warehouse orders.
 
         Optionally filter by warehouse expand warehouse tasks.
         """
@@ -408,7 +409,7 @@ class WarehouseOrderOData(EWMOdata):
     def get_openwarehousetasks(
             self, lgnum: Optional[str] = None, who: Optional[str] = None) -> List[WarehouseTask]:
         """
-        Get data from all open warehouse tasks.
+        Get data of all open warehouse tasks.
 
         Optionally filter by warehouse and warehouse order.
         """
@@ -530,7 +531,7 @@ class RobotOData(EWMOdata):
     """Interaction with EWM warehouse robot APIs."""
 
     def get_robot(self, lgnum: str, rsrc: str) -> Robot:
-        """Get data from one robot."""
+        """Get data of one robot."""
         # define endpoint
         endpoint = '/RobotSet'
 
@@ -544,7 +545,7 @@ class RobotOData(EWMOdata):
 
     def get_robots(self, lgnum: Optional[str] = None) -> List[Robot]:
         """
-        Get data from all open warehouse tasks.
+        Get data of all robots.
 
         Optionally filter by warehouse.
         """
@@ -621,5 +622,181 @@ class RobotOData(EWMOdata):
 
         # HTTP OData POST request
         http_resp = self._odata.http_patch_post('post', endpoint, urlparams=params)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_robot_resource_type(self, lgnum: str, rsrctype: str) -> RobotResourceType:
+        """Get data of one robot resource type."""
+        # define endpoint
+        endpoint = '/RobotResourceTypeSet'
+
+        # create IDs
+        ids = {'Lgnum': lgnum, 'RsrcType': rsrctype}
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_robot_resource_types(self, lgnum: Optional[str] = None) -> List[RobotResourceType]:
+        """
+        Get data of all robot resource types.
+
+        Optionally filter by warehouse.
+        """
+        # Define endpoint IDs and navigation based on parameter selection
+        ids: Optional[Dict]
+        nav: Optional[str]
+
+        if lgnum:
+            # define endpoint
+            endpoint = '/WarehouseNumberSet'
+            # create IDs
+            ids = {'Lgnum': lgnum}
+            # create navigation
+            nav = '/RobotResourceTypes'
+        else:
+            # define endpoint
+            endpoint = '/RobotResourceTypeSet'
+            # create IDs
+            ids = None
+            # create navigation
+            nav = None
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_resource_type_description(
+            self, lgnum: str, rsrctype: str, langu: str) -> ResourceTypeDescription:
+        """Get description of one resource type in a language."""
+        # define endpoint
+        endpoint = '/ResourceTypeDescriptionSet'
+
+        # create IDs
+        ids = {'Lgnum': lgnum, 'RsrcType': rsrctype, 'Langu': langu}
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_resource_type_descriptions(
+            self, lgnum: Optional[str] = None,
+            rsrctype: Optional[str] = None) -> List[ResourceTypeDescription]:
+        """
+        Get descriptions of resource types in all languages.
+
+        Optionally filter by warehouse and resource type.
+        """
+        ids: Optional[Dict]
+        nav: Optional[str]
+
+        if lgnum or rsrctype:
+            # define endpoint
+            endpoint = '/RobotResourceTypeSet'
+            # create IDs
+            ids = {'Lgnum': lgnum, 'RsrcType': rsrctype}
+            # create navigation
+            nav = '/ResourceTypeDescriptions'
+        else:
+            # define endpoint
+            endpoint = '/ResourceTypeDescriptionSet'
+            # create IDs
+            ids = None
+            # create navigation
+            nav = None
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_resource_group(self, lgnum: str, rsrcgrp: str) -> ResourceGroup:
+        """Get data of one robot resource group."""
+        # define endpoint
+        endpoint = '/ResourceGroupSet'
+
+        # create IDs
+        ids = {'Lgnum': lgnum, 'RsrcGrp': rsrcgrp}
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_resource_groups(self, lgnum: Optional[str] = None) -> List[ResourceGroup]:
+        """
+        Get data of all resource groups.
+
+        Optionally filter by warehouse.
+        """
+        # Define endpoint IDs and navigation based on parameter selection
+        ids: Optional[Dict]
+        nav: Optional[str]
+
+        if lgnum:
+            # define endpoint
+            endpoint = '/WarehouseNumberSet'
+            # create IDs
+            ids = {'Lgnum': lgnum}
+            # create navigation
+            nav = '/ResourceGroups'
+        else:
+            # define endpoint
+            endpoint = '/ResourceGroupSet'
+            # create IDs
+            ids = None
+            # create navigation
+            nav = None
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_resource_group_description(
+            self, lgnum: str, rsrcgrp: str, langu: str) -> ResourceGroupDescription:
+        """Get description of one resource group in a language."""
+        # define endpoint
+        endpoint = '/ResourceGroupDescriptionSet'
+
+        # create IDs
+        ids = {'Lgnum': lgnum, 'RsrcGrp': rsrcgrp, 'Langu': langu}
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids)
+
+        return self.handle_http_response(endpoint, http_resp)
+
+    def get_resource_group_descriptions(
+            self, lgnum: Optional[str] = None,
+            rsrcgrp: Optional[str] = None) -> List[ResourceGroupDescription]:
+        """
+        Get descriptions of resource groups in all languages.
+
+        Optionally filter by warehouse and resource group.
+        """
+        ids: Optional[Dict]
+        nav: Optional[str]
+
+        if lgnum or rsrcgrp:
+            # define endpoint
+            endpoint = '/ResourceGroupSet'
+            # create IDs
+            ids = {'Lgnum': lgnum, 'RsrcGrp': rsrcgrp}
+            # create navigation
+            nav = '/ResourceGroupDescriptions'
+        else:
+            # define endpoint
+            endpoint = '/ResourceGroupDescriptionSet'
+            # create IDs
+            ids = None
+            # create navigation
+            nav = None
+
+        # HTTP OData GET request
+        http_resp = self._odata.http_get(endpoint, ids=ids, navigation=nav)
 
         return self.handle_http_response(endpoint, http_resp)

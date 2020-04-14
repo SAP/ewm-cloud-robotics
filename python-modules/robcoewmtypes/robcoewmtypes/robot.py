@@ -12,6 +12,8 @@
 
 """Robot related data types."""
 
+from typing import List
+
 import attr
 
 from .helper import strstrip, validate_annotation
@@ -38,6 +40,68 @@ class Robot:
     actqueue: str = attr.ib(
         default='', validator=validate_annotation, converter=strstrip)
     exccodeoverall: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class RobotResourceType:
+    """SAP EWM Robot Resource Type."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrctype: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    robottype: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+    errorqueue: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class ResourceTypeDescription:
+    """SAP EWM Resource Type description type."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrctype: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    langu: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    text: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class ResourceGroup:
+    """SAP EWM Resource Group."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrcgrp: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    zewmerrorqueue: str = attr.ib(
+        default='', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class ResourceGroupDescription:
+    """SAP EWM Resource Group description type."""
+
+    # SAP keys
+    lgnum: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    rsrcgrp: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    langu: str = attr.ib(
+        validator=attr.validators.instance_of(str), converter=strstrip)
+    # SAP values
+    text: str = attr.ib(
         default='', validator=validate_annotation, converter=strstrip)
 
 
@@ -105,6 +169,25 @@ class RobotMission:
     status: str = attr.ib(default=STATE_UNKNOWN, validator=attr.validators.instance_of(str))
     active_action: str = attr.ib(
         default=ACTION_UNKNOWN, validator=attr.validators.instance_of(str))
+
+
+@attr.s
+class RobotConfigurationSpec:
+    """Current spec of warehouse robots state machine."""
+
+    # pylint: disable=invalid-name
+    lgnum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    rsrctype: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    rsrcgrp: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    batteryMin: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    batteryOk: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    batteryIdle: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    maxIdleTime: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
+    recoverFromRobotError: bool = attr.ib(default=False, validator=validate_annotation)
+    chargers: List[str] = attr.ib(
+        default=attr.Factory(list), validator=attr.validators.deep_iterable(
+            member_validator=attr.validators.instance_of(str),
+            iterable_validator=attr.validators.instance_of(list)))
 
 
 @attr.s

@@ -7,11 +7,8 @@
 ## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 ##
 
-
-
 apiVersion: skaffold/v1beta11
 kind: Config
-
 
 ## Default profile:
 ## Use local Docker daemon & registry to build and test all images, then exit without deployment
@@ -46,6 +43,10 @@ build:
       context: .
       docker:
         dockerfile: docker/robot-configurator/Dockerfile
+    - image: monitoring-ui
+      context: .
+      docker:
+        dockerfile: docker/monitoring-ui/Dockerfile
   local: 
     push: false
 test:
@@ -70,6 +71,9 @@ test:
   - image: robot-configurator
     structureTests:
       - docker/robot-configurator/test/container-structure-test/prod.yaml
+  - image: monitoring-ui
+    structureTests:
+      - docker/monitoring-ui/test/container-structure-test/prod.yaml
 deploy:
   kubectl:
     manifests:
@@ -129,6 +133,12 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: monitoring-ui
+          custom:
+            buildCommand: ./scripts/gcr-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
   ## Tests are executed to verify that correct Dockerfiles were used
   ## Deploy is left blank since this profile is for updating the container registry.
@@ -181,6 +191,12 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: monitoring-ui
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Profiles to build and push application specific images via deploy.sh to
   ## custom container registry
   ##
@@ -227,6 +243,23 @@ profiles:
       - image: robot-configurator
         structureTests:
           - docker/robot-configurator/test/container-structure-test/prod.yaml
+    ## ewm-monitoring-ui
+  - name: ewm-monitoring-ui
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: monitoring-ui
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: monitoring-ui
+        structureTests:
+          - docker/monitoring-ui/test/container-structure-test/prod.yaml
   ## ewm-sim        
   - name: ewm-sim
     build:
