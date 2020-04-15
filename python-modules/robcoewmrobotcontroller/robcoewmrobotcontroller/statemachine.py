@@ -831,7 +831,7 @@ class RobotEWMMachine(Machine):
             time_elapsed = self.who_ts.return_trolley - self.who_ts.get_trolley
             self.who_times.labels(
                 robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
-                    event.state.name), activity='get_trolley').observe(time_elapsed)
+                    event.state.name), activity='return_trolley').observe(time_elapsed)
         else:
             _LOGGER.error('Warehouse order processing times logging not started correctly.')
 
