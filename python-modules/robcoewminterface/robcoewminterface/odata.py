@@ -52,9 +52,10 @@ class ODataHandler:
         cls = self.__class__
 
         headers = {'Accept': 'application/json'}
+        body = {'client_id': self._config.clientid, 'client_secret': self._config.clientsecret}
 
         resp = requests.post(
-            self._config.tokenendpoint, headers=headers, timeout=cls.TIMEOUT,
+            self._config.tokenendpoint, headers=headers, data=body, timeout=cls.TIMEOUT,
             auth=(self._config.clientid, self._config.clientsecret))
 
         if resp.status_code == 200:
