@@ -29,6 +29,10 @@ _LOGGER = logging.getLogger(__name__)
 class RobotConfigurationController(K8sCRHandler):
     """Handle K8s RobotConfiguration custom resources."""
 
+    error_states = [
+        'moveTrolley_waitingForErrorRecovery', 'pickPackPass_waitingForErrorRecovery',
+        'robotError']
+
     def __init__(self) -> None:
         """Construct."""
         self.init_default_values_fromenv()
@@ -104,7 +108,7 @@ class RobotConfigurationController(K8sCRHandler):
         """Reset recovery flag of robots if they are not in robotError state anymore."""
         if custom_res['spec'].get('recoverFromRobotError'):
             statemachine = custom_res.get('status', {}).get('statemachine')
-            if statemachine != 'robotError':
+            if statemachine not in self.error_states:
                 spec = {'recoverFromRobotError': False}
                 # Update CR spec
                 self.update_cr_spec(name, spec)

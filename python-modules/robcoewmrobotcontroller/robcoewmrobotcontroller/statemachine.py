@@ -218,9 +218,11 @@ class RobotEWMMachine(Machine):
         status = custom_res.get('status', {})
         if status.get('robot', {}):
             # Check if the robot is running out of battery when it is at staging area
-            if self.state == 'atStaging':
+            if self.state in ['atStaging', 'movingToStaging']:
                 battery_percentage = status['robot'].get('batteryPercentage', 100.0)
                 if battery_percentage < self.robot_config.conf.batteryIdle:
+                    if self.state == 'movingToStaging':
+                        self.cancel_active_mission()
                     self.charge_battery()
             elif self.state == 'charging':
                 battery_percentage = status['robot'].get('batteryPercentage', 0.0)
@@ -236,8 +238,9 @@ class RobotEWMMachine(Machine):
 
     def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
         """Process robotconfiguration messages."""
+        cls = self.__class__
         # Check if robot should recover from robotError state
-        if self.state == 'robotError':
+        if self.state in cls.conf.error_states:
             if custom_res['spec'].get('recoverFromRobotError'):
                 _LOGGER.info('Robot recovery requested from robotconfiguration CR')
                 self.recover_robot()
@@ -553,8 +556,7 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
 
-            dtype = create_robcoewmtype_str(confirmation)
-            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+            self.order_controller.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'First confirmation for warehouse task %s of warehouse order %s sent to order '
@@ -579,14 +581,11 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
 
-            dtype = create_robcoewmtype_str(confirmation)
-            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+            self.order_controller.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'Second confirmation for warehouse task %s of warehouse order %s sent to order '
                 'manager', self.active_wht.tanum, self.active_wht.who)
-            # Close active warehouse task
-            self._close_active_wht(event)
         else:
             raise TypeError('No warehouse task assigned to self.active_wht')
 
@@ -599,14 +598,11 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
 
-            dtype = create_robcoewmtype_str(confirmation)
-            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+            self.order_controller.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'First confirmation error for warehouse task %s of warehouse order %s sent to '
                 'order manager', self.active_wht.tanum, self.active_wht.who)
-            # Close active warehouse task
-            self._close_active_wht(event)
         else:
             raise TypeError('No warehouse task assigned to self.active_wht')
 
@@ -619,14 +615,11 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
 
-            dtype = create_robcoewmtype_str(confirmation)
-            self.order_controller.confirm_wht(dtype, unstructure(confirmation))
+            self.order_controller.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'Second confirmation error for warehouse task %s of warehouse order %s sent to '
                 'order manager', self.active_wht.tanum, self.active_wht.who)
-            # Close active warehouse task
-            self._close_active_wht(event)
         else:
             raise TypeError('No warehouse task assigned to self.active_wht')
 
@@ -641,12 +634,25 @@ class RobotEWMMachine(Machine):
             request = RequestFromRobot(
                 self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
 
-        dtype = create_robcoewmtype_str(request)
-        self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
+        self.robotrequest_controller.send_robot_request(unstructure(request))
+
+    def _cancel_request_work(self, event: EventData) -> None:
+        """Cancel request work from order manager."""
+        _LOGGER.info(
+            'Cancel request work from order manager because of event %s', event.event.name)
+
+        request = RequestFromRobot(
+            self.robot_config.conf.lgnum, self.robot_config.rsrc, requestnewwho=True)
+        self.robotrequest_controller.delete_robot_request(unstructure(request))
+
+        request = RequestFromRobot(
+            self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
+
+        self.robotrequest_controller.delete_robot_request(unstructure(request))
 
     def _request_who_confirmation_notification(self, event: EventData) -> None:
         """
-        Send a  warehouse order completion request to EWM Order Manager.
+        Send a warehouse order completion request to EWM Order Manager.
 
         It notifies the robot when the warehouse order was completed.
         """
@@ -655,12 +661,27 @@ class RobotEWMMachine(Machine):
                 self.robot_config.conf.lgnum, self.robot_config.rsrc,
                 notifywhocompletion=self.active_who.who)
 
-            dtype = create_robcoewmtype_str(request)
-            self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
+            self.robotrequest_controller.send_robot_request(unstructure(request))
 
             _LOGGER.info(
                 'Requesting warehouse order completion notification for %s from order manager',
                 self.active_who.who)
+        else:
+            raise TypeError('No warehouse order object in self.active_who')
+
+    def _cancel_who_confirmation_notification(self, event: EventData) -> None:
+        """Cancel a warehouse order completion request to EWM Order Manager."""
+        if isinstance(self.active_who, WarehouseOrder):
+            request = RequestFromRobot(
+                self.robot_config.conf.lgnum, self.robot_config.rsrc,
+                notifywhocompletion=self.active_who.who)
+
+            _LOGGER.info(
+                'Canceling warehouse order completion notification for %s from order manager',
+                self.active_who.who)
+
+            self.robotrequest_controller.delete_robot_request(unstructure(request))
+
         else:
             raise TypeError('No warehouse order object in self.active_who')
 
@@ -675,8 +696,7 @@ class RobotEWMMachine(Machine):
                 self.robot_config.conf.lgnum, self.robot_config.rsrc,
                 notifywhtcompletion=self.active_wht.tanum)
 
-            dtype = create_robcoewmtype_str(request)
-            self.robotrequest_controller.send_robot_request(dtype, unstructure(request))
+            self.robotrequest_controller.send_robot_request(unstructure(request))
 
             _LOGGER.info(
                 'Requesting warehouse task completion notification for %s from order manager',
@@ -686,6 +706,7 @@ class RobotEWMMachine(Machine):
 
     def _decide_whats_next(self, event: EventData) -> None:
         """Decide what the robot should do next."""
+        cls = self.__class__
         if self.warehouseorders:
             _LOGGER.info('Warehouse order in queue, start processing')
             self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
@@ -693,8 +714,9 @@ class RobotEWMMachine(Machine):
             _LOGGER.info(
                 'Battery level %s is below minimum of %s, start charging',
                 self.mission_api.battery_percentage, self.robot_config.conf.batteryMin)
-            if self.active_mission:
-                self._cancel_active_mission(event)
+            # Cancel active mission before charging if there might be one
+            if event.transition.dest not in cls.conf.idle_states:
+                self.cancel_active_mission()
             self.charge_battery()
         elif self.mission_api.api_check_state_ok():
             if self.failed_warehouseorders > 3:

@@ -133,11 +133,8 @@ class EWMRobot:
         if state_restore:
             # If there are no CRs for warehouse order and sub warehouse order, state is invalid
             if state_restore.who:
-                if state_restore.statemachine in RobotEWMMachine.conf.error_states:
-                    warehouseorder = WarehouseOrder(state_restore.lgnum, state_restore.who)
-                else:
-                    warehouseorder = self.ordercontroller.get_warehouseorder(
-                        state_restore.lgnum, state_restore.who)
+                warehouseorder = self.ordercontroller.get_warehouseorder(
+                    state_restore.lgnum, state_restore.who)
                 if not warehouseorder:
                     _LOGGER.error(
                         'No CR for warehouse order %s in warehouse %s', state_restore.who,
@@ -156,10 +153,11 @@ class EWMRobot:
                 else:
                     valid_state.sub_warehouseorder = sub_warehouseorder
             if (state_restore.mission == ''
-                    and state_restore.statemachine not in RobotEWMConfig.idle_states):
+                    and state_restore.statemachine not in RobotEWMConfig.idle_states
+                    and state_restore.statemachine not in RobotEWMConfig.error_states):
                 _LOGGER.error(
-                    'State machine is state %s which is not an idle state, but does not have a '
-                    'running mission', state_restore.statemachine)
+                    'State machine is state %s which is not an idle or error state, but does not '
+                    'have a running mission', state_restore.statemachine)
                 is_valid = False
         else:
             is_valid = False

@@ -137,7 +137,7 @@ class RobotRequestController(K8sCRHandler):
                 if self.thread_run:
                     time.sleep(10)
 
-    def send_robot_request(self, dtype: str, request: Dict) -> None:
+    def send_robot_request(self, request: Dict) -> None:
         """Send robot request to order manager."""
         # Don't create the same request twice when it is not processed yet
         existing_requests = self.list_all_cr()
@@ -156,6 +156,17 @@ class RobotRequestController(K8sCRHandler):
         name = '{}.{}'.format(self.robco_robot_name, time.time())
 
         self.create_cr(name, labels, spec)
+
+    def delete_robot_request(self, request: Dict) -> None:
+        """Delete a robot request."""
+        # Delete all running robot requests of the same kind
+        existing_requests = self.list_all_cr()
+        for existing_request in existing_requests['items']:
+            if existing_request.get('status', {}).get(
+                    'status') != RequestFromRobotStatus.STATE_PROCESSED:
+                if request == existing_request.get('spec', {}):
+                    _LOGGER.info('Deleting robotrequest %s', existing_request['metadata']['name'])
+                    self.delete_cr(existing_request['metadata']['name'])
 
     def _robotrequest_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove deleted CR from self._processed_robotrequests."""

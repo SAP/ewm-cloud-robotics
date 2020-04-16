@@ -227,12 +227,12 @@ class EWMOrderManager:
         if request.notifywhocompletion and not status.notifywhocompletion:
             notfound = False
             try:
-                wht = self.ewmwho.get_openwarehousetasks(
+                who = self.ewmwho.get_warehouseorder(
                     lgnum=robotident.lgnum, who=request.notifywhocompletion)
             except NotFoundError:
                 notfound = True
             else:
-                if not wht:
+                if who.status not in ['D', '']:
                     notfound = True
             if notfound:
                 status.notifywhocompletion = request.notifywhocompletion
@@ -385,9 +385,10 @@ class EWMOrderManager:
                 self.who_counter.labels(  # pylint: disable=no-member
                     robot=whtask.rsrc.lower(), result=STATE_FAILED).inc()
 
-                # In case of an error in warehouse order processing always clean up because the
-                # order is moved to a different queue
-                self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
+                # In case of an error on first confirmation processing always clean up because the
+                # order is moved to a different queue and not assigned to the robot anymore
+                if whtask.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF:
+                    self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
 
     def get_and_send_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = True,
@@ -585,7 +586,7 @@ class EWMOrderManager:
                     'Warehouse order %s not found in EWM but in status RUNNING, setting to '
                     'PROCESSED', name)
             else:
-                if who.status == 'D' or (who.status == '' and who.rsrc != ''):
+                if who.status in ['D', '']:
                     processed = False
                 else:
                     processed = True

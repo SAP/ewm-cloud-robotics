@@ -119,10 +119,11 @@ class OrderController(K8sCRHandler):
                                 'Skip "%s" because warehouse task "%s" already got first '
                                 'confirmation but includes a source bin', name, wht['tanum'])
                             return False
-                        if conf['confirmationnumber'] == ConfirmWarehouseTask.SECOND_CONF:
+                        if (conf['confirmationnumber'] == ConfirmWarehouseTask.SECOND_CONF
+                                and conf['confirmationtype'] == ConfirmWarehouseTask.CONF_SUCCESS):
                             _LOGGER.error(
                                 'Skip "%s" because warehouse task "%s" already got second '
-                                'confirmation', name, wht['tanum'])
+                                'successful confirmation', name, wht['tanum'])
                             return False
 
         return True
@@ -140,7 +141,7 @@ class OrderController(K8sCRHandler):
         # Robot identifier
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
 
-    def confirm_wht(self, dtype: str, wht: Dict) -> None:
+    def confirm_wht(self, wht: Dict) -> None:
         """Notify order manager about current status of who + tasks."""
         # Warehouse order CR name must be lower case
         name = '{lgnum}.{who}'.format(lgnum=wht['lgnum'], who=wht['who']).lower()
@@ -158,8 +159,7 @@ class OrderController(K8sCRHandler):
         status['data'].append(wht)
         self.update_cr_status(name, status)
 
-    def get_warehouseorder(
-            self, lgnum: str, who: str) -> Optional[WarehouseOrder]:
+    def get_warehouseorder(self, lgnum: str, who: str) -> Optional[WarehouseOrder]:
         """Get a warehouse order from CR."""
         # Warehouse order CR name must be lower case
         name = '{}.{}'.format(lgnum, who).lower()
