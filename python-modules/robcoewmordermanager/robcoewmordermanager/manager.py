@@ -36,7 +36,7 @@ from robcoewminterface.odata import ODataHandler
 from robcoewminterface.ewm import WarehouseOrderOData
 from robcoewminterface.exceptions import (
     ODataAPIException, NoOrderFoundError, RobotHasOrderError, WarehouseTaskAlreadyConfirmedError,
-    NotFoundError, ResourceTypeIsNoRobot, RobotNotFoundError, WarehouseOrderAssignedError,
+    NotFoundError, ResourceTypeIsNoRobotError, RobotNotFoundError, WarehouseOrderAssignedError,
     WarehouseTaskAssignedError, ODATA_ERROR_CODES)
 
 from .helper import ProcessedMessageMemory, RobotIdentifier, WhoIdentifier
@@ -696,7 +696,7 @@ class EWMOrderManager:
         except (ConnectionError, TimeoutError, IOError) as err:
             _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
             return
-        except ResourceTypeIsNoRobot:
+        except ResourceTypeIsNoRobotError:
             msg = ODATA_ERROR_CODES.get('ResourceTypeIsNoRobot')
             status.message = msg
             status.status = AuctioneerRequestStatus.STATUS_FAILED
@@ -721,7 +721,7 @@ class EWMOrderManager:
                     spec.orderrequest.quantity-len(whos)))
             except NoOrderFoundError:
                 pass
-            except ResourceTypeIsNoRobot:
+            except ResourceTypeIsNoRobotError:
                 msg = ODATA_ERROR_CODES.get('ResourceTypeIsNoRobot')
                 status.message = msg
                 status.status = AuctioneerRequestStatus.STATUS_FAILED
