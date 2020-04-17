@@ -128,15 +128,29 @@ class MissionController(K8sCRHandler):
         # Only process missions for this MiR robot
         if robot == self._mir_robot.robco_robot_name:
             if self._active_mission.get('metadata', {}).get('name') == name:
-                mission_queue_id = self._active_mission['status']['missionQueueIds'][-1]
-                if self._mir_robot.cancel_mission(mission_queue_id):
-                    _LOGGER.info(
-                        'CR of active mission %s deleted. Mission canceled on robot %s', name,
-                        robot)
+                # Wait a maximum of 10 seconds for a missionQueueId
+                mission_queue_id: Optional[str] = None
+                for _ in range(20):
+                    if self._active_mission.get('metadata', {}).get('name') != name:
+                        break
+                    if self._active_mission['status']['missionQueueIds']:
+                        mission_queue_id = self._active_mission['status']['missionQueueIds'][-1]
+                        break
+                    time.sleep(0.5)
+
+                if mission_queue_id is not None:
+                    if self._mir_robot.cancel_mission(mission_queue_id):
+                        _LOGGER.info(
+                            'CR of active mission %s deleted. Mission canceled on robot %s', name,
+                            robot)
+                    else:
+                        _LOGGER.error(
+                            'CR of active mission %s deleted. Canceling mission on robot %s '
+                            'failed', name, robot)
                 else:
-                    _LOGGER.info(
-                        'CR of active mission %s deleted. Canceling mission on robot %s failed',
-                        name, robot)
+                    _LOGGER.error(
+                        'CR of active mission %s deleted. No missionQueueIds found. Unable to '
+                        'cancel mission on robot %s', name, robot)
 
             with self._missions_lock:
                 self._missions.pop(name, None)
@@ -169,29 +183,31 @@ class MissionController(K8sCRHandler):
         with self._missions_lock:
             missions = deepcopy(self._missions)
         for mission in missions.values():
-            if not self._active_mission:
-                # On upstart try to start RUNNING mission first
-                if self._controller_upstart is True:
-                    status_to_run = [
-                        RobcoMissionStates.STATE_RUNNING, RobcoMissionStates.STATE_ACCEPTED]
-                else:
-                    status_to_run = [RobcoMissionStates.STATE_ACCEPTED]
+            # When active mission was found break the loop
+            if self._active_mission:
+                break
+            # On upstart try to start RUNNING mission first
+            if self._controller_upstart is True:
+                status_to_run = [
+                    RobcoMissionStates.STATE_RUNNING, RobcoMissionStates.STATE_ACCEPTED]
+            else:
+                status_to_run = [RobcoMissionStates.STATE_ACCEPTED]
 
-                status = mission.get('status', {})
-                if status.get('status') in status_to_run:
-                    # Run mission
-                    self._active_mission = deepcopy(mission)
-                    result = self.run_mission()
-                    # Log mission status in prometheus
-                    for action in self._active_mission['spec']['actions']:
-                        for action_key, action_value in action.items():
-                            if action_key in self._mir_robot.mission_mapping:
-                                target = action_value.get(
-                                    cls.action_to_target_mapping.get(action_key), 'UNKNOWN')
-                                self.mission_counter.labels(  # pylint: disable=no-member
-                                    robot=self._mir_robot.robco_robot_name, action=action_key,
-                                    target=target, status=result).inc()
-                    self._active_mission.clear()
+            status = mission.get('status', {})
+            if status.get('status') in status_to_run:
+                # Run mission
+                self._active_mission = deepcopy(mission)
+                result = self.run_mission()
+                # Log mission status in prometheus
+                for action in self._active_mission['spec']['actions']:
+                    for action_key, action_value in action.items():
+                        if action_key in self._mir_robot.mission_mapping:
+                            target = action_value.get(
+                                cls.action_to_target_mapping.get(action_key), 'UNKNOWN')
+                            self.mission_counter.labels(  # pylint: disable=no-member
+                                robot=self._mir_robot.robco_robot_name, action=action_key,
+                                target=target, status=result).inc()
+                self._active_mission.clear()
 
         # After missions are processed for the first time, controller is not in upstart
         # mode anymore
@@ -340,7 +356,7 @@ class MissionController(K8sCRHandler):
             self._active_mission['status']['message'] = 'Internal error. Check logs.'
             return RobcoMissionStates.STATE_FAILED
         # if there is no mission queue id, create a new mission
-        if not mission_queue_id:
+        if mission_queue_id is None:
             try:
                 mission_queue_id = self._mir_robot.charge_robot(
                     charger_name, threshold_battery, target_battery)
@@ -373,7 +389,7 @@ class MissionController(K8sCRHandler):
             self._active_mission['status']['message'] = 'Internal error. Check logs.'
             return RobcoMissionStates.STATE_FAILED
         # if there is no mission queue id, create a new mission
-        if not mission_queue_id:
+        if mission_queue_id is None:
             try:
                 mission_queue_id = self._mir_robot.moveto_named_position(target)
             except RequestException:
@@ -405,7 +421,7 @@ class MissionController(K8sCRHandler):
             self._active_mission['status']['message'] = 'Internal error. Check logs.'
             return RobcoMissionStates.STATE_FAILED
         # if there is no mission queue id, create a new mission
-        if not mission_queue_id:
+        if mission_queue_id is None:
             try:
                 mission_queue_id = self._mir_robot.get_trolley(dock_name)
             except RequestException:
@@ -437,7 +453,7 @@ class MissionController(K8sCRHandler):
             self._active_mission['status']['message'] = 'Internal error. Check logs.'
             return RobcoMissionStates.STATE_FAILED
         # if there is no mission queue id, create a new mission
-        if not mission_queue_id:
+        if mission_queue_id is None:
             try:
                 mission_queue_id = self._mir_robot.return_trolley(dock_name)
             except RequestException:
