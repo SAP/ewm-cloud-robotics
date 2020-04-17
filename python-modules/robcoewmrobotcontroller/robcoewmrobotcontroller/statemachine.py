@@ -218,11 +218,14 @@ class RobotEWMMachine(Machine):
         status = custom_res.get('status', {})
         if status.get('robot', {}):
             # Check if the robot is running out of battery when it is at staging area
-            if self.state in ['atStaging', 'movingToStaging']:
+            if self.state == 'atStaging':
                 battery_percentage = status['robot'].get('batteryPercentage', 100.0)
                 if battery_percentage < self.robot_config.conf.batteryIdle:
-                    if self.state == 'movingToStaging':
-                        self.cancel_active_mission()
+                    self.charge_battery()
+            elif self.state == 'movingToStaging':
+                battery_percentage = status['robot'].get('batteryPercentage', 100.0)
+                if battery_percentage < self.robot_config.conf.batteryMin:
+                    self.cancel_active_mission()
                     self.charge_battery()
             elif self.state == 'charging':
                 battery_percentage = status['robot'].get('batteryPercentage', 0.0)
@@ -836,7 +839,7 @@ class RobotEWMMachine(Machine):
         if isinstance(self.who_ts, WarehouseOrderTimestamps):
             self.who_ts.get_trolley = time.time()
             # For multiple warehouse tasks per order, a return_trolley timestamp is already set
-            if not self.who_ts.return_trolley:
+            if self.who_ts.return_trolley:
                 time_elapsed = self.who_ts.get_trolley - self.who_ts.return_trolley
             else:
                 time_elapsed = self.who_ts.get_trolley - self.who_ts.start
@@ -903,7 +906,6 @@ class RobotEWMMachine(Machine):
         """Move to staging area."""
         _LOGGER.info('Robot starts moving to staging area')
         self.create_staging_mission()
-        self._decide_whats_next(event)
 
     def on_enter_robotError(self, event: EventData) -> None:
         """Print error message."""
