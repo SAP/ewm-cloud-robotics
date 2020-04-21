@@ -37,6 +37,8 @@ sap.ui.define([
 			} else {
 				this._bindModels();
 			}
+			this.getOwnerComponent().setModel(new JSONModel({"automaticUpdates": false, "updateTimer": 30}), "uiStates");
+			this._timerId = null;
 		},
 
 		onExit: function () {
@@ -51,6 +53,21 @@ sap.ui.define([
 				}
 			}
 		},
+		
+		changeUpdateStyle: function(oEvent) {
+			if(oEvent.getParameter("pressed")) {
+				this.changeUpdateTimer();
+			}
+			else {
+				clearInterval(this._timerId);
+			}
+		}, 
+		
+		changeUpdateTimer: function() {
+			clearInterval(this._timerId);
+			var that = this;
+			this._timerId = setInterval(function() {that._bindModels()}, this.getOwnerComponent().getModel("uiStates").getProperty("/updateTimer") * 1000);
+		},
 
 		_bindModels: function () {
 			this._bindRobotModel();
@@ -59,10 +76,10 @@ sap.ui.define([
 
 		_bindRobotModel: function () {
 			this._robotIndex = {};
-			this.getOwnerComponent().setModel(new JSONModel({
-				"rows": []
-			}), "robots");
+			var modelData = {"rows": []};
+			var furtherLinks = [];
 			var that = this;
+			// load robots data
 			$.get(this.getOwnerComponent().getModel("src").getData().robots, function (data) {
 				var robotJSON = {};
 				for (var i = 0; i < data.items.length; ++i) {
@@ -81,9 +98,13 @@ sap.ui.define([
 						"updateTime": data.items[i].status.robot.updateTime
 					};
 
-					that.getOwnerComponent().getModel("robots").setProperty("/rows/" + i, robotJSON);
-
-					$.get(data.items[i].metadata.selfLink.replace("robots", "robotconfigurations"), function (robotconfiguration) {
+					modelData.rows.push(robotJSON);
+					furtherLinks.push(data.items[i].metadata.selfLink.replace("robots", "robotconfigurations"));
+				}
+				var robotConfigFeedback = 0;
+				// enhance robot information with robotconfiguration regarding the ewm status
+				furtherLinks.forEach(function(link) {
+					$.get(link, function (robotconfiguration) {
 						var statemachine = "";
 						var statemachine_uistate = "Success";
 						if (robotconfiguration.hasOwnProperty("status")) {
@@ -94,11 +115,15 @@ sap.ui.define([
 								}
 							}
 						}
-						that.getOwnerComponent().getModel("robots").setProperty("/rows/" + that._robotIndex[robotconfiguration.metadata.name] + "/statemachine", statemachine);
-						that.getOwnerComponent().getModel("robots").setProperty("/rows/" + that._robotIndex[robotconfiguration.metadata.name] + "/statemachine_uistate", statemachine_uistate);
+						modelData.rows[that._robotIndex[robotconfiguration.metadata.name]]["statemachine"] = statemachine;
+						modelData.rows[that._robotIndex[robotconfiguration.metadata.name]]["statemachine_uistate"] = statemachine_uistate;
+					}).always(function() {
+						robotConfigFeedback++;
+						if(robotConfigFeedback === furtherLinks.length) {
+							that.getOwnerComponent().setModel(new JSONModel(modelData), "robots");
+						}
 					});
-				}
-				//that.getOwnerComponent().setModel(new JSONModel(robotJSON), "robots");
+				});
 			});
 		},
 
