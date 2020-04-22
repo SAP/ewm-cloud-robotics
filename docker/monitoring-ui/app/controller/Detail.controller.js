@@ -33,6 +33,17 @@ sap.ui.define([
 			this.oRouter.getRoute("whoDetail").attachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("whoDetailFullscreen").attachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("robotDetailFullscreen").attachPatternMatched(this._onRobotRouteMatched, this);
+
+			sap.ui.getCore().getEventBus().subscribe("Master", "UpdateEvent", this.updateModels, this);
+		},
+
+		updateModels: function() {
+			if(this.getOwnerComponent().getModel("viewType").getProperty("/robot")) {
+				this._bindRobotConfiguration(this._robotName);
+			}
+			else {
+				this._bindWhoConfiguration(this._warhouseOrder);
+			}
 		},
 
 		_bindRobotConfiguration: function (robotName) {
@@ -410,6 +421,7 @@ sap.ui.define([
 			this.oRouter.getRoute("robotDetail").detachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("whoDetailFullscreen").detachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("robotDetailFullscreen").detachPatternMatched(this._onRobotRouteMatched, this);
+			sap.ui.getCore().getEventBus().unsubscribe("Master", "UpdateEvent", this.updateModels, this)
 		}
 	});
 });

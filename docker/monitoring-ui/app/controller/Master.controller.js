@@ -66,10 +66,13 @@ sap.ui.define([
 		changeUpdateTimer: function() {
 			clearInterval(this._timerId);
 			var that = this;
-			this._timerId = setInterval(function() {that._bindModels()}, this.getOwnerComponent().getModel("uiStates").getProperty("/updateTimer") * 1000);
+			this._timerId = setInterval(function() {
+				that._bindModels();
+			}, this.getOwnerComponent().getModel("uiStates").getProperty("/updateTimer") * 1000);
 		},
 
 		_bindModels: function () {
+			sap.ui.getCore().getEventBus().publish("Master", "UpdateEvent");
 			this._bindRobotModel();
 			this._bindWarehouseOrderModel();
 		},
