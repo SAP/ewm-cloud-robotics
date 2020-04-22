@@ -170,7 +170,13 @@ sap.ui.define([
 						"order_status": data.items[i].spec.order_status
 					});
 				}
+				var aFilters = [];
+				var oBinding = that.getView().byId("idWarehouseOrders").getBinding("items");
+				if(oBinding) {
+					aFilters = oBinding.aFilters;
+				}
 				that.getOwnerComponent().setModel(new JSONModel(warehouseJSON), "who");
+				that.byId("idWarehouseOrders").getBinding("items").filter(aFilters);
 			});
 		},
 
