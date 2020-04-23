@@ -402,11 +402,10 @@ class EWMOrderManager:
             robotident, firstrequest=firstrequest, newwho=newwho, onlynewwho=onlynewwho)
 
         if whos:
-            success = self.send_robot_whos(robotident, whos)
-        else:
-            success = False
+            self.send_robot_whos(robotident, whos)
+            return True
 
-        return success
+        return False
 
     def get_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = False,
@@ -495,7 +494,7 @@ class EWMOrderManager:
         self.ordercontroller.cleanup_who(unstructure(who))
         self.msg_mem.delete_who_from_memory(whoident)
 
-    def send_robot_whos(self, robotident: RobotIdentifier, whos: List[WarehouseOrder]) -> bool:
+    def send_robot_whos(self, robotident: RobotIdentifier, whos: List[WarehouseOrder]) -> None:
         """
         Send warehouse order from SAP EWM to the robot.
 
@@ -511,8 +510,6 @@ class EWMOrderManager:
         _LOGGER.info(
             'Warehouse orders "%s" sent to robot "%s" in warehouse "%s"',
             whos_who, robotident.rsrc, robotident.lgnum)
-
-        return True
 
     def process_who_cr_cb(self, name: str, custom_res: Dict) -> None:
         """
@@ -569,7 +566,10 @@ class EWMOrderManager:
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=True, newwho=False, onlynewwho=False)
                 if success is False:
-                    raise NoOrderFoundError
+                    _LOGGER.error(
+                        'Unable to update warehouse order on robot %s. Warehouse order %s in '
+                        'warehouse %s not found or not running', robotident.rsrc, dataset.who,
+                        dataset.lgnum)
 
             # Memorize the dataset in the end
             self.msg_mem.memorize_who_conf(dataset)
