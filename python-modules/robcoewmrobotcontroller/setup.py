@@ -16,7 +16,6 @@ from setuptools import find_packages, setup
 REQUIRES = [
     'attrs==19.3.0',
     'cattrs==1.0.0',
-    'requests',
     'transitions==0.7.2',
     'prometheus-client',
     'robcoewmtypes',
