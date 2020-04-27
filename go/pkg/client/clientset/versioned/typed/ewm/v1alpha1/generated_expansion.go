@@ -13,9 +13,9 @@ package v1alpha1
 
 type AuctioneerExpansion interface{}
 
-type AuctioneerRequestExpansion interface{}
-
 type OrderAuctionExpansion interface{}
+
+type OrderReservationExpansion interface{}
 
 type RobotConfigurationExpansion interface{}
 

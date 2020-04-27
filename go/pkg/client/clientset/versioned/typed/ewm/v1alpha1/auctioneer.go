@@ -12,6 +12,7 @@
 package v1alpha1
 
 import (
+	"context"
 	"time"
 
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
@@ -30,15 +31,15 @@ type AuctioneersGetter interface {
 
 // AuctioneerInterface has methods to work with Auctioneer resources.
 type AuctioneerInterface interface {
-	Create(*v1alpha1.Auctioneer) (*v1alpha1.Auctioneer, error)
-	Update(*v1alpha1.Auctioneer) (*v1alpha1.Auctioneer, error)
-	UpdateStatus(*v1alpha1.Auctioneer) (*v1alpha1.Auctioneer, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.Auctioneer, error)
-	List(opts v1.ListOptions) (*v1alpha1.AuctioneerList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Auctioneer, err error)
+	Create(ctx context.Context, auctioneer *v1alpha1.Auctioneer, opts v1.CreateOptions) (*v1alpha1.Auctioneer, error)
+	Update(ctx context.Context, auctioneer *v1alpha1.Auctioneer, opts v1.UpdateOptions) (*v1alpha1.Auctioneer, error)
+	UpdateStatus(ctx context.Context, auctioneer *v1alpha1.Auctioneer, opts v1.UpdateOptions) (*v1alpha1.Auctioneer, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.Auctioneer, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.AuctioneerList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Auctioneer, err error)
 	AuctioneerExpansion
 }
 
@@ -57,20 +58,20 @@ func newAuctioneers(c *EwmV1alpha1Client, namespace string) *auctioneers {
 }
 
 // Get takes name of the auctioneer, and returns the corresponding auctioneer object, and an error if there is any.
-func (c *auctioneers) Get(name string, options v1.GetOptions) (result *v1alpha1.Auctioneer, err error) {
+func (c *auctioneers) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.Auctioneer, err error) {
 	result = &v1alpha1.Auctioneer{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("auctioneers").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of Auctioneers that match those selectors.
-func (c *auctioneers) List(opts v1.ListOptions) (result *v1alpha1.AuctioneerList, err error) {
+func (c *auctioneers) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.AuctioneerList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -81,13 +82,13 @@ func (c *auctioneers) List(opts v1.ListOptions) (result *v1alpha1.AuctioneerList
 		Resource("auctioneers").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested auctioneers.
-func (c *auctioneers) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *auctioneers) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -98,87 +99,90 @@ func (c *auctioneers) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("auctioneers").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a auctioneer and creates it.  Returns the server's representation of the auctioneer, and an error, if there is any.
-func (c *auctioneers) Create(auctioneer *v1alpha1.Auctioneer) (result *v1alpha1.Auctioneer, err error) {
+func (c *auctioneers) Create(ctx context.Context, auctioneer *v1alpha1.Auctioneer, opts v1.CreateOptions) (result *v1alpha1.Auctioneer, err error) {
 	result = &v1alpha1.Auctioneer{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("auctioneers").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(auctioneer).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a auctioneer and updates it. Returns the server's representation of the auctioneer, and an error, if there is any.
-func (c *auctioneers) Update(auctioneer *v1alpha1.Auctioneer) (result *v1alpha1.Auctioneer, err error) {
+func (c *auctioneers) Update(ctx context.Context, auctioneer *v1alpha1.Auctioneer, opts v1.UpdateOptions) (result *v1alpha1.Auctioneer, err error) {
 	result = &v1alpha1.Auctioneer{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("auctioneers").
 		Name(auctioneer.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(auctioneer).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *auctioneers) UpdateStatus(auctioneer *v1alpha1.Auctioneer) (result *v1alpha1.Auctioneer, err error) {
+func (c *auctioneers) UpdateStatus(ctx context.Context, auctioneer *v1alpha1.Auctioneer, opts v1.UpdateOptions) (result *v1alpha1.Auctioneer, err error) {
 	result = &v1alpha1.Auctioneer{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("auctioneers").
 		Name(auctioneer.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(auctioneer).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the auctioneer and deletes it. Returns an error if one occurs.
-func (c *auctioneers) Delete(name string, options *v1.DeleteOptions) error {
+func (c *auctioneers) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("auctioneers").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *auctioneers) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *auctioneers) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("auctioneers").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched auctioneer.
-func (c *auctioneers) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.Auctioneer, err error) {
+func (c *auctioneers) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.Auctioneer, err error) {
 	result = &v1alpha1.Auctioneer{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("auctioneers").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

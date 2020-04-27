@@ -12,6 +12,7 @@
 package v1alpha1
 
 import (
+	"context"
 	"time"
 
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
@@ -30,15 +31,15 @@ type OrderAuctionsGetter interface {
 
 // OrderAuctionInterface has methods to work with OrderAuction resources.
 type OrderAuctionInterface interface {
-	Create(*v1alpha1.OrderAuction) (*v1alpha1.OrderAuction, error)
-	Update(*v1alpha1.OrderAuction) (*v1alpha1.OrderAuction, error)
-	UpdateStatus(*v1alpha1.OrderAuction) (*v1alpha1.OrderAuction, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.OrderAuction, error)
-	List(opts v1.ListOptions) (*v1alpha1.OrderAuctionList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.OrderAuction, err error)
+	Create(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.CreateOptions) (*v1alpha1.OrderAuction, error)
+	Update(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.UpdateOptions) (*v1alpha1.OrderAuction, error)
+	UpdateStatus(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.UpdateOptions) (*v1alpha1.OrderAuction, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.OrderAuction, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.OrderAuctionList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.OrderAuction, err error)
 	OrderAuctionExpansion
 }
 
@@ -57,20 +58,20 @@ func newOrderAuctions(c *EwmV1alpha1Client, namespace string) *orderAuctions {
 }
 
 // Get takes name of the orderAuction, and returns the corresponding orderAuction object, and an error if there is any.
-func (c *orderAuctions) Get(name string, options v1.GetOptions) (result *v1alpha1.OrderAuction, err error) {
+func (c *orderAuctions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.OrderAuction, err error) {
 	result = &v1alpha1.OrderAuction{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("orderauctions").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of OrderAuctions that match those selectors.
-func (c *orderAuctions) List(opts v1.ListOptions) (result *v1alpha1.OrderAuctionList, err error) {
+func (c *orderAuctions) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.OrderAuctionList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -81,13 +82,13 @@ func (c *orderAuctions) List(opts v1.ListOptions) (result *v1alpha1.OrderAuction
 		Resource("orderauctions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested orderAuctions.
-func (c *orderAuctions) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *orderAuctions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -98,87 +99,90 @@ func (c *orderAuctions) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("orderauctions").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a orderAuction and creates it.  Returns the server's representation of the orderAuction, and an error, if there is any.
-func (c *orderAuctions) Create(orderAuction *v1alpha1.OrderAuction) (result *v1alpha1.OrderAuction, err error) {
+func (c *orderAuctions) Create(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.CreateOptions) (result *v1alpha1.OrderAuction, err error) {
 	result = &v1alpha1.OrderAuction{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("orderauctions").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(orderAuction).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a orderAuction and updates it. Returns the server's representation of the orderAuction, and an error, if there is any.
-func (c *orderAuctions) Update(orderAuction *v1alpha1.OrderAuction) (result *v1alpha1.OrderAuction, err error) {
+func (c *orderAuctions) Update(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.UpdateOptions) (result *v1alpha1.OrderAuction, err error) {
 	result = &v1alpha1.OrderAuction{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("orderauctions").
 		Name(orderAuction.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(orderAuction).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *orderAuctions) UpdateStatus(orderAuction *v1alpha1.OrderAuction) (result *v1alpha1.OrderAuction, err error) {
+func (c *orderAuctions) UpdateStatus(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.UpdateOptions) (result *v1alpha1.OrderAuction, err error) {
 	result = &v1alpha1.OrderAuction{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("orderauctions").
 		Name(orderAuction.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(orderAuction).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the orderAuction and deletes it. Returns an error if one occurs.
-func (c *orderAuctions) Delete(name string, options *v1.DeleteOptions) error {
+func (c *orderAuctions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("orderauctions").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *orderAuctions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *orderAuctions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("orderauctions").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched orderAuction.
-func (c *orderAuctions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.OrderAuction, err error) {
+func (c *orderAuctions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.OrderAuction, err error) {
 	result = &v1alpha1.OrderAuction{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("orderauctions").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

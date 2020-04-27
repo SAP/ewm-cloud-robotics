@@ -10,7 +10,7 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""K8s custom resource handler for requests from order auctioneer."""
+"""K8s custom resource handler for reservations from order auctioneer."""
 
 import logging
 
@@ -19,7 +19,7 @@ from typing import List
 from cattr import structure
 
 from robcoewmtypes.helper import get_sample_cr
-from robcoewmtypes.auction import AuctioneerRequestStatus
+from robcoewmtypes.auction import OrderReservationStatus
 from robcoewmtypes.warehouseorder import WarehouseOrderIdent
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
@@ -27,24 +27,24 @@ from k8scrhandler.k8scrhandler import K8sCRHandler
 _LOGGER = logging.getLogger(__name__)
 
 
-class AuctioneerRequestController(K8sCRHandler):
+class OrderReservationController(K8sCRHandler):
     """Handle K8s custom resources."""
 
     def __init__(self) -> None:
         """Construct."""
-        template_cr = get_sample_cr('auctioneerrequest')
+        template_cr = get_sample_cr('orderreservation')
 
         super().__init__(
             'ewm.sap.com',
             'v1alpha1',
-            'auctioneerrequests',
+            'orderreservations',
             'default',
             template_cr,
             {}
         )
 
     def get_reserved_warehouseorders(self) -> List[WarehouseOrderIdent]:
-        """Get reserved warehouse orders of requests which are in process."""
+        """Get reserved warehouse orders of reservations which are in process."""
         reserved_whos: List[WarehouseOrderIdent] = []
         # Get all CRs
         cr_resp = self.list_all_cr()
@@ -54,8 +54,8 @@ class AuctioneerRequestController(K8sCRHandler):
                 if not custom_res.get('status'):
                     continue
                 # Continue if CR is not in process
-                status = structure(custom_res.get('status'), AuctioneerRequestStatus)
-                if status.status not in AuctioneerRequestStatus.IN_PROCESS_STATUS:
+                status = structure(custom_res.get('status'), OrderReservationStatus)
+                if status.status not in OrderReservationStatus.IN_PROCESS_STATUS:
                     continue
                 # Append warehouse order idents to list
                 for who in status.warehouseorders:

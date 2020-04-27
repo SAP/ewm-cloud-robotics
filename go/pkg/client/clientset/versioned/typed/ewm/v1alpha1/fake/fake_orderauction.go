@@ -12,6 +12,8 @@
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -32,7 +34,7 @@ var orderauctionsResource = schema.GroupVersionResource{Group: "ewm.sap.com", Ve
 var orderauctionsKind = schema.GroupVersionKind{Group: "ewm.sap.com", Version: "v1alpha1", Kind: "OrderAuction"}
 
 // Get takes name of the orderAuction, and returns the corresponding orderAuction object, and an error if there is any.
-func (c *FakeOrderAuctions) Get(name string, options v1.GetOptions) (result *v1alpha1.OrderAuction, err error) {
+func (c *FakeOrderAuctions) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.OrderAuction, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(orderauctionsResource, c.ns, name), &v1alpha1.OrderAuction{})
 
@@ -43,7 +45,7 @@ func (c *FakeOrderAuctions) Get(name string, options v1.GetOptions) (result *v1a
 }
 
 // List takes label and field selectors, and returns the list of OrderAuctions that match those selectors.
-func (c *FakeOrderAuctions) List(opts v1.ListOptions) (result *v1alpha1.OrderAuctionList, err error) {
+func (c *FakeOrderAuctions) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.OrderAuctionList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(orderauctionsResource, orderauctionsKind, c.ns, opts), &v1alpha1.OrderAuctionList{})
 
@@ -65,14 +67,14 @@ func (c *FakeOrderAuctions) List(opts v1.ListOptions) (result *v1alpha1.OrderAuc
 }
 
 // Watch returns a watch.Interface that watches the requested orderAuctions.
-func (c *FakeOrderAuctions) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeOrderAuctions) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(orderauctionsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a orderAuction and creates it.  Returns the server's representation of the orderAuction, and an error, if there is any.
-func (c *FakeOrderAuctions) Create(orderAuction *v1alpha1.OrderAuction) (result *v1alpha1.OrderAuction, err error) {
+func (c *FakeOrderAuctions) Create(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.CreateOptions) (result *v1alpha1.OrderAuction, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(orderauctionsResource, c.ns, orderAuction), &v1alpha1.OrderAuction{})
 
@@ -83,7 +85,7 @@ func (c *FakeOrderAuctions) Create(orderAuction *v1alpha1.OrderAuction) (result 
 }
 
 // Update takes the representation of a orderAuction and updates it. Returns the server's representation of the orderAuction, and an error, if there is any.
-func (c *FakeOrderAuctions) Update(orderAuction *v1alpha1.OrderAuction) (result *v1alpha1.OrderAuction, err error) {
+func (c *FakeOrderAuctions) Update(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.UpdateOptions) (result *v1alpha1.OrderAuction, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(orderauctionsResource, c.ns, orderAuction), &v1alpha1.OrderAuction{})
 
@@ -95,7 +97,7 @@ func (c *FakeOrderAuctions) Update(orderAuction *v1alpha1.OrderAuction) (result 
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeOrderAuctions) UpdateStatus(orderAuction *v1alpha1.OrderAuction) (*v1alpha1.OrderAuction, error) {
+func (c *FakeOrderAuctions) UpdateStatus(ctx context.Context, orderAuction *v1alpha1.OrderAuction, opts v1.UpdateOptions) (*v1alpha1.OrderAuction, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(orderauctionsResource, "status", c.ns, orderAuction), &v1alpha1.OrderAuction{})
 
@@ -106,7 +108,7 @@ func (c *FakeOrderAuctions) UpdateStatus(orderAuction *v1alpha1.OrderAuction) (*
 }
 
 // Delete takes name of the orderAuction and deletes it. Returns an error if one occurs.
-func (c *FakeOrderAuctions) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeOrderAuctions) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(orderauctionsResource, c.ns, name), &v1alpha1.OrderAuction{})
 
@@ -114,15 +116,15 @@ func (c *FakeOrderAuctions) Delete(name string, options *v1.DeleteOptions) error
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeOrderAuctions) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(orderauctionsResource, c.ns, listOptions)
+func (c *FakeOrderAuctions) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(orderauctionsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.OrderAuctionList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched orderAuction.
-func (c *FakeOrderAuctions) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.OrderAuction, err error) {
+func (c *FakeOrderAuctions) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.OrderAuction, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(orderauctionsResource, c.ns, name, pt, data, subresources...), &v1alpha1.OrderAuction{})
 

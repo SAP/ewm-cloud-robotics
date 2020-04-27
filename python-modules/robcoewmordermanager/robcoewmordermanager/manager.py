@@ -29,7 +29,7 @@ from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
 from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus
 from robcoewmtypes.warehouseorder import (
     ConfirmWarehouseTask, WarehouseOrder, WarehouseOrderCRDSpec, WarehouseOrderIdent)
-from robcoewmtypes.auction import AuctioneerRequestSpec, AuctioneerRequestStatus
+from robcoewmtypes.auction import OrderReservationSpec, OrderReservationStatus
 
 from robcoewminterface.types import ODataConfig
 from robcoewminterface.odata import ODataHandler
@@ -42,7 +42,7 @@ from robcoewminterface.exceptions import (
 from .helper import ProcessedMessageMemory, RobotIdentifier, WhoIdentifier
 from .ordercontroller import OrderController
 from .robotrequestcontroller import RobotRequestController
-from .auctioneerrequestcontroller import AuctioneerRequestController
+from .orderreservationcontroller import OrderReservationController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ class EWMOrderManager:
 
     def __init__(
             self, oc: OrderController, rc: RobotRequestController,
-            ac: AuctioneerRequestController) -> None:
+            orc: OrderReservationController) -> None:
         """Construct."""
         self.init_odata_fromenv()
 
@@ -81,7 +81,7 @@ class EWMOrderManager:
         # K8s Custom Resource Controller
         self.ordercontroller = oc
         self.robotrequestcontroller = rc
-        self.auctioneerrequestcontroller = ac
+        self.orderreservationcontroller = orc
 
         # Register callback functions
         # Warehouse order status callback
@@ -90,9 +90,9 @@ class EWMOrderManager:
         # Robot request controller
         self.robotrequestcontroller.register_callback(
             'RobotRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotrequest_callback)
-        # Auctioneer request controller
-        self.auctioneerrequestcontroller.register_callback(
-            'AuctioneerRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], self.auctioneerrequests_cb)
+        # Order reservation controller
+        self.orderreservationcontroller.register_callback(
+            'OrderReservation', ['ADDED', 'MODIFIED', 'REPROCESS'], self.orderreservation_cb)
 
     def init_odata_fromenv(self) -> None:
         """Initialize OData interface from environment variables."""
@@ -658,31 +658,31 @@ class EWMOrderManager:
 
         return new_confs
 
-    def auctioneerrequests_cb(self, name: str, custom_res: Dict) -> None:
-        """Process auctioneer requests CRs."""
-        spec = structure(custom_res['spec'], AuctioneerRequestSpec)
+    def orderreservation_cb(self, name: str, custom_res: Dict) -> None:
+        """Process Order requests CRs."""
+        spec = structure(custom_res['spec'], OrderReservationSpec)
 
-        status = structure(custom_res['status'], AuctioneerRequestStatus) if custom_res.get(
-            'status') else AuctioneerRequestStatus(
-                AuctioneerRequestStatus.STATUS_NEW, self._datetime_reservation_timeout_iso())
+        status = structure(custom_res['status'], OrderReservationStatus) if custom_res.get(
+            'status') else OrderReservationStatus(
+                OrderReservationStatus.STATUS_NEW, self._datetime_reservation_timeout_iso())
 
-        if status.status == AuctioneerRequestStatus.STATUS_NEW:
-            self._process_auctioneer_cr_new(name, spec, status)
-        elif status.status == AuctioneerRequestStatus.STATUS_ACCEPTED:
-            self._process_auctioneer_cr_accepted(name, spec, status)
-        elif status.status == AuctioneerRequestStatus.STATUS_RESERVATIONS:
-            self._process_auctioneer_cr_reservations(name, spec, status)
+        if status.status == OrderReservationStatus.STATUS_NEW:
+            self._process_orderres_cr_new(name, spec, status)
+        elif status.status == OrderReservationStatus.STATUS_ACCEPTED:
+            self._process_orderres_cr_accepted(name, spec, status)
+        elif status.status == OrderReservationStatus.STATUS_RESERVATIONS:
+            self._process_orderres_cr_reservations(name, spec, status)
 
     def _datetime_reservation_timeout_iso(self) -> str:
         """Return datetime now() in ISO format."""
         timeout = datetime.now(timezone.utc) + timedelta(minutes=self.reservation_timeout)
         return timeout.isoformat(timespec='seconds')
 
-    def _process_auctioneer_cr_new(
-            self, name: str, spec: AuctioneerRequestSpec, status: AuctioneerRequestStatus) -> None:
-        """Process an auctioneer CR with status new."""
+    def _process_orderres_cr_new(
+            self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
+        """Process an order reservation CR with status new."""
         # Return if wrong status
-        if status.status != AuctioneerRequestStatus.STATUS_NEW:
+        if status.status != OrderReservationStatus.STATUS_NEW:
             return
 
         # Init warehouse order lists
@@ -699,14 +699,14 @@ class EWMOrderManager:
         except ResourceTypeIsNoRobotError:
             msg = ODATA_ERROR_CODES.get('ResourceTypeIsNoRobot')
             status.message = msg
-            status.status = AuctioneerRequestStatus.STATUS_FAILED
-            self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+            status.status = OrderReservationStatus.STATUS_FAILED
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
             return
         except NoOrderFoundError:
             _LOGGER.debug('No potential warehouse order reservations found, continuing')
 
         # Check if warehouse orders are reserved for a different auction
-        whos_reserved = self.auctioneerrequestcontroller.get_reserved_warehouseorders()
+        whos_reserved = self.orderreservationcontroller.get_reserved_warehouseorders()
 
         # Use non reserved warehouse orders for this auction
         for who in whos_exist:
@@ -724,8 +724,8 @@ class EWMOrderManager:
             except ResourceTypeIsNoRobotError:
                 msg = ODATA_ERROR_CODES.get('ResourceTypeIsNoRobot')
                 status.message = msg
-                status.status = AuctioneerRequestStatus.STATUS_FAILED
-                self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+                status.status = OrderReservationStatus.STATUS_FAILED
+                self.orderreservationcontroller.update_cr_status(name, unstructure(status))
             except (ConnectionError, TimeoutError, IOError) as err:
                 _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
                 return
@@ -733,23 +733,23 @@ class EWMOrderManager:
         if whos:
             # Attach the warehouse order list to CR status
             status.warehouseorders = whos
-            status.status = AuctioneerRequestStatus.STATUS_ACCEPTED
-            self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+            status.status = OrderReservationStatus.STATUS_ACCEPTED
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
             _LOGGER.info(
                 'Reserved %s warehouse orders in warehouse %s for resource type %s, group %s '
-                'with auctioneer request %s until %s', len(whos), spec.orderrequest.lgnum,
+                'with order reservation %s until %s', len(whos), spec.orderrequest.lgnum,
                 spec.orderrequest.rsrctype, spec.orderrequest.rsrcgrp, name, status.validuntil)
         else:
-            msg = 'No warehouse orders found for auctioneer request {}. Trying again'.format(name)
+            msg = 'No warehouse orders found for order request {}. Trying again'.format(name)
             status.message = msg
-            self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
             _LOGGER.info(msg)
 
-    def _process_auctioneer_cr_accepted(
-            self, name: str, spec: AuctioneerRequestSpec, status: AuctioneerRequestStatus) -> None:
-        """Process an auctioneer CR with status accepted."""
+    def _process_orderres_cr_accepted(
+            self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
+        """Process an order reservation CR with status accepted."""
         # Return if wrong status
-        if status.status != AuctioneerRequestStatus.STATUS_ACCEPTED:
+        if status.status != OrderReservationStatus.STATUS_ACCEPTED:
             return
 
         # Get warehouse orders with open warehouse tasks from EWM
@@ -773,15 +773,15 @@ class EWMOrderManager:
 
         # Update CR status
         if not connection_error:
-            status.status = AuctioneerRequestStatus.STATUS_RESERVATIONS
+            status.status = OrderReservationStatus.STATUS_RESERVATIONS
         status.validuntil = self._datetime_reservation_timeout_iso()
-        self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+        self.orderreservationcontroller.update_cr_status(name, unstructure(status))
 
-    def _process_auctioneer_cr_reservations(
-            self, name: str, spec: AuctioneerRequestSpec, status: AuctioneerRequestStatus) -> None:
-        """Process an auctioneer CR with status reservations."""
+    def _process_orderres_cr_reservations(
+            self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
+        """Process an order reservation CR with status reservations."""
         # Return if wrong status
-        if status.status != AuctioneerRequestStatus.STATUS_RESERVATIONS:
+        if status.status != OrderReservationStatus.STATUS_RESERVATIONS:
             return
 
         # Check process of the auction once warehouse orders are reserved
@@ -790,10 +790,10 @@ class EWMOrderManager:
         except ValueError:
             timeout = datetime.now(timezone.utc)
 
-        # There are warehouse order assignments from auctioneer
+        # There are warehouse order assignments
         if spec.orderassignments:
             _LOGGER.info(
-                'Found %s warehouse order assignments to robots in auctioneer request %s',
+                'Found %s warehouse order assignments to robots in order request %s',
                 len(spec.orderassignments), name)
             msg = 'All warehouse orders assigned to robots'
             reserved: List[WarehouseOrderIdent] = []
@@ -865,9 +865,9 @@ class EWMOrderManager:
 
             # CR is processed in this status, until there was no connection error to EWM
             if not connection_error:
-                status.status = AuctioneerRequestStatus.STATUS_SUCCEEDED
+                status.status = OrderReservationStatus.STATUS_SUCCEEDED
             status.message = msg
-            self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
         # On timeout cancel the reservations
         elif timeout < datetime.now(timezone.utc):
             msg = 'Warehouse order reservations timed out, set status open in EWM again'
@@ -888,6 +888,6 @@ class EWMOrderManager:
 
             # CR is processed in this status, until there was no connection error to EWM
             if not connection_error:
-                status.status = AuctioneerRequestStatus.STATUS_TIMEOUT
+                status.status = OrderReservationStatus.STATUS_TIMEOUT
             status.message = msg
-            self.auctioneerrequestcontroller.update_cr_status(name, unstructure(status))
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))

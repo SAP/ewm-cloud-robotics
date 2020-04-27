@@ -12,6 +12,7 @@
 package v1alpha1
 
 import (
+	"context"
 	time "time"
 
 	ewmv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
@@ -24,59 +25,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// AuctioneerRequestInformer provides access to a shared informer and lister for
-// AuctioneerRequests.
-type AuctioneerRequestInformer interface {
+// OrderReservationInformer provides access to a shared informer and lister for
+// OrderReservations.
+type OrderReservationInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.AuctioneerRequestLister
+	Lister() v1alpha1.OrderReservationLister
 }
 
-type auctioneerRequestInformer struct {
+type orderReservationInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewAuctioneerRequestInformer constructs a new informer for AuctioneerRequest type.
+// NewOrderReservationInformer constructs a new informer for OrderReservation type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewAuctioneerRequestInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredAuctioneerRequestInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewOrderReservationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredOrderReservationInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredAuctioneerRequestInformer constructs a new informer for AuctioneerRequest type.
+// NewFilteredOrderReservationInformer constructs a new informer for OrderReservation type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredAuctioneerRequestInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredOrderReservationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.EwmV1alpha1().AuctioneerRequests(namespace).List(options)
+				return client.EwmV1alpha1().OrderReservations(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.EwmV1alpha1().AuctioneerRequests(namespace).Watch(options)
+				return client.EwmV1alpha1().OrderReservations(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&ewmv1alpha1.AuctioneerRequest{},
+		&ewmv1alpha1.OrderReservation{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *auctioneerRequestInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredAuctioneerRequestInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *orderReservationInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredOrderReservationInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *auctioneerRequestInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&ewmv1alpha1.AuctioneerRequest{}, f.defaultInformer)
+func (f *orderReservationInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&ewmv1alpha1.OrderReservation{}, f.defaultInformer)
 }
 
-func (f *auctioneerRequestInformer) Lister() v1alpha1.AuctioneerRequestLister {
-	return v1alpha1.NewAuctioneerRequestLister(f.Informer().GetIndexer())
+func (f *orderReservationInformer) Lister() v1alpha1.OrderReservationLister {
+	return v1alpha1.NewOrderReservationLister(f.Informer().GetIndexer())
 }

@@ -12,6 +12,8 @@
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -32,7 +34,7 @@ var robotrequestsResource = schema.GroupVersionResource{Group: "ewm.sap.com", Ve
 var robotrequestsKind = schema.GroupVersionKind{Group: "ewm.sap.com", Version: "v1alpha1", Kind: "RobotRequest"}
 
 // Get takes name of the robotRequest, and returns the corresponding robotRequest object, and an error if there is any.
-func (c *FakeRobotRequests) Get(name string, options v1.GetOptions) (result *v1alpha1.RobotRequest, err error) {
+func (c *FakeRobotRequests) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.RobotRequest, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(robotrequestsResource, c.ns, name), &v1alpha1.RobotRequest{})
 
@@ -43,7 +45,7 @@ func (c *FakeRobotRequests) Get(name string, options v1.GetOptions) (result *v1a
 }
 
 // List takes label and field selectors, and returns the list of RobotRequests that match those selectors.
-func (c *FakeRobotRequests) List(opts v1.ListOptions) (result *v1alpha1.RobotRequestList, err error) {
+func (c *FakeRobotRequests) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RobotRequestList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(robotrequestsResource, robotrequestsKind, c.ns, opts), &v1alpha1.RobotRequestList{})
 
@@ -65,14 +67,14 @@ func (c *FakeRobotRequests) List(opts v1.ListOptions) (result *v1alpha1.RobotReq
 }
 
 // Watch returns a watch.Interface that watches the requested robotRequests.
-func (c *FakeRobotRequests) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeRobotRequests) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(robotrequestsResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a robotRequest and creates it.  Returns the server's representation of the robotRequest, and an error, if there is any.
-func (c *FakeRobotRequests) Create(robotRequest *v1alpha1.RobotRequest) (result *v1alpha1.RobotRequest, err error) {
+func (c *FakeRobotRequests) Create(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.CreateOptions) (result *v1alpha1.RobotRequest, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(robotrequestsResource, c.ns, robotRequest), &v1alpha1.RobotRequest{})
 
@@ -83,7 +85,7 @@ func (c *FakeRobotRequests) Create(robotRequest *v1alpha1.RobotRequest) (result 
 }
 
 // Update takes the representation of a robotRequest and updates it. Returns the server's representation of the robotRequest, and an error, if there is any.
-func (c *FakeRobotRequests) Update(robotRequest *v1alpha1.RobotRequest) (result *v1alpha1.RobotRequest, err error) {
+func (c *FakeRobotRequests) Update(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.UpdateOptions) (result *v1alpha1.RobotRequest, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(robotrequestsResource, c.ns, robotRequest), &v1alpha1.RobotRequest{})
 
@@ -95,7 +97,7 @@ func (c *FakeRobotRequests) Update(robotRequest *v1alpha1.RobotRequest) (result 
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeRobotRequests) UpdateStatus(robotRequest *v1alpha1.RobotRequest) (*v1alpha1.RobotRequest, error) {
+func (c *FakeRobotRequests) UpdateStatus(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.UpdateOptions) (*v1alpha1.RobotRequest, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(robotrequestsResource, "status", c.ns, robotRequest), &v1alpha1.RobotRequest{})
 
@@ -106,7 +108,7 @@ func (c *FakeRobotRequests) UpdateStatus(robotRequest *v1alpha1.RobotRequest) (*
 }
 
 // Delete takes name of the robotRequest and deletes it. Returns an error if one occurs.
-func (c *FakeRobotRequests) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeRobotRequests) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(robotrequestsResource, c.ns, name), &v1alpha1.RobotRequest{})
 
@@ -114,15 +116,15 @@ func (c *FakeRobotRequests) Delete(name string, options *v1.DeleteOptions) error
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeRobotRequests) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(robotrequestsResource, c.ns, listOptions)
+func (c *FakeRobotRequests) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(robotrequestsResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.RobotRequestList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched robotRequest.
-func (c *FakeRobotRequests) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.RobotRequest, err error) {
+func (c *FakeRobotRequests) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RobotRequest, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(robotrequestsResource, c.ns, name, pt, data, subresources...), &v1alpha1.RobotRequest{})
 

@@ -25,12 +25,12 @@ func (c *FakeEwmV1alpha1) Auctioneers(namespace string) v1alpha1.AuctioneerInter
 	return &FakeAuctioneers{c, namespace}
 }
 
-func (c *FakeEwmV1alpha1) AuctioneerRequests(namespace string) v1alpha1.AuctioneerRequestInterface {
-	return &FakeAuctioneerRequests{c, namespace}
-}
-
 func (c *FakeEwmV1alpha1) OrderAuctions(namespace string) v1alpha1.OrderAuctionInterface {
 	return &FakeOrderAuctions{c, namespace}
+}
+
+func (c *FakeEwmV1alpha1) OrderReservations(namespace string) v1alpha1.OrderReservationInterface {
+	return &FakeOrderReservations{c, namespace}
 }
 
 func (c *FakeEwmV1alpha1) RobotConfigurations(namespace string) v1alpha1.RobotConfigurationInterface {

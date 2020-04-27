@@ -20,8 +20,8 @@ import (
 type EwmV1alpha1Interface interface {
 	RESTClient() rest.Interface
 	AuctioneersGetter
-	AuctioneerRequestsGetter
 	OrderAuctionsGetter
+	OrderReservationsGetter
 	RobotConfigurationsGetter
 	RobotRequestsGetter
 	WarehouseOrdersGetter
@@ -36,12 +36,12 @@ func (c *EwmV1alpha1Client) Auctioneers(namespace string) AuctioneerInterface {
 	return newAuctioneers(c, namespace)
 }
 
-func (c *EwmV1alpha1Client) AuctioneerRequests(namespace string) AuctioneerRequestInterface {
-	return newAuctioneerRequests(c, namespace)
-}
-
 func (c *EwmV1alpha1Client) OrderAuctions(namespace string) OrderAuctionInterface {
 	return newOrderAuctions(c, namespace)
+}
+
+func (c *EwmV1alpha1Client) OrderReservations(namespace string) OrderReservationInterface {
+	return newOrderReservations(c, namespace)
 }
 
 func (c *EwmV1alpha1Client) RobotConfigurations(namespace string) RobotConfigurationInterface {

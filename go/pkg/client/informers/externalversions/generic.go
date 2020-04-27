@@ -48,10 +48,10 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 	// Group=ewm.sap.com, Version=v1alpha1
 	case v1alpha1.SchemeGroupVersion.WithResource("auctioneers"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().Auctioneers().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("auctioneerrequests"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().AuctioneerRequests().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("orderauctions"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().OrderAuctions().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("orderreservations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().OrderReservations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("robotconfigurations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().RobotConfigurations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("robotrequests"):

@@ -11,7 +11,7 @@
 set -e
 
 # K8S branch for code-generator and apimachinery
-K8S_BRANCH="release-1.17"
+K8S_BRANCH="release-1.18"
 GIT_APIMACHINERY="https://github.com/kubernetes/apimachinery.git"
 GIT_CODEGENERATOR="https://github.com/kubernetes/code-generator.git"
 

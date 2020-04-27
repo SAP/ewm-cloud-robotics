@@ -12,6 +12,7 @@
 package v1alpha1
 
 import (
+	"context"
 	time "time"
 
 	ewmv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
@@ -54,13 +55,13 @@ func NewFilteredAuctioneerInformer(client versioned.Interface, namespace string,
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.EwmV1alpha1().Auctioneers(namespace).List(options)
+				return client.EwmV1alpha1().Auctioneers(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.EwmV1alpha1().Auctioneers(namespace).Watch(options)
+				return client.EwmV1alpha1().Auctioneers(namespace).Watch(context.TODO(), options)
 			},
 		},
 		&ewmv1alpha1.Auctioneer{},

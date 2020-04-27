@@ -39,8 +39,8 @@ class OrderAssignment:
 
 
 @attr.s
-class AuctioneerRequestSpec:
-    """SAP auctioneerrequest CR spec."""
+class OrderReservationSpec:
+    """SAP orderreservation CR spec."""
 
     orderrequest: OrderRequest = attr.ib(validator=validate_annotation)
     orderassignments: List[OrderAssignment] = attr.ib(
@@ -50,8 +50,8 @@ class AuctioneerRequestSpec:
 
 
 @attr.s
-class AuctioneerRequestStatus:
-    """SAP auctioneerrequest CR status."""
+class OrderReservationStatus:
+    """SAP orderreservation CR status."""
 
     STATUS_NEW = 'NEW'
     STATUS_ACCEPTED = 'ACCEPTED'

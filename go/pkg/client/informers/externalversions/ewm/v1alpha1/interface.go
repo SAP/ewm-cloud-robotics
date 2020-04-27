@@ -19,10 +19,10 @@ import (
 type Interface interface {
 	// Auctioneers returns a AuctioneerInformer.
 	Auctioneers() AuctioneerInformer
-	// AuctioneerRequests returns a AuctioneerRequestInformer.
-	AuctioneerRequests() AuctioneerRequestInformer
 	// OrderAuctions returns a OrderAuctionInformer.
 	OrderAuctions() OrderAuctionInformer
+	// OrderReservations returns a OrderReservationInformer.
+	OrderReservations() OrderReservationInformer
 	// RobotConfigurations returns a RobotConfigurationInformer.
 	RobotConfigurations() RobotConfigurationInformer
 	// RobotRequests returns a RobotRequestInformer.
@@ -47,14 +47,14 @@ func (v *version) Auctioneers() AuctioneerInformer {
 	return &auctioneerInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// AuctioneerRequests returns a AuctioneerRequestInformer.
-func (v *version) AuctioneerRequests() AuctioneerRequestInformer {
-	return &auctioneerRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
 // OrderAuctions returns a OrderAuctionInformer.
 func (v *version) OrderAuctions() OrderAuctionInformer {
 	return &orderAuctionInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// OrderReservations returns a OrderReservationInformer.
+func (v *version) OrderReservations() OrderReservationInformer {
+	return &orderReservationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RobotConfigurations returns a RobotConfigurationInformer.

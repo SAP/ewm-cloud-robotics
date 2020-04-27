@@ -82,41 +82,41 @@ const (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AuctioneerRequest represents the AuctioneerRequest CRD
-type AuctioneerRequest struct {
+// OrderReservation represents the OrderReservation CRD
+type OrderReservation struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec AuctioneerRequestSpec `json:"spec"`
+	Spec OrderReservationSpec `json:"spec"`
 	// +optional
-	Status AuctioneerRequestStatus `json:"status,omitempty"`
+	Status OrderReservationStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// AuctioneerRequestList represents the array of AuctioneerRequest CRD
-type AuctioneerRequestList struct {
+// OrderReservationList represents the array of OrderReservation CRD
+type OrderReservationList struct {
 	metav1.TypeMeta `json:",inline"`
 	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []AuctioneerRequest `json:"items"`
+	Items []OrderReservation `json:"items"`
 }
 
-// AuctioneerRequestSpec represents the spec of AuctioneerRequest CRD
-type AuctioneerRequestSpec struct {
+// OrderReservationSpec represents the spec of OrderReservation CRD
+type OrderReservationSpec struct {
 	OrderRequest     OrderRequest      `json:"orderrequest"`
 	OrderAssignments []OrderAssignment `json:"orderassignments,omitempty"`
 }
 
-// AuctioneerRequestStatus represents the status of AuctioneerRequest CRD
-type AuctioneerRequestStatus struct {
-	WarehouseOrders  []EWMWarehouseOrder           `json:"warehouseorders,omitempty"`
-	OrderAssignments []OrderAssignment             `json:"orderassignments,omitempty"`
-	Status           AuctioneerRequestStatusStatus `json:"status,omitempty"`
-	Message          string                        `json:"message,omitempty"`
-	ValidUntil       metav1.Time                   `json:"validuntil,omitempty"`
+// OrderReservationStatus represents the status of OrderReservation CRD
+type OrderReservationStatus struct {
+	WarehouseOrders  []EWMWarehouseOrder          `json:"warehouseorders,omitempty"`
+	OrderAssignments []OrderAssignment            `json:"orderassignments,omitempty"`
+	Status           OrderReservationStatusStatus `json:"status,omitempty"`
+	Message          string                       `json:"message,omitempty"`
+	ValidUntil       metav1.Time                  `json:"validuntil,omitempty"`
 }
 
 // OrderRequest represents the request of warehouse orders by order auctioneer
@@ -134,17 +134,17 @@ type OrderAssignment struct {
 	Rsrc  string `json:"rsrc"`
 }
 
-// AuctioneerRequestStatusStatus describes the status of an AuctioneerRequest
-type AuctioneerRequestStatusStatus string
+// OrderReservationStatusStatus describes the status of an OrderReservation
+type OrderReservationStatusStatus string
 
-// Values for AuctioneerRequestStatusStatus
+// Values for OrderReservationStatusStatus
 const (
-	AuctioneerRequestStatusNew          AuctioneerRequestStatusStatus = "NEW"
-	AuctioneerRequestStatusAccepted     AuctioneerRequestStatusStatus = "ACCEPTED"
-	AuctioneerRequestStatusReservations AuctioneerRequestStatusStatus = "RESERVATIONS"
-	AuctioneerRequestStatusFailed       AuctioneerRequestStatusStatus = "FAILED"
-	AuctioneerRequestStatusSucceeded    AuctioneerRequestStatusStatus = "SUCCEEDED"
-	AuctioneerRequestStatusTimeout      AuctioneerRequestStatusStatus = "TIMEOUT"
+	OrderReservationStatusNew          OrderReservationStatusStatus = "NEW"
+	OrderReservationStatusAccepted     OrderReservationStatusStatus = "ACCEPTED"
+	OrderReservationStatusReservations OrderReservationStatusStatus = "RESERVATIONS"
+	OrderReservationStatusFailed       OrderReservationStatusStatus = "FAILED"
+	OrderReservationStatusSucceeded    OrderReservationStatusStatus = "SUCCEEDED"
+	OrderReservationStatusTimeout      OrderReservationStatusStatus = "TIMEOUT"
 )
 
 // +genclient
@@ -172,14 +172,14 @@ type OrderAuctionList struct {
 	Items []OrderAuction `json:"items"`
 }
 
-// OrderAuctionSpec represents the spec of AuctioneerRequest CRD
+// OrderAuctionSpec represents the spec of OrderAuction CRD
 type OrderAuctionSpec struct {
 	WarehouseOrders []EWMWarehouseOrder       `json:"warehouseorders"`
 	ValidUntil      metav1.Time               `json:"validuntil"`
 	AuctionStatus   OrderAuctionAuctionStatus `json:"auctionstatus"`
 }
 
-// OrderAuctionStatus represents the status of AuctioneerRequest CRD
+// OrderAuctionStatus represents the status of OrderAuction CRD
 type OrderAuctionStatus struct {
 	BidStatus       OrderAuctionBidStatus   `json:"bidstatus,omitempty"`
 	WarehouseOrders []WarehouseOrderBidding `json:"warehouseorders,omitempty"`

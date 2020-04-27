@@ -12,6 +12,7 @@
 package v1alpha1
 
 import (
+	"context"
 	"time"
 
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
@@ -30,15 +31,15 @@ type RobotRequestsGetter interface {
 
 // RobotRequestInterface has methods to work with RobotRequest resources.
 type RobotRequestInterface interface {
-	Create(*v1alpha1.RobotRequest) (*v1alpha1.RobotRequest, error)
-	Update(*v1alpha1.RobotRequest) (*v1alpha1.RobotRequest, error)
-	UpdateStatus(*v1alpha1.RobotRequest) (*v1alpha1.RobotRequest, error)
-	Delete(name string, options *v1.DeleteOptions) error
-	DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error
-	Get(name string, options v1.GetOptions) (*v1alpha1.RobotRequest, error)
-	List(opts v1.ListOptions) (*v1alpha1.RobotRequestList, error)
-	Watch(opts v1.ListOptions) (watch.Interface, error)
-	Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.RobotRequest, err error)
+	Create(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.CreateOptions) (*v1alpha1.RobotRequest, error)
+	Update(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.UpdateOptions) (*v1alpha1.RobotRequest, error)
+	UpdateStatus(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.UpdateOptions) (*v1alpha1.RobotRequest, error)
+	Delete(ctx context.Context, name string, opts v1.DeleteOptions) error
+	DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error
+	Get(ctx context.Context, name string, opts v1.GetOptions) (*v1alpha1.RobotRequest, error)
+	List(ctx context.Context, opts v1.ListOptions) (*v1alpha1.RobotRequestList, error)
+	Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error)
+	Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RobotRequest, err error)
 	RobotRequestExpansion
 }
 
@@ -57,20 +58,20 @@ func newRobotRequests(c *EwmV1alpha1Client, namespace string) *robotRequests {
 }
 
 // Get takes name of the robotRequest, and returns the corresponding robotRequest object, and an error if there is any.
-func (c *robotRequests) Get(name string, options v1.GetOptions) (result *v1alpha1.RobotRequest, err error) {
+func (c *robotRequests) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.RobotRequest, err error) {
 	result = &v1alpha1.RobotRequest{}
 	err = c.client.Get().
 		Namespace(c.ns).
 		Resource("robotrequests").
 		Name(name).
 		VersionedParams(&options, scheme.ParameterCodec).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // List takes label and field selectors, and returns the list of RobotRequests that match those selectors.
-func (c *robotRequests) List(opts v1.ListOptions) (result *v1alpha1.RobotRequestList, err error) {
+func (c *robotRequests) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.RobotRequestList, err error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -81,13 +82,13 @@ func (c *robotRequests) List(opts v1.ListOptions) (result *v1alpha1.RobotRequest
 		Resource("robotrequests").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Watch returns a watch.Interface that watches the requested robotRequests.
-func (c *robotRequests) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *robotRequests) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	var timeout time.Duration
 	if opts.TimeoutSeconds != nil {
 		timeout = time.Duration(*opts.TimeoutSeconds) * time.Second
@@ -98,87 +99,90 @@ func (c *robotRequests) Watch(opts v1.ListOptions) (watch.Interface, error) {
 		Resource("robotrequests").
 		VersionedParams(&opts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Watch()
+		Watch(ctx)
 }
 
 // Create takes the representation of a robotRequest and creates it.  Returns the server's representation of the robotRequest, and an error, if there is any.
-func (c *robotRequests) Create(robotRequest *v1alpha1.RobotRequest) (result *v1alpha1.RobotRequest, err error) {
+func (c *robotRequests) Create(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.CreateOptions) (result *v1alpha1.RobotRequest, err error) {
 	result = &v1alpha1.RobotRequest{}
 	err = c.client.Post().
 		Namespace(c.ns).
 		Resource("robotrequests").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(robotRequest).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Update takes the representation of a robotRequest and updates it. Returns the server's representation of the robotRequest, and an error, if there is any.
-func (c *robotRequests) Update(robotRequest *v1alpha1.RobotRequest) (result *v1alpha1.RobotRequest, err error) {
+func (c *robotRequests) Update(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.UpdateOptions) (result *v1alpha1.RobotRequest, err error) {
 	result = &v1alpha1.RobotRequest{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("robotrequests").
 		Name(robotRequest.Name).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(robotRequest).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-
-func (c *robotRequests) UpdateStatus(robotRequest *v1alpha1.RobotRequest) (result *v1alpha1.RobotRequest, err error) {
+func (c *robotRequests) UpdateStatus(ctx context.Context, robotRequest *v1alpha1.RobotRequest, opts v1.UpdateOptions) (result *v1alpha1.RobotRequest, err error) {
 	result = &v1alpha1.RobotRequest{}
 	err = c.client.Put().
 		Namespace(c.ns).
 		Resource("robotrequests").
 		Name(robotRequest.Name).
 		SubResource("status").
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(robotRequest).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }
 
 // Delete takes name of the robotRequest and deletes it. Returns an error if one occurs.
-func (c *robotRequests) Delete(name string, options *v1.DeleteOptions) error {
+func (c *robotRequests) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("robotrequests").
 		Name(name).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *robotRequests) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
+func (c *robotRequests) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
 	var timeout time.Duration
-	if listOptions.TimeoutSeconds != nil {
-		timeout = time.Duration(*listOptions.TimeoutSeconds) * time.Second
+	if listOpts.TimeoutSeconds != nil {
+		timeout = time.Duration(*listOpts.TimeoutSeconds) * time.Second
 	}
 	return c.client.Delete().
 		Namespace(c.ns).
 		Resource("robotrequests").
-		VersionedParams(&listOptions, scheme.ParameterCodec).
+		VersionedParams(&listOpts, scheme.ParameterCodec).
 		Timeout(timeout).
-		Body(options).
-		Do().
+		Body(&opts).
+		Do(ctx).
 		Error()
 }
 
 // Patch applies the patch and returns the patched robotRequest.
-func (c *robotRequests) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.RobotRequest, err error) {
+func (c *robotRequests) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.RobotRequest, err error) {
 	result = &v1alpha1.RobotRequest{}
 	err = c.client.Patch(pt).
 		Namespace(c.ns).
 		Resource("robotrequests").
-		SubResource(subresources...).
 		Name(name).
+		SubResource(subresources...).
+		VersionedParams(&opts, scheme.ParameterCodec).
 		Body(data).
-		Do().
+		Do(ctx).
 		Into(result)
 	return
 }

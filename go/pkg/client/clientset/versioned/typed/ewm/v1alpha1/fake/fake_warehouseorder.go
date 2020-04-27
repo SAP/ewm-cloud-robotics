@@ -12,6 +12,8 @@
 package fake
 
 import (
+	"context"
+
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	labels "k8s.io/apimachinery/pkg/labels"
@@ -32,7 +34,7 @@ var warehouseordersResource = schema.GroupVersionResource{Group: "ewm.sap.com", 
 var warehouseordersKind = schema.GroupVersionKind{Group: "ewm.sap.com", Version: "v1alpha1", Kind: "WarehouseOrder"}
 
 // Get takes name of the warehouseOrder, and returns the corresponding warehouseOrder object, and an error if there is any.
-func (c *FakeWarehouseOrders) Get(name string, options v1.GetOptions) (result *v1alpha1.WarehouseOrder, err error) {
+func (c *FakeWarehouseOrders) Get(ctx context.Context, name string, options v1.GetOptions) (result *v1alpha1.WarehouseOrder, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewGetAction(warehouseordersResource, c.ns, name), &v1alpha1.WarehouseOrder{})
 
@@ -43,7 +45,7 @@ func (c *FakeWarehouseOrders) Get(name string, options v1.GetOptions) (result *v
 }
 
 // List takes label and field selectors, and returns the list of WarehouseOrders that match those selectors.
-func (c *FakeWarehouseOrders) List(opts v1.ListOptions) (result *v1alpha1.WarehouseOrderList, err error) {
+func (c *FakeWarehouseOrders) List(ctx context.Context, opts v1.ListOptions) (result *v1alpha1.WarehouseOrderList, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewListAction(warehouseordersResource, warehouseordersKind, c.ns, opts), &v1alpha1.WarehouseOrderList{})
 
@@ -65,14 +67,14 @@ func (c *FakeWarehouseOrders) List(opts v1.ListOptions) (result *v1alpha1.Wareho
 }
 
 // Watch returns a watch.Interface that watches the requested warehouseOrders.
-func (c *FakeWarehouseOrders) Watch(opts v1.ListOptions) (watch.Interface, error) {
+func (c *FakeWarehouseOrders) Watch(ctx context.Context, opts v1.ListOptions) (watch.Interface, error) {
 	return c.Fake.
 		InvokesWatch(testing.NewWatchAction(warehouseordersResource, c.ns, opts))
 
 }
 
 // Create takes the representation of a warehouseOrder and creates it.  Returns the server's representation of the warehouseOrder, and an error, if there is any.
-func (c *FakeWarehouseOrders) Create(warehouseOrder *v1alpha1.WarehouseOrder) (result *v1alpha1.WarehouseOrder, err error) {
+func (c *FakeWarehouseOrders) Create(ctx context.Context, warehouseOrder *v1alpha1.WarehouseOrder, opts v1.CreateOptions) (result *v1alpha1.WarehouseOrder, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewCreateAction(warehouseordersResource, c.ns, warehouseOrder), &v1alpha1.WarehouseOrder{})
 
@@ -83,7 +85,7 @@ func (c *FakeWarehouseOrders) Create(warehouseOrder *v1alpha1.WarehouseOrder) (r
 }
 
 // Update takes the representation of a warehouseOrder and updates it. Returns the server's representation of the warehouseOrder, and an error, if there is any.
-func (c *FakeWarehouseOrders) Update(warehouseOrder *v1alpha1.WarehouseOrder) (result *v1alpha1.WarehouseOrder, err error) {
+func (c *FakeWarehouseOrders) Update(ctx context.Context, warehouseOrder *v1alpha1.WarehouseOrder, opts v1.UpdateOptions) (result *v1alpha1.WarehouseOrder, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateAction(warehouseordersResource, c.ns, warehouseOrder), &v1alpha1.WarehouseOrder{})
 
@@ -95,7 +97,7 @@ func (c *FakeWarehouseOrders) Update(warehouseOrder *v1alpha1.WarehouseOrder) (r
 
 // UpdateStatus was generated because the type contains a Status member.
 // Add a +genclient:noStatus comment above the type to avoid generating UpdateStatus().
-func (c *FakeWarehouseOrders) UpdateStatus(warehouseOrder *v1alpha1.WarehouseOrder) (*v1alpha1.WarehouseOrder, error) {
+func (c *FakeWarehouseOrders) UpdateStatus(ctx context.Context, warehouseOrder *v1alpha1.WarehouseOrder, opts v1.UpdateOptions) (*v1alpha1.WarehouseOrder, error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewUpdateSubresourceAction(warehouseordersResource, "status", c.ns, warehouseOrder), &v1alpha1.WarehouseOrder{})
 
@@ -106,7 +108,7 @@ func (c *FakeWarehouseOrders) UpdateStatus(warehouseOrder *v1alpha1.WarehouseOrd
 }
 
 // Delete takes name of the warehouseOrder and deletes it. Returns an error if one occurs.
-func (c *FakeWarehouseOrders) Delete(name string, options *v1.DeleteOptions) error {
+func (c *FakeWarehouseOrders) Delete(ctx context.Context, name string, opts v1.DeleteOptions) error {
 	_, err := c.Fake.
 		Invokes(testing.NewDeleteAction(warehouseordersResource, c.ns, name), &v1alpha1.WarehouseOrder{})
 
@@ -114,15 +116,15 @@ func (c *FakeWarehouseOrders) Delete(name string, options *v1.DeleteOptions) err
 }
 
 // DeleteCollection deletes a collection of objects.
-func (c *FakeWarehouseOrders) DeleteCollection(options *v1.DeleteOptions, listOptions v1.ListOptions) error {
-	action := testing.NewDeleteCollectionAction(warehouseordersResource, c.ns, listOptions)
+func (c *FakeWarehouseOrders) DeleteCollection(ctx context.Context, opts v1.DeleteOptions, listOpts v1.ListOptions) error {
+	action := testing.NewDeleteCollectionAction(warehouseordersResource, c.ns, listOpts)
 
 	_, err := c.Fake.Invokes(action, &v1alpha1.WarehouseOrderList{})
 	return err
 }
 
 // Patch applies the patch and returns the patched warehouseOrder.
-func (c *FakeWarehouseOrders) Patch(name string, pt types.PatchType, data []byte, subresources ...string) (result *v1alpha1.WarehouseOrder, err error) {
+func (c *FakeWarehouseOrders) Patch(ctx context.Context, name string, pt types.PatchType, data []byte, opts v1.PatchOptions, subresources ...string) (result *v1alpha1.WarehouseOrder, err error) {
 	obj, err := c.Fake.
 		Invokes(testing.NewPatchSubresourceAction(warehouseordersResource, c.ns, name, pt, data, subresources...), &v1alpha1.WarehouseOrder{})
 

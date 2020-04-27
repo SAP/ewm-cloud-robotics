@@ -22,7 +22,7 @@ from prometheus_client import start_http_server
 
 from robcoewmordermanager.ordercontroller import OrderController
 from robcoewmordermanager.robotrequestcontroller import RobotRequestController
-from robcoewmordermanager.auctioneerrequestcontroller import AuctioneerRequestController
+from robcoewmordermanager.orderreservationcontroller import OrderReservationController
 from robcoewmordermanager.manager import EWMOrderManager
 
 _LOGGER = logging.getLogger(__name__)
@@ -66,15 +66,15 @@ def run_ordermanager():
     # Create K8S handler instances
     k8s_oc = OrderController()
     k8s_rc = RobotRequestController()
-    k8s_ac = AuctioneerRequestController()
+    k8s_orc = OrderReservationController()
 
     # Create order manager instance
-    manager = EWMOrderManager(k8s_oc, k8s_rc, k8s_ac)
+    manager = EWMOrderManager(k8s_oc, k8s_rc, k8s_orc)
 
     # Start
     manager.ordercontroller.run(reprocess=True, multiple_executor_threads=True)
     manager.robotrequestcontroller.run(reprocess=True, multiple_executor_threads=True)
-    manager.auctioneerrequestcontroller.run(reprocess=True, multiple_executor_threads=True)
+    manager.orderreservationcontroller.run(reprocess=True, multiple_executor_threads=True)
 
     _LOGGER.info('SAP EWM Order Manager started - K8S CR mode')
 
@@ -95,9 +95,9 @@ def run_ordermanager():
                     'Uncovered exception in "%s" thread of robotrequestcontroller. Raising it in '
                     'main thread', k)
                 raise exc
-            for k, exc in manager.auctioneerrequestcontroller.thread_exceptions.items():
+            for k, exc in manager.orderreservationcontroller.thread_exceptions.items():
                 _LOGGER.error(
-                    'Uncovered exception in "%s" thread of auctioneerrequestcontroller. Raising it'
+                    'Uncovered exception in "%s" thread of orderreservationcontroller. Raising it'
                     ' in main thread', k)
                 raise exc
             # Sleep maximum 1.0 second
@@ -111,7 +111,7 @@ def run_ordermanager():
         _LOGGER.info('Stopping K8S CR watchers')
         manager.ordercontroller.stop_watcher()
         manager.robotrequestcontroller.stop_watcher()
-        manager.auctioneerrequestcontroller.stop_watcher()
+        manager.orderreservationcontroller.stop_watcher()
 
 
 if __name__ == '__main__':

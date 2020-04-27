@@ -19,14 +19,6 @@ type AuctioneerListerExpansion interface{}
 // AuctioneerNamespaceLister.
 type AuctioneerNamespaceListerExpansion interface{}
 
-// AuctioneerRequestListerExpansion allows custom methods to be added to
-// AuctioneerRequestLister.
-type AuctioneerRequestListerExpansion interface{}
-
-// AuctioneerRequestNamespaceListerExpansion allows custom methods to be added to
-// AuctioneerRequestNamespaceLister.
-type AuctioneerRequestNamespaceListerExpansion interface{}
-
 // OrderAuctionListerExpansion allows custom methods to be added to
 // OrderAuctionLister.
 type OrderAuctionListerExpansion interface{}
@@ -34,6 +26,14 @@ type OrderAuctionListerExpansion interface{}
 // OrderAuctionNamespaceListerExpansion allows custom methods to be added to
 // OrderAuctionNamespaceLister.
 type OrderAuctionNamespaceListerExpansion interface{}
+
+// OrderReservationListerExpansion allows custom methods to be added to
+// OrderReservationLister.
+type OrderReservationListerExpansion interface{}
+
+// OrderReservationNamespaceListerExpansion allows custom methods to be added to
+// OrderReservationNamespaceLister.
+type OrderReservationNamespaceListerExpansion interface{}
 
 // RobotConfigurationListerExpansion allows custom methods to be added to
 // RobotConfigurationLister.
