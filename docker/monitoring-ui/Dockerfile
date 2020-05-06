@@ -1,6 +1,6 @@
 ###############################################################################
 # STEP 1 build executable binary
-FROM golang:alpine as builder
+FROM golang:1.14-alpine as builder
 # Install SSL ca certificates
 RUN apk update && apk add git && apk add ca-certificates && apk add wget && apk add unzip
 # Build OpenUI5 SDK

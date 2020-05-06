@@ -1,0 +1,29 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-monitoring-ui
+  labels:
+    app: ewm-monitoring-ui
+spec:
+  appName: ewm-monitoring-ui-$APP_VERSION
+  cloud: 
+    values:
+      image:
+        repository: "ewmcloudrobotics/monitoring-ui"
+        image.tag: "latest"
+      envs:
+        ewmhost: "" # Host for the OData API endpoint
+        ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV" # Basepath for the OData API matching the service definition
+        ewmnewpath: "/ewm-monitoring-ui/ZEWM_ROBCO_SRV" # Path where OData service could be reached on the cloud robotics domain
+        ewmauth: "OAuth" # Authentication method for OData API. Could be OAuth or Basic
+        ewmuser: "" # Technical user for all warehouseorder related API calls - Basic auth
+        ewmpassword: "" # Matching password - Basic auth
+        ewmclientid: "" # client ID - OAuth
+        ewmclientsecret: "" # client secret - OAuth
+        ewmtokenendpoint: "" # token endpoint for OAuth token (client_credentials)
+---
