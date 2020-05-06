@@ -710,10 +710,7 @@ class RobotEWMMachine(Machine):
     def _decide_whats_next(self, event: EventData) -> None:
         """Decide what the robot should do next."""
         cls = self.__class__
-        if self.warehouseorders:
-            _LOGGER.info('Warehouse order in queue, start processing')
-            self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
-        elif self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
+        if self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
             _LOGGER.info(
                 'Battery level %s is below minimum of %s, start charging',
                 self.mission_api.battery_percentage, self.robot_config.conf.batteryMin)
@@ -721,14 +718,16 @@ class RobotEWMMachine(Machine):
             if event.transition.dest not in cls.conf.idle_states:
                 self.cancel_active_mission()
             self.charge_battery()
+        elif self.failed_warehouseorders > 3:
+            _LOGGER.error(
+                'Too many consecutive failed warehouse orders (%s). Robot enters error state',
+                self.failed_warehouseorders)
+            self.too_many_failed_whos()
+        elif self.warehouseorders:
+            _LOGGER.info('Warehouse order in queue, start processing')
+            self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
         elif self.mission_api.api_check_state_ok():
-            if self.failed_warehouseorders > 3:
-                _LOGGER.error(
-                    'Too many consecutive failed warehouse orders (%s). Robot enters error state',
-                    self.failed_warehouseorders)
-                self.too_many_failed_whos()
-            else:
-                self._request_work(event)
+            self._request_work(event)
 
     def _increase_mission_errorcount(self, event: EventData) -> None:
         """Increase errorcount for the state which triggered the event."""
@@ -914,6 +913,8 @@ class RobotEWMMachine(Machine):
             'robotconfiguration CR')
         # Reset error counter
         self.failed_warehouseorders = 0
+        # Wait at staging area
+        self.create_staging_mission()
 
     def on_enter_moveTrolley_movingToSourceBin(self, event: EventData) -> None:
         """Start moving to the source bin of a warehouse task."""
