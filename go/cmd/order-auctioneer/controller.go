@@ -135,7 +135,17 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 
 	// Watch OrderAuction CRs
 	err = c.Watch(&source.Kind{Type: &ewm.OrderAuction{}},
-		&handler.EnqueueRequestForOwner{OwnerType: &ewm.Auctioneer{}, IsController: true})
+		&handler.Funcs{
+			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
+				log.Debug().Msgf("Auctioneer controller received update event for OrderAuction %q", e.MetaNew.GetName())
+				r.enqueueFromLabel(e.MetaNew, q)
+				if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
+					log.Debug().Msgf("Auctioneer controller received update event for OrderAuction %q", e.MetaOld.GetName())
+					r.enqueueFromLabel(e.MetaOld, q)
+				}
+			},
+		},
+	)
 
 	if err != nil {
 		return errors.Wrap(err, "watch OrderAuction")
@@ -145,19 +155,15 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 	err = c.Watch(&source.Kind{Type: &registry.Robot{}},
 		&handler.Funcs{
 			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				// Only create events because of robots for which this app was deployed
-				if !r.deployedRobots[e.MetaNew.GetName()] && !r.deployedRobots[e.MetaOld.GetName()] {
-					return
-				}
 				// Check if status changed from unavailable to available or name changed
 				rbStateOld := string(e.ObjectOld.(*registry.Robot).Status.Robot.State)
 				rbStateNew := string(e.ObjectNew.(*registry.Robot).Status.Robot.State)
 				change := !robotAvailable[rbStateOld] && robotAvailable[rbStateNew]
-				change = change || e.MetaOld.GetName() != e.MetaNew.GetName()
+				change = change || nameOrNamespaceChanged(e.MetaNew, e.MetaOld)
 				if change {
 					log.Debug().Msgf("Auctioneer controller received update event for Robot %q", e.MetaNew.GetName())
 					r.enqueueFromLabel(e.MetaNew, q)
-					if e.MetaOld.GetName() != e.MetaNew.GetName() {
+					if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
 						log.Info().Msgf("Auctioneer controller received update event for Robot %q", e.MetaOld.GetName())
 						r.enqueueFromLabel(e.MetaOld, q)
 					}
@@ -192,11 +198,11 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 				rcNew := e.ObjectNew.(*ewm.RobotConfiguration)
 				change := !reflect.DeepEqual(rcOld.Spec, rcNew.Spec)
 				change = change || statemachineUnavailable[rcOld.Status.Statemachine] && !statemachineUnavailable[rcNew.Status.Statemachine]
-				change = change || e.MetaOld.GetName() != e.MetaNew.GetName()
+				change = change || nameOrNamespaceChanged(e.MetaNew, e.MetaOld)
 				if change {
 					log.Info().Msgf("Auctioneer controller received update event for RobotConfiguration %q", e.MetaNew.GetName())
 					r.enqueueFromConfig(rcNew.Spec, q)
-					if e.MetaOld.GetName() != e.MetaNew.GetName() {
+					if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
 						log.Info().Msgf("Auctioneer controller received update event for RobotConfiguration %q", e.MetaOld.GetName())
 						r.enqueueFromConfig(rcOld.Spec, q)
 					}
@@ -216,11 +222,11 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 				// Check if Spec.OrderStatus or name changed
 				change := e.ObjectOld.(*ewm.WarehouseOrder).Spec.OrderStatus != e.ObjectNew.(*ewm.WarehouseOrder).Spec.OrderStatus
-				change = change || e.MetaOld.GetName() != e.MetaNew.GetName()
+				change = change || nameOrNamespaceChanged(e.MetaNew, e.MetaOld)
 				if change {
 					log.Debug().Msgf("Auctioneer controller received update event for WarehouseOrder %q", e.MetaNew.GetName())
 					r.enqueueFromLabel(e.MetaNew, q)
-					if e.MetaOld.GetName() != e.MetaNew.GetName() {
+					if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
 						log.Info().Msgf("Auctioneer controller received update event for WarehouseOrder %q", e.MetaOld.GetName())
 						r.enqueueFromLabel(e.MetaOld, q)
 					}
@@ -259,6 +265,12 @@ func indexOwnerReferences(o runtime.Object) (refs []string) {
 	return refs
 }
 
+func nameOrNamespaceChanged(metaNew, metaOld metav1.Object) bool {
+	change := metaNew.GetName() != metaOld.GetName()
+	change = change || metaNew.GetNamespace() != metaOld.GetNamespace()
+	return change
+}
+
 func (r *reconcileAuctioneer) enqueueFromConfig(c ewm.RobotConfigurationSpec, q workqueue.RateLimitingInterface) {
 	// Lookup config in Auctioneer Status
 	var auctioneers ewm.AuctioneerList
@@ -287,6 +299,11 @@ func (r *reconcileAuctioneer) enqueueFromLabel(m metav1.Object, q workqueue.Rate
 
 	if !ok {
 		log.Error().Msgf("No label %q in CR %q", robotLabel, m.GetName())
+		return
+	}
+
+	// Only create events because of robots for which this app was deployed
+	if !r.deployedRobots[robot] {
 		return
 	}
 
@@ -338,20 +355,20 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 	}
 
 	// Run auctions for this Auctioneer
-	clres, wor, err := r.runAuctions(ctx, &auctioneer, robotStates)
+	clres, opr, err := r.runAuctions(ctx, &auctioneer, robotStates)
 	if err != nil {
 		r.setErrorStatus(ctx, &auctioneer, err)
 		return reconcile.Result{}, errors.Wrap(err, "run auctions")
 	}
 
 	// Update status
-	err = r.updateStatus(ctx, &auctioneer, robotStates, clres, wor)
+	err = r.updateStatus(ctx, &auctioneer, robotStates, clres, opr)
 	if err != nil {
 		r.setErrorStatus(ctx, &auctioneer, err)
 		return reconcile.Result{}, errors.Wrap(err, "update auctioneer status")
 	}
 
-	return reconcile.Result{}, nil
+	return r.getReconcileResult(&auctioneer, robotStates, opr), nil
 }
 
 func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctioneer, rs *robotStates, clres *classifiedReservations, opr ordersPerRobot) error {
@@ -362,9 +379,11 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 	for robot := range rs.isInScope {
 		newStatus.RobotsInScope = append(newStatus.RobotsInScope, robot)
 	}
+	sort.Strings(newStatus.RobotsInScope)
 	for robot := range rs.isAvailable {
 		newStatus.AvailableRobots = append(newStatus.AvailableRobots, robot)
 	}
+	sort.Strings(newStatus.AvailableRobots)
 
 	// Warehouse orders in process
 	for _, wip := range opr {
@@ -403,6 +422,8 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 		if err != nil {
 			return errors.Wrap(err, "Auctioneer CR update")
 		}
+
+		log.Debug().Msgf("Status of Auctioneer %q updated", a.GetName())
 	}
 
 	return nil
@@ -413,6 +434,18 @@ func (r *reconcileAuctioneer) setErrorStatus(ctx context.Context, a *ewm.Auction
 	a.Status.Message = fmt.Sprintln(err)
 	// Update status of  Auctioneer CR
 	r.client.Status().Update(ctx, a)
+}
+
+func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotStates, opr ordersPerRobot) reconcile.Result {
+
+	for robot, orders := range opr {
+		if rs.isAvailable[robot] && orders < a.Spec.Configuration.MinOrdersPerRobot {
+			d := time.Second * 30
+			log.Debug().Msgf("Robot %q and maybe others are below spec.configuration.minOrdersPerRobot. Requeue in %v", robot, d)
+			return reconcile.Result{RequeueAfter: d}
+		}
+	}
+	return reconcile.Result{}
 }
 
 func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) (*robotStates, error) {
@@ -479,31 +512,39 @@ func (r *reconcileAuctioneer) mapWarehouseOrders(ctx context.Context, a *ewm.Auc
 		}
 	}
 
-	log.Debug().Msgf("Found this number of running warehouse orders per robot %v", ordersPerRobot)
+	log.Debug().Msgf("Got this map of running warehouse orders per robot: %v", ordersPerRobot)
 
 	return ordersPerRobot, nil
 }
 
-func (r *reconcileAuctioneer) mapOrderAuctions(auc *ewm.OrderAuctionList) (auctionMap, auctionsPerRobot) {
+func (r *reconcileAuctioneer) mapOrderAuctions(ctx context.Context, reservations *ewm.OrderReservationList) (auctionMap, auctionsPerRobot, error) {
 
 	// An OrderAuction consists of different CRs for each robot taking part. All CRs of an auction share the same label
 	auctionMap := make(auctionMap)
 
 	auctionsPerRobot := make(auctionsPerRobot)
 
-	for _, oa := range auc.Items {
-		auction := oa.GetLabels()[orderAuctionLabel]
-		auctionMap[auction] = append(auctionMap[auction], oa)
-		robot := oa.GetLabels()[robotLabel]
-		// Increase counter if OrderAuction is not completed yet
-		if oa.Spec.AuctionStatus != ewm.OrderAuctionAuctionStatusCompleted {
-			auctionsPerRobot[robot]++
+	for _, res := range reservations.Items {
+		// Get OrderAuctions for this OrderReservation
+		var orderAuctions ewm.OrderAuctionList
+		err := r.client.List(ctx, &orderAuctions, ctrlclient.MatchingFields{ownerReferencesUID: string(res.UID)})
+		if err != nil {
+			return nil, nil, errors.Wrap(err, "get OrderAuctions")
+		}
+		for _, oa := range orderAuctions.Items {
+			auction := oa.GetLabels()[orderAuctionLabel]
+			auctionMap[auction] = append(auctionMap[auction], oa)
+			robot := oa.GetLabels()[robotLabel]
+			// Increase counter if OrderAuction is not completed yet
+			if oa.Spec.AuctionStatus != ewm.OrderAuctionAuctionStatusCompleted {
+				auctionsPerRobot[robot]++
+			}
 		}
 	}
 
-	log.Debug().Msgf("Found this numbers of running order auctions per robot %v", auctionsPerRobot)
+	log.Debug().Msgf("Got this map of running order auctions per robot: %v", auctionsPerRobot)
 
-	return auctionMap, auctionsPerRobot
+	return auctionMap, auctionsPerRobot, nil
 }
 
 func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer, rs *robotStates) (*classifiedReservations, ordersPerRobot, error) {
@@ -516,15 +557,11 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 		return nil, nil, errors.Wrap(err, "get OrderReservations")
 	}
 
-	// Get OrderAuctions for this Auctioneer
-	var orderAuctions ewm.OrderAuctionList
-	err = r.client.List(ctx, &orderAuctions, ctrlclient.MatchingFields{ownerReferencesUID: string(a.UID)})
-	if err != nil {
-		return nil, nil, errors.Wrap(err, "get orderAuctions")
-	}
-
 	// Map OrderAuction CRs to order auctions and robots
-	auctionMap, auctionsPerRobot := r.mapOrderAuctions(&orderAuctions)
+	auctionMap, auctionsPerRobot, err := r.mapOrderAuctions(ctx, &orderReservations)
+	if err != nil {
+		return nil, nil, errors.Wrap(err, "map OrderAuctions")
+	}
 
 	// Classify OrderReservations to categories which decide what to to next
 	classifiedReservations := r.classifyOrderReservations(&orderReservations, auctionMap, rs)
@@ -551,7 +588,6 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 
 	// Fifth step
 	r.doCleanupReservations(ctx, classifiedReservations)
-	r.doCleanupAuctions(ctx, auctionMap, &orderReservations)
 
 	return classifiedReservations, ordersPerRobot, nil
 }
@@ -773,14 +809,14 @@ func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Aucti
 					},
 				}
 				// Set Controller reference for CR
-				controllerutil.SetControllerReference(a, &oa, r.scheme)
+				controllerutil.SetControllerReference(&res, &oa, r.scheme)
 
 				// Create CR
 				err := r.client.Create(ctx, &oa)
 				if err != nil {
 					log.Error().Err(err).Msgf("Error creating CRs for OrderAuction %q", res.GetLabels()[orderAuctionLabel])
 				} else {
-					log.Debug().Msgf("OrderAuction CR %q created", oa.GetName)
+					log.Debug().Msgf("OrderAuction CR %q created", oa.GetName())
 					am[res.GetLabels()[orderAuctionLabel]] = append(am[res.GetLabels()[orderAuctionLabel]], oa)
 					apr[robot]++
 				}
@@ -809,11 +845,13 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 	createReservations := false
 
 	for robot := range rs.isAvailable {
-		// First check if might request work, because is below maximum number of warehouse orders
+		// First check if robot might request work, because is below maximum number of warehouse orders
 		if opr[robot] < a.Spec.Configuration.MaxOrdersPerRobot && apr[robot] == 0 {
 			robotMightWork = append(robotMightWork, robot)
 			// Create OrderReservation only if at least one robot is below minimum number of warehouse orders
 			if opr[robot] < a.Spec.Configuration.MinOrdersPerRobot {
+				log.Info().Msgf("Only %v warehouse orders assigned to robot %q. This is below the minimum of %v. Starting a new order auction",
+					opr[robot], robot, a.Spec.Configuration.MinOrdersPerRobot)
 				createReservations = true
 			}
 		}
@@ -860,10 +898,11 @@ func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clres *
 		return clres.auctionsToComplete[i].GetCreationTimestamp().UTC().After(clres.auctionsToComplete[j].GetCreationTimestamp().UTC())
 	})
 
-	// Keep a maximum of 50 OrderReservations. Corresponding OrderAuction CRs will be deleted later
+	// Keep a maximum of 50 OrderReservations. Corresponding OrderAuction CRs will be deleted by garbage collector based on OwnerReferences
 	for i, res := range clres.auctionsToComplete {
 		if i > 49 {
-			err := r.client.Delete(ctx, &res)
+			policy := metav1.DeletePropagationBackground
+			err := r.client.Delete(ctx, &res, &ctrlclient.DeleteOptions{PropagationPolicy: &policy})
 			if err != nil {
 				log.Error().Err(err).Msgf("Error cleaning up OrderReservation %q", res.GetName())
 			} else {
@@ -871,28 +910,4 @@ func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clres *
 			}
 		}
 	}
-}
-
-func (r *reconcileAuctioneer) doCleanupAuctions(ctx context.Context, am auctionMap, reservations *ewm.OrderReservationList) {
-	// Check for OrderAuction CRs where the corresponding OrderReservation is not existing anymore and delete them
-	for auction, auctionCRs := range am {
-		found := false
-		for _, res := range reservations.Items {
-			if res.GetLabels()[orderAuctionLabel] == auction {
-				found = true
-				break
-			}
-		}
-		if !found {
-			for _, oa := range auctionCRs {
-				err := r.client.Delete(ctx, &oa)
-				if err != nil {
-					log.Error().Err(err).Msgf("Error cleaning up OrderAuction %q", oa.GetName())
-				} else {
-					log.Info().Msgf("Cleaned up OrderAuction %q", oa.GetName())
-				}
-			}
-		}
-	}
-
 }
