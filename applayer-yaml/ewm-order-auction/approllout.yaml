@@ -1,0 +1,24 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-order-auction
+  labels:
+    app: ewm-order-auction
+spec:
+  appName: ewm-order-auction-$APP_VERSION
+  ## Select only robot models with edge clusters, such as
+  ## MiR robots. 
+  robots:
+  - selector:
+      matchLabels:
+        model: mir100
+  cloud:
+    values:
+      image:
+        repository: "ewmcloudrobotics/order-auctioneer"
+        tag: "latest"

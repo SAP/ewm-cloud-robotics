@@ -66,6 +66,7 @@ type Scope struct {
 // Configuration defines the configuration of an Auctioneer
 type Configuration struct {
 	MaxOrdersPerRobot   int `json:"maxOrdersPerRobot"`
+	MinOrdersPerRobot   int `json:"minOrdersPerRobot"`
 	MinOrdersPerAuction int `json:"minOrdersPerAuction"`
 }
 
@@ -74,9 +75,10 @@ type AuctioneerStatusStatus string
 
 // Values for AuctioneerStatusStatus
 const (
-	AuctioneerStatusObserving AuctioneerStatusStatus = "OBSERVING"
-	AuctioneerStatusAuction   AuctioneerStatusStatus = "AUCTION"
-	AuctioneerStatusError     AuctioneerStatusStatus = "ERROR"
+	AuctioneerStatusWatching AuctioneerStatusStatus = "WATCHING"
+	AuctioneerStatusWaiting  AuctioneerStatusStatus = "WAITING"
+	AuctioneerStatusAuction  AuctioneerStatusStatus = "AUCTION"
+	AuctioneerStatusError    AuctioneerStatusStatus = "ERROR"
 )
 
 // +genclient
@@ -181,15 +183,15 @@ type OrderAuctionSpec struct {
 
 // OrderAuctionStatus represents the status of OrderAuction CRD
 type OrderAuctionStatus struct {
-	BidStatus       OrderAuctionBidStatus   `json:"bidstatus,omitempty"`
-	WarehouseOrders []WarehouseOrderBidding `json:"warehouseorders,omitempty"`
+	BidStatus OrderAuctionBidStatus   `json:"bidstatus,omitempty"`
+	Biddings  []WarehouseOrderBidding `json:"biddings,omitempty"`
 }
 
 // WarehouseOrderBidding represents the a bidding from a robot for a warehouse order
 type WarehouseOrderBidding struct {
 	Lgnum   string  `json:"lgnum"`
 	Who     string  `json:"who"`
-	Bidding float32 `json:"bidding"`
+	Bidding float64 `json:"bidding"`
 }
 
 // OrderAuctionAuctionStatus describes the status of this OrderAuction
@@ -242,10 +244,10 @@ type RobotConfigurationSpec struct {
 	Rsrctype              string   `json:"rsrctype"`
 	Rsrcgrp               string   `json:"rsrcgrp"`
 	Chargers              []string `json:"chargers"`
-	BatteryMin            float32  `json:"batteryMin"`
-	BatteryOk             float32  `json:"batteryOk"`
-	BatteryIdle           float32  `json:"batteryIdle"`
-	MaxIdleTime           float32  `json:"maxIdleTime"`
+	BatteryMin            float64  `json:"batteryMin"`
+	BatteryOk             float64  `json:"batteryOk"`
+	BatteryIdle           float64  `json:"batteryIdle"`
+	MaxIdleTime           float64  `json:"maxIdleTime"`
 	RecoverFromRobotError bool     `json:"recoverFromRobotError"`
 }
 
@@ -356,7 +358,7 @@ type EWMWarehouseOrder struct {
 	Lgpla          string             `json:"lgpla"`
 	Queue          string             `json:"queue"`
 	Rsrc           string             `json:"rsrc"`
-	Lsd            int                `json:"lsd"`
+	Lsd            Time               `json:"lsd"`
 	Topwhoid       string             `json:"topwhoid"`
 	Refwhoid       string             `json:"refwhoid"`
 	Flgwho         bool               `json:"flgwho"`
@@ -382,8 +384,8 @@ type EWMWarehouseTask struct {
 	Vlenr    string  `json:"vlenr"`
 	Vlpla    string  `json:"vlpla"`
 	Vltyp    string  `json:"vltyp"`
-	Volum    float32 `json:"volum"`
-	Weight   float32 `json:"weight"`
+	Volum    float64 `json:"volum"`
+	Weight   float64 `json:"weight"`
 	Who      string  `json:"who"`
 }
 

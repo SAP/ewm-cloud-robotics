@@ -1,0 +1,13 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/order-bid-agent"
+  tag: "latest"
+
+robot:
+  name: ""
+
+# Certificate authority used to sign in-cluster certificates.
+certificate_authority:
+  key: ""
+  crt: ""

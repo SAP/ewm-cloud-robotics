@@ -43,7 +43,6 @@ spec:
           required:
             - warehouseorders
             - validuntil
-            - maxorders
             - auctionstatus
           properties:
             warehouseorders:
@@ -171,7 +170,7 @@ spec:
               enum:
                 - RUNNING
                 - COMPLETED
-            warehouseorders:
+            biddings:
               type: array
               items:
                 type: object

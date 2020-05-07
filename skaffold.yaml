@@ -47,6 +47,10 @@ build:
       context: .
       docker:
         dockerfile: docker/monitoring-ui/Dockerfile
+    - image: order-auctioneer
+      context: .
+      docker:
+        dockerfile: docker/order-auctioneer/Dockerfile
   local: 
     push: false
 test:
@@ -74,6 +78,9 @@ test:
   - image: monitoring-ui
     structureTests:
       - docker/monitoring-ui/test/container-structure-test/prod.yaml
+  - image: order-auctioneer
+    structureTests:
+      - docker/order-auctioneer/test/container-structure-test/prod.yaml
 deploy:
   kubectl:
     manifests:
@@ -139,6 +146,12 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: order-auctioneer
+          custom:
+            buildCommand: ./scripts/gcr-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
   ## Tests are executed to verify that correct Dockerfiles were used
   ## Deploy is left blank since this profile is for updating the container registry.
@@ -194,6 +207,12 @@ profiles:
         - image: monitoring-ui
           custom:
             buildCommand: ./scripts/dockerhub-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-auctioneer
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -260,6 +279,23 @@ profiles:
       - image: monitoring-ui
         structureTests:
           - docker/monitoring-ui/test/container-structure-test/prod.yaml
+    ## ewm-order-auction
+  - name: ewm-order-auction
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: order-auctioneer
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: order-auctioneer
+        structureTests:
+          - docker/order-auctioneer/test/container-structure-test/prod.yaml
   ## ewm-sim        
   - name: ewm-sim
     build:

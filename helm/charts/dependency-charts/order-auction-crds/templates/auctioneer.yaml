@@ -57,11 +57,15 @@ spec:
               type: object
               required:
                 - maxOrdersPerRobot
+                - minOrdersPerRobot
                 - minOrdersPerAuction
               properties:
                 maxOrdersPerRobot:
                   type: integer
-                  minimum: 1
+                  minimum: 2
+                minOrdersPerRobot:
+                  type: integer
+                  minimum: 2
                 minOrdersPerAuction:
                   type: integer
                   minimum: 2
@@ -83,7 +87,8 @@ spec:
             status:
               type: string
               enum:
-                - OBSERVING
+                - WATCHING
+                - WAITING
                 - AUCTION
                 - ERROR
             message:
