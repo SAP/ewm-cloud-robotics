@@ -984,7 +984,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     endloop.
 
     if lv_where is not initial.
-      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_grp in @s_rsrc_grp'.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_grp in @s_rsrc_grp and langu = @sy-langu'.
       select * from /scwm/trsrc_grpt
         into corresponding fields of table @lt_trsrc_grpt
         where (lv_where).
@@ -992,7 +992,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       select * from /scwm/trsrc_grpt
         into corresponding fields of table @lt_trsrc_grpt
         where lgnum in @s_lgnum
-          and rsrc_grp in @s_rsrc_grp.
+          and rsrc_grp in @s_rsrc_grp
+          and langu = @sy-langu.
     endif.  "if lv_where is not initial.
 
     if sy-subrc = 0.
@@ -1216,14 +1217,14 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     endloop.
 
     if lv_where is not initial.
-      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_type in @s_rsrc_type'.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_type in @s_rsrc_type and langu = @sy-langu'.
       select * from /scwm/trsrc_typt
         into corresponding fields of table @lt_trsrc_typt
         where (lv_where).
     else.
       select * from /scwm/trsrc_typt
         into corresponding fields of table @lt_trsrc_typt
-        where lgnum in @s_lgnum and rsrc_type in @s_rsrc_type.
+        where lgnum in @s_lgnum and rsrc_type in @s_rsrc_type and langu = @sy-langu.
     endif.  "if lv_where is not initial.
 
     if sy-subrc = 0.
