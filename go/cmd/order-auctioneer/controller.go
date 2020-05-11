@@ -750,7 +750,7 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 				continue
 			}
 			if who.Who == bidding.bidding.Who && who.Lgnum == bidding.bidding.Lgnum {
-				log.Info().Msgf("Assigning warehouse order \"%s.%s\" to Rsrc %q. The bidding was %v", bidding.bidding.Lgnum,
+				log.Info().Msgf("Assigning warehouse order \"%s.%s\" to Rsrc %q. Lsd overdue. The bidding was %v", bidding.bidding.Lgnum,
 					bidding.bidding.Who, strings.ToUpper(bidding.robot), bidding.bidding.Bidding)
 				orderAssignment := ewm.OrderAssignment{
 					Lgnum: bidding.bidding.Lgnum,
@@ -760,8 +760,28 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 				orderAssignments = append(orderAssignments, orderAssignment)
 				robotsAssigned[bidding.robot] = true
 				warehouseOrdersAssigned[bidding.bidding.Who] = true
-				// Assignment made can continue with next warehouseOrdersOverdue
+				// Assignment made, can continue with next warehouseOrdersOverdue
 				break
+			}
+		}
+		// If there is no bidding assign it to a random robot
+		if !warehouseOrdersAssigned[who.Who] {
+			for robot := range rs.isAvailable {
+				if !robotsAssigned[robot] {
+					log.Info().Msgf(
+						"Assigning warehouse order \"%s.%s\" to Rsrc %q. Lsd overdue. No bidding, random robot selection.",
+						who.Lgnum, who.Who, strings.ToUpper(robot))
+					orderAssignment := ewm.OrderAssignment{
+						Lgnum: who.Lgnum,
+						Who:   who.Who,
+						Rsrc:  strings.ToUpper(robot),
+					}
+					orderAssignments = append(orderAssignments, orderAssignment)
+					robotsAssigned[robot] = true
+					warehouseOrdersAssigned[who.Who] = true
+					// Assignment made, can continue with next warehouseOrdersOverdue
+					break
+				}
 			}
 		}
 	}
