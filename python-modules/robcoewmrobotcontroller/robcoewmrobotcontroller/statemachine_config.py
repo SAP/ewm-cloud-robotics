@@ -41,6 +41,7 @@ class RobotEWMConfig:
     t_too_many_failed_whos = 'too_many_failed_whos'
     t_request_work = 'request_work'
     t_recover_robot = 'recover_robot'
+    t_unassign_whos = 'unassign_whos'
 
     # processes
     p_moveTrolley = 'moveTrolley'
@@ -146,7 +147,11 @@ class RobotEWMConfig:
         {'trigger': t_charge_battery,
          'source': [*idle_states, 'movingToStaging'],
          'dest': 'charging',
-         'before': '_cancel_request_work'},
+         'before': ['_cancel_request_work', '_send_unassign_whos_request']},
+        {'trigger': t_unassign_whos,
+         'source': 'charging',
+         'dest': None,
+         'before': '_send_unassign_whos_request'},
         {'trigger': t_mission_succeeded,
          'source': 'charging',
          'dest': 'noWork'},

@@ -62,11 +62,14 @@ class OrderController(K8sCRHandler):
         # Run all registered callback functions
         try:
             # Check if warehouse order has to be processed in callback.
-            process_cr = self._warehouse_order_precheck(name, custom_res)
+            if operation == 'DELETED':
+                process_cr = True
+            else:
+                process_cr = self._warehouse_order_precheck(name, custom_res)
             # If pre check was successfull set iterate over all callbacks
             if process_cr:
                 for callback in self.callbacks[operation].values():
-                    callback(name, custom_res['spec']['data'])
+                    callback(name, custom_res.get('spec', {}).get('data', {}))
         except Exception:  # pylint: disable=broad-except
             _LOGGER.error(
                 'Error while processing custom resource %s', name)

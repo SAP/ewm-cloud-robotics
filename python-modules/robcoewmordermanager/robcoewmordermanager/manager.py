@@ -389,6 +389,44 @@ class EWMOrderManager:
                 # order is moved to a different queue and not assigned to the robot anymore
                 if whtask.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF:
                     self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
+        # UNASSIGN Messages
+        elif whtask.confirmationtype == ConfirmWarehouseTask.CONF_UNASSIGN:
+            # Only able to unassign before first confirmation was made
+            if whtask.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF:
+
+                try:
+                    self.ewmwho.unassign_robot_warehouseorder(
+                        whtask.lgnum, whtask.rsrc, whtask.who)
+                except (TimeoutError, ConnectionError) as err:
+                    # If not successfull. Raise to put message back in queue
+                    _LOGGER.error(
+                        'Connection error while requesting unassigning warehouse order %s from '
+                        'robot  %s: %s', whtask.who, whtask.rsrc, err)
+                    raise
+                except IOError as err:
+                    _LOGGER.error(
+                        'IOError error while requesting unassigning warehouse order %s from '
+                        'robot  %s: %s', whtask.who, whtask.rsrc, err)
+                    raise
+                except NoOrderFoundError:
+                    _LOGGER.error(
+                        'Unable to unassign warehouse order %s.%s: not found', whtask.lgnum,
+                        whtask.who)
+                except ODataAPIException as err:
+                    _LOGGER.error(
+                        'Business error in SAP EWM Backend while requesting unassigning warehouse '
+                        'order %s from robot  %s: %s', whtask.who, whtask.rsrc, err)
+                    raise
+                else:
+                    _LOGGER.info(
+                        'Warehouse order %s.%s successfully unassigned from robot %s',
+                        whtask.lgnum, whtask.who, whtask.rsrc)
+                self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
+            else:
+                _LOGGER.error(
+                    'Cannot unassign warehouse order %s.%s from robot %s because first '
+                    'confirmation of warehouse task %s is already made', whtask.lgnum, whtask.who,
+                    whtask.rsrc, whtask.tanum)
 
     def get_and_send_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = True,

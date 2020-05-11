@@ -15,7 +15,7 @@
 import logging
 import time
 from collections import namedtuple, OrderedDict, defaultdict
-from typing import DefaultDict, Dict, Optional
+from typing import DefaultDict, Dict, Optional, List
 
 from transitions.core import EventData
 from transitions.extensions import LockedHierarchicalMachine as Machine
@@ -380,6 +380,7 @@ class RobotEWMMachine(Machine):
                     'New warehouse order %s received, but robot battery level is too low at "%s" '
                     'percent. Continue charging', warehouseorder.who,
                     self.mission_api.battery_percentage)
+                self.unassign_whos()
             elif self.state in self.conf.idle_states:
                 _LOGGER.info(
                     'New warehouse order %s received, while robot is in state "%s". Start '
@@ -625,6 +626,34 @@ class RobotEWMMachine(Machine):
                 'order manager', self.active_wht.tanum, self.active_wht.who)
         else:
             raise TypeError('No warehouse task assigned to self.active_wht')
+
+    def _send_unassign_whos_request(self, event: EventData) -> None:
+        """Request to unassign warehouse orders from robot."""
+        who_remove: List[WhoIdentifier] = []
+        for whoident, who in self.warehouseorders.items():
+            # Do not unassign the active warehouse order
+            if who == self.active_who:
+                continue
+            # But the other warehouse orders from queue
+            for wht in who.warehousetasks:
+                confirmation = ConfirmWarehouseTask(
+                    lgnum=wht.lgnum, tanum=wht.tanum,
+                    rsrc=self.robot_config.rsrc, who=wht.who,
+                    confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
+                    confirmationtype=ConfirmWarehouseTask.CONF_UNASSIGN)
+
+                self.order_controller.confirm_wht(unstructure(confirmation))
+                who_remove.append(whoident)
+
+                _LOGGER.info(
+                    'Request to unassign warehouse order %s sent to order manager',
+                    wht.who)
+                # Needs to be sent only once per warehouse order
+                break
+
+        # Remove unassigned warehouse orders from queue
+        for whoident in who_remove:
+            self.warehouseorders.pop(whoident, None)
 
     def _request_work(self, event: EventData) -> None:
         """Request work from order manager."""

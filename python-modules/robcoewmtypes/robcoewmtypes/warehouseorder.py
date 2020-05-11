@@ -150,6 +150,7 @@ class ConfirmWarehouseTask:
 
     CONF_SUCCESS = 'SUCCESS'
     CONF_ERROR = 'ERROR'
+    CONF_UNASSIGN = 'UNASSIGN'
 
     @confirmationnumber.validator
     def validate_confirmationnumber(self, attribute, value) -> None:
@@ -162,8 +163,8 @@ class ConfirmWarehouseTask:
     def validate_confirmationtype(self, attribute, value) -> None:
         """Validate confirmation."""
         cls = self.__class__
-        if value not in [cls.CONF_SUCCESS, cls.CONF_ERROR]:
-            raise ValueError('Attribute "confirmationtype" must be SUCCESS or ERROR')
+        if value not in [cls.CONF_SUCCESS, cls.CONF_ERROR, cls.CONF_UNASSIGN]:
+            raise ValueError('Attribute "confirmationtype" must be SUCCESS, ERROR or UNASSIGN')
 
 
 @attr.s
