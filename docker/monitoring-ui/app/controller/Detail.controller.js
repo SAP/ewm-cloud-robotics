@@ -129,8 +129,10 @@ sap.ui.define([
 					if ("warehousetasks" in data.items[i].spec.data) {
 						whoJSON.warehousetasks = data.items[i].spec.data.warehousetasks;
 					}
-					if ("process_status" in data.items[i].spec) {
-						whoJSON.process_status = data.items[i].spec.process_status;
+					if ("status" in data.items[i]) {
+						if ("data" in data.items[i].status) {
+							whoJSON.process_status = data.items[i].status.data;
+						}
 					}
 
 					that.getOwnerComponent().setModel(new JSONModel(whoJSON), "whoDetail");
