@@ -307,13 +307,16 @@ sap.ui.define([
 					this
 				);
 				this.getView().addDependent(this._valueHelpDialogRsrcgrp);
-				//this._valueHelpDialogLgnum.setModel(this.getOwnerComponent().getModel("odata"), "odata");
-			}
-			
-			// create a filter for the binding
-			this._valueHelpDialogRsrcgrp.getBinding("items").filter([new Filter(
-				"Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey()
-			)]);
+				var that = this;
+				this.getView().getModel("odata").read("/ResourceGroupSet", {
+					urlParameters: {
+						"$expand": "ResourceGroupDescriptions"
+					},
+					success: function(data) {
+						that._valueHelpDialogRsrcgrp.setModel(new JSONModel(data), "rsrcgrp");
+					}
+				});
+			} 
 
 			// open value help dialog filtered by the input value
 			this._valueHelpDialogRsrcgrp.open(sInputValue);
@@ -326,14 +329,11 @@ sap.ui.define([
 					new Filter({
 						filters: [
 							new Filter("RsrcGrp", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Text", sap.ui.model.FilterOperator.Contains, sValue)
+							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue)
 						],
 						and: false
-					}),
-					new Filter("Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey())
-				],
-				and: true
+					})
+				]
 			});
 			oEvent.getSource().getBinding("items").filter([oFilter]);
 		},
@@ -355,14 +355,18 @@ sap.ui.define([
 					"monitoring.view.fragments.DetailRobotRsrctypeValueHelp",
 					this
 				);
+
 				this.getView().addDependent(this._valueHelpDialogRsrctype);
-				//this._valueHelpDialogLgnum.setModel(this.getOwnerComponent().getModel("odata"), "odata");
+				var that = this;
+				this.getView().getModel("odata").read("/RobotResourceTypeSet", {
+					urlParameters: {
+						"$expand": "ResourceTypeDescriptions"
+					},
+					success: function(data) {
+						that._valueHelpDialogRsrctype.setModel(new JSONModel(data), "rsrctype");
+					}
+				});
 			}
-			
-			// create a filter for the binding
-			this._valueHelpDialogRsrctype.getBinding("items").filter([new Filter(
-				"Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey()
-			)]);
 
 			// open value help dialog filtered by the input value
 			this._valueHelpDialogRsrctype.open(sInputValue);
@@ -375,14 +379,11 @@ sap.ui.define([
 					new Filter({
 						filters: [
 							new Filter("RsrcType", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Text", sap.ui.model.FilterOperator.Contains, sValue)
+							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue)
 						],
 						and: false
-					}),
-					new Filter("Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey())
-				],
-				and: true
+					})
+				]
 			});
 			oEvent.getSource().getBinding("items").filter([oFilter]);
 		},

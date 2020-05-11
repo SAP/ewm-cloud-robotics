@@ -94,12 +94,27 @@ sap.ui.define([
 						"uid": data.items[i].metadata.uid,
 						"creationTimestamp": data.items[i].metadata.creationTimestamp,
 						"name": data.items[i].metadata.name,
-						"model": data.items[i].metadata.labels.model,
-						"batteryPercentage": data.items[i].status.robot.batteryPercentage,
-						"lastStateChangeTime": data.items[i].status.robot.lastStateChangeTime,
-						"state": data.items[i].status.robot.state,
-						"updateTime": data.items[i].status.robot.updateTime
+						"model": data.items[i].metadata.labels.model
 					};
+					
+					//add status information
+					if(data.items[i].hasOwnProperty("status")) {
+						if(data.items[i].status.hasOwnProperty("robot")) {
+							if(data.items[i].status.robot.hasOwnProperty("state")) {
+								robotJSON["state"] = data.items[i].status.robot.state;
+							}
+							if(data.items[i].status.robot.hasOwnProperty("updateTime")) {
+								robotJSON["updateTime"] = data.items[i].status.robot.updateTime;
+							}
+							if(data.items[i].status.robot.hasOwnProperty("batteryPercentage")) {
+								robotJSON["batteryPercentage"] = data.items[i].status.robot.batteryPercentage;
+							}
+							if(data.items[i].status.robot.hasOwnProperty("lastStateChangeTime")) {
+								robotJSON["lastStateChangeTime"] = data.items[i].status.robot.lastStateChangeTime;
+							}
+						}
+							
+					}
 
 					modelData.rows.push(robotJSON);
 					furtherLinks.push(data.items[i].metadata.selfLink.replace("robots", "robotconfigurations"));
