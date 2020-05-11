@@ -14,8 +14,9 @@ sap.ui.define([
 	"monitoring/model/formatter",
 	'sap/f/library',
 	'sap/m/MessageToast',
-	"sap/ui/model/Filter"
-], function (Controller, JSONModel, formatter, fioriLibrary, MessageToast, Filter) {
+	"sap/ui/model/Filter",
+	"sap/m/MessageBox"
+], function (Controller, JSONModel, formatter, fioriLibrary, MessageToast, Filter, MessageBox) {
 	"use strict";
 
 	return Controller.extend("monitoring.controller.Detail", {
@@ -139,6 +140,48 @@ sap.ui.define([
 		},
 
 		handleSave: function () {
+			// validate input before save
+			this.getView().byId("btnSave").setEnabled(false);
+			this.responseCtr = 0; // ResourceType and Group has to answer
+			this.withoutErrors = true;
+			var configData = this.getOwnerComponent().getModel("robotConfig").getData();
+			var that = this;
+			
+			this.getView().getModel("odata").read("/RobotResourceTypeSet(Lgnum='" + configData.lgnum +"',RsrcType='" + configData.rsrctype + "')", {
+				success: function() {
+					that.responseCtr++;
+					if(that.responseCtr >= 2) {
+						that.executeSave();
+					}
+				},
+				error: function() {
+					if(that.withoutErrors) {
+						that.getView().byId("btnSave").setEnabled(true);
+						MessageBox.error(that.getView().getModel("i18n").getResourceBundle().getText("validationFailed"));
+						that.withoutErrors = false;
+					}
+				}
+			});
+			
+			this.getView().getModel("odata").read("/ResourceGroupSet(Lgnum='" + configData.lgnum +"',RsrcGrp='" + configData.rsrcgrp + "')", {
+				success: function() {
+					that.responseCtr++;
+					if(that.responseCtr >= 2) {
+						that.executeSave();
+					}
+				},
+				error: function() {
+					if(that.withoutErrors) {
+						that.getView().byId("btnSave").setEnabled(true);
+						MessageBox.error(that.getView().getModel("i18n").getResourceBundle().getText("validationFailed"));
+						that.withoutErrors = false;
+					}
+				}
+			});
+		},
+
+		executeSave: function() {
+			this.getView().byId("btnSave").setEnabled(true);
 			var that = this;
 			var configData = this.getOwnerComponent().getModel("robotConfig").getData();
 			var patchData = {};

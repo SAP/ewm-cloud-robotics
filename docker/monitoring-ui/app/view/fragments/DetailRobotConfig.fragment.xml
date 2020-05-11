@@ -16,7 +16,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 					<Title text="{robotConfig>/name}" wrapping="true"/>
 				</u:expandedHeading>
 				<u:actions>
-					<Button icon="sap-icon://save" press="handleSave" text="{i18n>saveInput}" type="Success" class="sapUiSmallMarginEnd"/>
+					<Button id="btnSave" icon="sap-icon://save" press="handleSave" text="{i18n>saveInput}" type="Success" class="sapUiSmallMarginEnd"/>
 					<OverflowToolbarButton icon="sap-icon://decline" press="handleClose" tooltip="{i18n>close}"/>
 					<OverflowToolbarButton icon="{= ${viewType>/layout} === 'MidColumnFullScreen' ? 'sap-icon://exit-full-screen' : 'sap-icon://full-screen'}"
 						press="handleRobotFullscreen" tooltip="{i18n>fullscreen}"/>
