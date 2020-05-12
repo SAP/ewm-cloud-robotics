@@ -1,11 +1,11 @@
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
-	<TableSelectDialog search="handleValueHelpRsrctypeSearch" confirm="handleValueHelpRsrctypeConfirm"
-		items="{path: 'odata>/ResourceTypeDescriptionSet', sorter:{path: 'Lgnum'} }">
+	<TableSelectDialog id="resourceTypeTable" search="handleValueHelpRsrctypeSearch" confirm="handleValueHelpRsrctypeConfirm"
+		items="{path: 'rsrctype>/results', sorter:{path: 'Lgnum'} }">
 		<ColumnListItem>
 			<cells>
-				<ObjectIdentifier title="{odata>RsrcType}"/>
-				<Text text="{odata>Lgnum}"/>
-				<Text text="{odata>Text}"/>
+				<ObjectIdentifier title="{rsrctype>RsrcType}"/>
+				<Text text="{rsrctype>Lgnum}"/>
+				<Text text="{rsrctype>ResourceTypeDescriptions/results/0/Text}"/>
 			</cells>
 		</ColumnListItem>
 		<columns>

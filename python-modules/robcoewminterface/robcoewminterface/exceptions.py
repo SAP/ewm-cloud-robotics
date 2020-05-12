@@ -45,7 +45,8 @@ ODATA_ERROR_CODES = {
     'WAREHOUSE_TASK_ALREADY_CONFIRMED': 'Warehouse Task is confirmed already.',
     'URL_PARAM_BODY_INCONSISTENT': 'URL parameters and POST body inconsistent.',
     'WAREHOUSE_ORDER_STATUS_NOT_UPDATED': 'Warehouse Order status not updated.',
-    'FOREIGN_LOCK': 'Foreign lock.'
+    'FOREIGN_LOCK': 'Foreign lock.',
+    'NO_AUTHORIZATION': 'No authorization in EWM backend.'
 }
 
 ODATA_ERROR_REVERSE = {v: k for k, v in ODATA_ERROR_CODES.items()}
@@ -165,6 +166,13 @@ class ForeignLockError(ODataAPIException):
 
     # OData error code this exception class should be used to.
     ERROR_CODE = 'FOREIGN_LOCK'
+
+
+class NoAuthorizationError(ODataAPIException):
+    """NoAuthorization error."""
+
+    # OData error code this exception class should be used to.
+    ERROR_CODE = 'NO_AUTHORIZATION'
 
 
 class AuthorizationError(ODataAPIException):

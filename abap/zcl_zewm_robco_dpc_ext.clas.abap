@@ -29,6 +29,8 @@ public section.
   constants GC_ERROR_QNC type STRING value 'QUEUE_NOT_CHANGED' ##NO_TEXT.
   constants GC_ERROR_WAC type STRING value 'WAREHOUSE_TASK_ALREADY_CONFIRMED' ##NO_TEXT.
   constants GC_ERROR_WSN type STRING value 'WAREHOUSE_ORDER_STATUS_NOT_UPDATED' ##NO_TEXT.
+  constants GC_ERROR_FLK type STRING value 'FOREIGN_LOCK' ##NO_TEXT.
+  constants GC_ERROR_NOA type STRING value 'NO_AUTHORIZATION' ##NO_TEXT.
 
   methods /IWBEP/IF_MGW_APPL_SRV_RUNTIME~EXECUTE_ACTION
     redefinition .
@@ -79,8 +81,6 @@ protected section.
   methods ROBOTRESOURCETYP_GET_ENTITYSET
     redefinition .
 private section.
-
-  data GC_ERROR_FLK type STRING value 'FOREIGN_LOCK' ##NO_TEXT.
 ENDCLASS.
 
 
@@ -127,6 +127,33 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     data(lt_parameter) = io_tech_request_context->get_parameters( ).
 
     field-symbols: <ls_parameter>      like line of lt_parameter.
+
+    case lv_action_name.
+      when 'GetRobotWarehouseOrders' or 'GetInProcessWarehouseOrders'.
+        authority-check object 'ZEWM_ROBCO'
+          id 'ACTVT'  field '03'.
+
+        if sy-subrc <> 0.
+          raise exception type /iwbep/cx_mgw_busi_exception
+            exporting
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = 401
+              msg_code         = gc_error_noa
+              message          = text-026.
+        endif.
+      when others.
+        authority-check object 'ZEWM_ROBCO'
+          id 'ACTVT'  field '02'.
+
+        if sy-subrc <> 0.
+          raise exception type /iwbep/cx_mgw_busi_exception
+            exporting
+              textid           = /iwbep/cx_mgw_busi_exception=>business_error
+              http_status_code = 401
+              msg_code         = gc_error_noa
+              message          = text-026.
+        endif.
+    endcase.
 
     loop at lt_parameter assigning <ls_parameter>.
       case <ls_parameter>-name.
@@ -811,6 +838,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -845,6 +884,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lt_warehousetask type zcl_zewm_robco_mpc=>tt_openwarehousetask.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
@@ -923,6 +974,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -964,6 +1027,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
 
 * OData keys from associations
@@ -984,7 +1059,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     endloop.
 
     if lv_where is not initial.
-      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_grp in @s_rsrc_grp'.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_grp in @s_rsrc_grp and langu = @sy-langu'.
       select * from /scwm/trsrc_grpt
         into corresponding fields of table @lt_trsrc_grpt
         where (lv_where).
@@ -992,7 +1067,8 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       select * from /scwm/trsrc_grpt
         into corresponding fields of table @lt_trsrc_grpt
         where lgnum in @s_lgnum
-          and rsrc_grp in @s_rsrc_grp.
+          and rsrc_grp in @s_rsrc_grp
+          and langu = @sy-langu.
     endif.  "if lv_where is not initial.
 
     if sy-subrc = 0.
@@ -1048,6 +1124,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1084,6 +1172,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lt_trsrc_grp type zcl_zewm_robco_mpc=>tt_resourcegroup.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
 * OData keys from associations
     loop at it_key_tab assigning <ls_key>.
@@ -1155,6 +1255,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1196,6 +1308,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
 
 * OData keys from associations
@@ -1216,14 +1340,14 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
     endloop.
 
     if lv_where is not initial.
-      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_type in @s_rsrc_type'.
+      lv_where = lv_where && ' and lgnum in @s_lgnum and rsrc_type in @s_rsrc_type and langu = @sy-langu'.
       select * from /scwm/trsrc_typt
         into corresponding fields of table @lt_trsrc_typt
         where (lv_where).
     else.
       select * from /scwm/trsrc_typt
         into corresponding fields of table @lt_trsrc_typt
-        where lgnum in @s_lgnum and rsrc_type in @s_rsrc_type.
+        where lgnum in @s_lgnum and rsrc_type in @s_rsrc_type and langu = @sy-langu.
     endif.  "if lv_where is not initial.
 
     if sy-subrc = 0.
@@ -1279,6 +1403,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1315,6 +1451,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lt_robotresourcetype type zcl_zewm_robco_mpc=>tt_robotresourcetype.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
 * OData keys from associations
     loop at it_key_tab assigning <ls_key>.
@@ -1383,6 +1531,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           ls_robot_input    type zcl_zewm_robco_mpc=>ts_robot,
           ls_rsrc_v         type /scwm/v_rsrc,
           ls_trsrc_grp      type /scwm/trsrc_grp.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '01'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
 * Get data from oData service
     io_data_provider->read_entry_data( importing es_data = ls_robot_input ).
@@ -1493,6 +1653,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1534,6 +1706,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lt_robot    type zcl_zewm_robco_mpc=>tt_robot.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
 * OData keys from associations
     loop at it_key_tab assigning <ls_key>.
@@ -1618,6 +1802,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           ls_trsrc_grp      type /scwm/trsrc_grp.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '02'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
 * Get data from oData service
     io_data_provider->read_entry_data( importing es_data = ls_robot_input ).
@@ -1782,6 +1978,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1815,6 +2023,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lt_storagebin type zcl_zewm_robco_mpc=>tt_storagebin.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
@@ -1882,6 +2102,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -1915,6 +2147,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           lt_warehousedescription type zcl_zewm_robco_mpc=>tt_warehousedescription.
 
     field-symbols: <ls_key> like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
     data(lv_where) = io_tech_request_context->get_osql_where_clause_convert( ).
 
@@ -1993,6 +2237,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -2020,6 +2276,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 **
 
     data: lt_warehousenumber type zcl_zewm_robco_mpc=>tt_warehousenumber.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
     select * from /scwm/t300 into corresponding fields of table @lt_warehousenumber.
     if sy-subrc = 0.
@@ -2074,6 +2342,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_key> like line of it_key_tab.
 
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
+
     loop at it_key_tab assigning <ls_key>.
       case <ls_key>-name.
         when 'Lgnum'.
@@ -2114,6 +2394,18 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 
     field-symbols: <ls_filter> type /iwbep/s_mgw_select_option,
                    <ls_key>    like line of it_key_tab.
+
+    authority-check object 'ZEWM_ROBCO'
+      id 'ACTVT'  field '03'.
+
+    if sy-subrc <> 0.
+      raise exception type /iwbep/cx_mgw_busi_exception
+        exporting
+          textid           = /iwbep/cx_mgw_busi_exception=>business_error
+          http_status_code = 401
+          msg_code         = gc_error_noa
+          message          = text-026.
+    endif.
 
 * OData filters
     lt_filter = io_tech_request_context->get_filter( )->get_filter_select_options( ).

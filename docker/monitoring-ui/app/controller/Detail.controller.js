@@ -14,8 +14,9 @@ sap.ui.define([
 	"monitoring/model/formatter",
 	'sap/f/library',
 	'sap/m/MessageToast',
-	"sap/ui/model/Filter"
-], function (Controller, JSONModel, formatter, fioriLibrary, MessageToast, Filter) {
+	"sap/ui/model/Filter",
+	"sap/m/MessageBox"
+], function (Controller, JSONModel, formatter, fioriLibrary, MessageToast, Filter, MessageBox) {
 	"use strict";
 
 	return Controller.extend("monitoring.controller.Detail", {
@@ -33,6 +34,17 @@ sap.ui.define([
 			this.oRouter.getRoute("whoDetail").attachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("whoDetailFullscreen").attachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("robotDetailFullscreen").attachPatternMatched(this._onRobotRouteMatched, this);
+
+			sap.ui.getCore().getEventBus().subscribe("Master", "UpdateEvent", this.updateModels, this);
+		},
+
+		updateModels: function() {
+			if(this.getOwnerComponent().getModel("viewType").getProperty("/robot")) {
+				this._bindRobotConfiguration(this._robotName);
+			}
+			else {
+				this._bindWhoConfiguration(this._warhouseOrder);
+			}
 		},
 
 		_bindRobotConfiguration: function (robotName) {
@@ -117,8 +129,10 @@ sap.ui.define([
 					if ("warehousetasks" in data.items[i].spec.data) {
 						whoJSON.warehousetasks = data.items[i].spec.data.warehousetasks;
 					}
-					if ("process_status" in data.items[i].spec) {
-						whoJSON.process_status = data.items[i].spec.process_status;
+					if ("status" in data.items[i]) {
+						if ("data" in data.items[i].status) {
+							whoJSON.process_status = data.items[i].status.data;
+						}
 					}
 
 					that.getOwnerComponent().setModel(new JSONModel(whoJSON), "whoDetail");
@@ -128,6 +142,48 @@ sap.ui.define([
 		},
 
 		handleSave: function () {
+			// validate input before save
+			this.getView().byId("btnSave").setEnabled(false);
+			this.responseCtr = 0; // ResourceType and Group has to answer
+			this.withoutErrors = true;
+			var configData = this.getOwnerComponent().getModel("robotConfig").getData();
+			var that = this;
+			
+			this.getView().getModel("odata").read("/RobotResourceTypeSet(Lgnum='" + configData.lgnum +"',RsrcType='" + configData.rsrctype + "')", {
+				success: function() {
+					that.responseCtr++;
+					if(that.responseCtr >= 2) {
+						that.executeSave();
+					}
+				},
+				error: function() {
+					if(that.withoutErrors) {
+						that.getView().byId("btnSave").setEnabled(true);
+						MessageBox.error(that.getView().getModel("i18n").getResourceBundle().getText("validationFailed"));
+						that.withoutErrors = false;
+					}
+				}
+			});
+			
+			this.getView().getModel("odata").read("/ResourceGroupSet(Lgnum='" + configData.lgnum +"',RsrcGrp='" + configData.rsrcgrp + "')", {
+				success: function() {
+					that.responseCtr++;
+					if(that.responseCtr >= 2) {
+						that.executeSave();
+					}
+				},
+				error: function() {
+					if(that.withoutErrors) {
+						that.getView().byId("btnSave").setEnabled(true);
+						MessageBox.error(that.getView().getModel("i18n").getResourceBundle().getText("validationFailed"));
+						that.withoutErrors = false;
+					}
+				}
+			});
+		},
+
+		executeSave: function() {
+			this.getView().byId("btnSave").setEnabled(true);
 			var that = this;
 			var configData = this.getOwnerComponent().getModel("robotConfig").getData();
 			var patchData = {};
@@ -296,13 +352,16 @@ sap.ui.define([
 					this
 				);
 				this.getView().addDependent(this._valueHelpDialogRsrcgrp);
-				//this._valueHelpDialogLgnum.setModel(this.getOwnerComponent().getModel("odata"), "odata");
-			}
-			
-			// create a filter for the binding
-			this._valueHelpDialogRsrcgrp.getBinding("items").filter([new Filter(
-				"Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey()
-			)]);
+				var that = this;
+				this.getView().getModel("odata").read("/ResourceGroupSet", {
+					urlParameters: {
+						"$expand": "ResourceGroupDescriptions"
+					},
+					success: function(data) {
+						that._valueHelpDialogRsrcgrp.setModel(new JSONModel(data), "rsrcgrp");
+					}
+				});
+			} 
 
 			// open value help dialog filtered by the input value
 			this._valueHelpDialogRsrcgrp.open(sInputValue);
@@ -315,14 +374,11 @@ sap.ui.define([
 					new Filter({
 						filters: [
 							new Filter("RsrcGrp", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Text", sap.ui.model.FilterOperator.Contains, sValue)
+							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue)
 						],
 						and: false
-					}),
-					new Filter("Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey())
-				],
-				and: true
+					})
+				]
 			});
 			oEvent.getSource().getBinding("items").filter([oFilter]);
 		},
@@ -344,14 +400,18 @@ sap.ui.define([
 					"monitoring.view.fragments.DetailRobotRsrctypeValueHelp",
 					this
 				);
+
 				this.getView().addDependent(this._valueHelpDialogRsrctype);
-				//this._valueHelpDialogLgnum.setModel(this.getOwnerComponent().getModel("odata"), "odata");
+				var that = this;
+				this.getView().getModel("odata").read("/RobotResourceTypeSet", {
+					urlParameters: {
+						"$expand": "ResourceTypeDescriptions"
+					},
+					success: function(data) {
+						that._valueHelpDialogRsrctype.setModel(new JSONModel(data), "rsrctype");
+					}
+				});
 			}
-			
-			// create a filter for the binding
-			this._valueHelpDialogRsrctype.getBinding("items").filter([new Filter(
-				"Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey()
-			)]);
 
 			// open value help dialog filtered by the input value
 			this._valueHelpDialogRsrctype.open(sInputValue);
@@ -364,14 +424,11 @@ sap.ui.define([
 					new Filter({
 						filters: [
 							new Filter("RsrcType", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue),
-							new Filter("Text", sap.ui.model.FilterOperator.Contains, sValue)
+							new Filter("Lgnum", sap.ui.model.FilterOperator.Contains, sValue)
 						],
 						and: false
-					}),
-					new Filter("Langu", sap.ui.model.FilterOperator.EQ, this._getSprasKey())
-				],
-				and: true
+					})
+				]
 			});
 			oEvent.getSource().getBinding("items").filter([oFilter]);
 		},
@@ -410,6 +467,7 @@ sap.ui.define([
 			this.oRouter.getRoute("robotDetail").detachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("whoDetailFullscreen").detachPatternMatched(this._onWhoRouteMatched, this);
 			this.oRouter.getRoute("robotDetailFullscreen").detachPatternMatched(this._onRobotRouteMatched, this);
+			sap.ui.getCore().getEventBus().unsubscribe("Master", "UpdateEvent", this.updateModels, this)
 		}
 	});
 });

@@ -12,6 +12,9 @@ sap.ui.define([], function () {
 	"use strict";
 	return {
 		toDateTime: function (dateTime) {
+			if(typeof(dateTime) === "undefined") {
+				return this.getOwnerComponent().getModel("i18n").getResourceBundle().getText("na");
+			}
 			var date = new Date(dateTime);
 			return (
 				('0' + date.getDate()).slice(-2) + "." + 
@@ -25,6 +28,23 @@ sap.ui.define([], function () {
 		
 		toInt: function(num) {
 			return parseInt(num);
+		},
+		
+		toVisible: function(value) {
+			if(typeof(value) === "undefined") {
+				return false;
+			}
+			return true;
+		},
+		
+		toRobotState: function(state) {
+			if(typeof(state) === "undefined") {
+				return "None";
+			}
+			if(state === "AVAILABLE") {
+				return "Success";
+			}
+			return "Error";
 		}
 	};
 });

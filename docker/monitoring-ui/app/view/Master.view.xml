@@ -10,13 +10,22 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 <mvc:View controllerName="monitoring.controller.Master" xmlns="sap.m" xmlns:f="sap.f" xmlns:mvc="sap.ui.core.mvc" xmlns:u="sap.uxap">
 	<u:ObjectPageLayout id="ObjectPageLayout" alwaysShowContentHeader="true">
 		<u:headerTitle>
-			<u:ObjectPageHeader objectTitle="{i18n>appTitle}"/>
+			<u:ObjectPageDynamicHeaderTitle>
+				<u:expandedHeading>
+					<Title text="{i18n>appTitle}" wrapping="true"/>
+				</u:expandedHeading>
+				<u:actions>
+					<StepInput width="12em" step="15" value="{uiStates>/updateTimer}" description="{i18n>seconds}" visible="{uiStates>/automaticUpdates}" change="changeUpdateTimer" min="1"/>
+					<Button text="{i18n>refresh}" visible="{= !${uiStates>/automaticUpdates}}" icon="sap-icon://synchronize" press="_bindModels"/>
+					<ToggleButton press="changeUpdateStyle" text="{= ${uiStates>/automaticUpdates} ? ${i18n>automaticUpdates} : ${i18n>manualUpdate} }" pressed="{uiStates>/automaticUpdates}"/>
+				</u:actions>
+			</u:ObjectPageDynamicHeaderTitle>
 		</u:headerTitle>
 		<u:sections>
 			<u:ObjectPageSection title="{i18n>robots}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'updateTime', descending: 'true'} }">
+						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'name', descending: false } }">
 							<columns>
 								<Column visible="{masterLayout>/mediumExpanded}">
 									<Text text="{i18n>updateTime}"/>
@@ -52,12 +61,12 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 										<Text text="{path: 'robots>updateTime', formatter: '.formatter.toDateTime'}"/>
 										<Text text="{robots>name}"/>
 										<Text text="{robots>model}"/>
-										<ProgressIndicator percentValue="{robots>batteryPercentage}"
+										<ProgressIndicator visible="{path:'robots>batteryPercentage', formatter: '.formatter.toVisible'}" percentValue="{robots>batteryPercentage}"
 											displayValue="{path:'robots>batteryPercentage', formatter: '.formatter.toInt'}%" showValue="true"
 											state="{= ${robots>batteryPercentage} > 50 ? 'Success' : (${robots>batteryPercentage} > 25 ? 'Warning' : 'Error')}"/>
 										<Text text="{path: 'robots>lastStateChangeTime', formatter: '.formatter.toDateTime'}"/>
 										<ObjectStatus text="{= ${masterLayout>/mediumExpanded} ? ${robots>state} : ''}"
-											state="{= ${robots>state} === 'AVAILABLE' ? 'Success' : 'Error'}"
+											state="{path:'robots>state', formatter: '.formatter.toRobotState'}"
 											icon="{= ${robots>state} === 'AVAILABLE' ? 'sap-icon://status-positive' : 'sap-icon://status-negative'}"/>
 										<ObjectStatus text="{= ${masterLayout>/mediumExpanded} ? ${robots>statemachine} : ''}" state="{robots>statemachine_uistate}"
 											icon="{= ${robots>statemachine_uistate} === 'Success' ? 'sap-icon://status-positive' : 'sap-icon://status-negative'}"/>
@@ -73,7 +82,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 			<u:ObjectPageSection title="{i18n>warehouseOrders}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: { path: 'order_status', descending: 'true'} }"
+						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: { path: 'order_status', descending: true} }"
 							growing="true" growingScrollToLoad="false">
 							<headerToolbar>
 								<OverflowToolbar>

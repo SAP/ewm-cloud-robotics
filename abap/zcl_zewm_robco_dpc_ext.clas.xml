@@ -162,6 +162,12 @@
      <ENTRY>Foreign lock.</ENTRY>
      <LENGTH>23</LENGTH>
     </item>
+    <item>
+     <ID>I</ID>
+     <KEY>026</KEY>
+     <ENTRY>No authorization in EWM backend.</ENTRY>
+     <LENGTH>64</LENGTH>
+    </item>
    </TPOOL>
    <DESCRIPTIONS>
     <SEOCOMPOTX>
@@ -193,6 +199,12 @@
      <CMPNAME>GC_ERROR_NEQ</CMPNAME>
      <LANGU>E</LANGU>
      <DESCRIPT>Error Code: No Error Queue found.</DESCRIPT>
+    </SEOCOMPOTX>
+    <SEOCOMPOTX>
+     <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
+     <CMPNAME>GC_ERROR_NOA</CMPNAME>
+     <LANGU>E</LANGU>
+     <DESCRIPT>Error Code: &apos;No authorization in EWM backend.&apos;</DESCRIPT>
     </SEOCOMPOTX>
     <SEOCOMPOTX>
      <CLSNAME>ZCL_ZEWM_ROBCO_DPC_EXT</CLSNAME>
