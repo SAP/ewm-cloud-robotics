@@ -99,7 +99,7 @@
       <RSFDO>
        <PARAMETER>RSRC_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Ressource not found</STEXT>
+       <STEXT>Resource not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_STATUS_NOT_UPDATED</PARAMETER>
@@ -278,7 +278,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>

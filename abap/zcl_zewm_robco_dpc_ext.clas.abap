@@ -368,14 +368,15 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
       when 'SetRobotStatus'.
         call function 'ZSET_ROBOT_STATUS'
           exporting
-            iv_lgnum       = lv_lgnum
-            iv_rsrc        = lv_rsrc
-            iv_exccode     = lv_exccode
+            iv_lgnum        = lv_lgnum
+            iv_rsrc         = lv_rsrc
+            iv_exccode      = lv_exccode
           importing
-            es_rsrc        = ls_rsrc
+            es_rsrc         = ls_rsrc
           exceptions
-            status_not_set = 1
-            others         = 2.
+            robot_not_found = 1
+            status_not_set  = 2
+            others          = 3.
 
         case sy-subrc.
           when 0.
@@ -383,6 +384,13 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
             copy_data_to_ref( exporting is_data = ls_robot
               changing cr_data = er_data ).
           when 1.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
+          when 2.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
                 textid           = /iwbep/cx_mgw_busi_exception=>business_error
@@ -479,10 +487,11 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           importing
             et_ltap_vb            = lt_ltap_vb
           exceptions
-            wht_not_confirmed     = 1
-            wht_already_confirmed = 2
-            internal_error        = 3
-            others                = 4.
+            robot_not_found       = 1
+            wht_not_confirmed     = 2
+            wht_already_confirmed = 3
+            internal_error        = 4
+            others                = 5.
         case sy-subrc.
           when 0.
             move-corresponding lt_ltap_vb to lt_warehousetaskconf.
@@ -493,9 +502,16 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
               exporting
                 textid           = /iwbep/cx_mgw_busi_exception=>business_error
                 http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
+          when 2.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
                 msg_code         = gc_error_wnc
                 message          = text-017.
-          when 2.
+          when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
                 textid           = /iwbep/cx_mgw_busi_exception=>business_error
@@ -521,10 +537,11 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
           importing
             et_ltap_vb            = lt_ltap_vb
           exceptions
-            wht_not_confirmed     = 1
-            wht_already_confirmed = 2
-            internal_error        = 3
-            others                = 4.
+            robot_not_found       = 1
+            wht_not_confirmed     = 2
+            wht_already_confirmed = 3
+            internal_error        = 4
+            others                = 5.
         case sy-subrc.
           when 0.
             move-corresponding lt_ltap_vb to lt_warehousetaskconf.
@@ -535,9 +552,16 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
               exporting
                 textid           = /iwbep/cx_mgw_busi_exception=>business_error
                 http_status_code = 404
+                msg_code         = gc_error_rnf
+                message          = text-001.
+          when 2.
+            raise exception type /iwbep/cx_mgw_busi_exception
+              exporting
+                textid           = /iwbep/cx_mgw_busi_exception=>business_error
+                http_status_code = 404
                 msg_code         = gc_error_wnc
                 message          = text-017.
-          when 2.
+          when 3.
             raise exception type /iwbep/cx_mgw_busi_exception
               exporting
                 textid           = /iwbep/cx_mgw_busi_exception=>business_error

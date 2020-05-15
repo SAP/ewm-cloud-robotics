@@ -79,7 +79,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
@@ -167,6 +167,9 @@
      </EXPORT>
      <EXCEPTION>
       <RSEXC>
+       <EXCEPTION>ROBOT_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
        <EXCEPTION>WHT_NOT_CONFIRMED</EXCEPTION>
       </RSEXC>
       <RSEXC>
@@ -228,6 +231,11 @@
        <STEXT>Table Type: Warehouse Tasks Internal</STEXT>
       </RSFDO>
       <RSFDO>
+       <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Robot resource was not found</STEXT>
+      </RSFDO>
+      <RSFDO>
        <PARAMETER>WHT_NOT_CONFIRMED</PARAMETER>
        <KIND>X</KIND>
        <STEXT>Warehouse Task was not confirmed.</STEXT>
@@ -273,6 +281,9 @@
      </EXPORT>
      <EXCEPTION>
       <RSEXC>
+       <EXCEPTION>ROBOT_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
        <EXCEPTION>WHT_NOT_CONFIRMED</EXCEPTION>
       </RSEXC>
       <RSEXC>
@@ -302,6 +313,11 @@
        <PARAMETER>ET_LTAP_VB</PARAMETER>
        <KIND>P</KIND>
        <STEXT>Table Type: Warehouse Tasks Internal</STEXT>
+      </RSFDO>
+      <RSFDO>
+       <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Robot ressource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHT_NOT_CONFIRMED</PARAMETER>
@@ -521,7 +537,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ORDER_FOUND</PARAMETER>
@@ -592,7 +608,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>NO_ORDER_FOUND</PARAMETER>
@@ -693,7 +709,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
@@ -813,7 +829,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>
@@ -871,6 +887,9 @@
      </EXPORT>
      <EXCEPTION>
       <RSEXC>
+       <EXCEPTION>ROBOT_NOT_FOUND</EXCEPTION>
+      </RSEXC>
+      <RSEXC>
        <EXCEPTION>STATUS_NOT_SET</EXCEPTION>
       </RSEXC>
      </EXCEPTION>
@@ -896,9 +915,14 @@
        <STEXT>Resources</STEXT>
       </RSFDO>
       <RSFDO>
+       <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
+       <KIND>X</KIND>
+       <STEXT>Robot resource was not found</STEXT>
+      </RSFDO>
+      <RSFDO>
        <PARAMETER>STATUS_NOT_SET</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource status could not be set</STEXT>
+       <STEXT>Robot resource status could not be set</STEXT>
       </RSFDO>
      </DOCUMENTATION>
     </item>
@@ -973,7 +997,7 @@
       <RSFDO>
        <PARAMETER>ROBOT_NOT_FOUND</PARAMETER>
        <KIND>X</KIND>
-       <STEXT>Robot ressource was not found</STEXT>
+       <STEXT>Robot resource was not found</STEXT>
       </RSFDO>
       <RSFDO>
        <PARAMETER>WHO_NOT_FOUND</PARAMETER>

@@ -22,18 +22,45 @@ function zconfirm_warehouse_task.
 *"  EXPORTING
 *"     REFERENCE(ET_LTAP_VB) TYPE  /SCWM/TT_LTAP_VB
 *"  EXCEPTIONS
+*"      ROBOT_NOT_FOUND
 *"      WHT_NOT_CONFIRMED
 *"      WHT_ALREADY_CONFIRMED
 *"      INTERNAL_ERROR
 *"----------------------------------------------------------------------
 
-  data: lv_severity type bapi_mtype,
-        ls_to_conf  type /scwm/to_conf,
-        lt_bapiret  type bapirettab,
-        lt_ltap_vb  type /scwm/tt_ltap_vb,
-        lt_to_conf  type /scwm/to_conf_tt,
-        ls_conf_exc	type /scwm/s_conf_exc,
-        lt_conf_exc	type /scwm/tt_conf_exc.
+  data: lv_robot_type type zewm_de_robot_type,
+        ls_rsrc       type /scwm/rsrc,
+        lv_severity   type bapi_mtype,
+        ls_to_conf    type /scwm/to_conf,
+        lt_bapiret    type bapirettab,
+        lt_ltap_vb    type /scwm/tt_ltap_vb,
+        lt_to_conf    type /scwm/to_conf_tt,
+        ls_conf_exc	  type /scwm/s_conf_exc,
+        lt_conf_exc	  type /scwm/tt_conf_exc.
+
+* Get robot master data
+  call function '/SCWM/RSRC_READ_SINGLE'
+    exporting
+      iv_lgnum    = iv_lgnum
+      iv_rsrc     = iv_rsrc
+    importing
+      es_rsrc     = ls_rsrc
+    exceptions
+      wrong_input = 1
+      not_found   = 2
+      others      = 3.
+
+  if sy-subrc <> 0.
+    raise robot_not_found.
+  else.
+* Check if resource is a robot
+    select single robot_type from zewm_trsrc_typ into @lv_robot_type
+      where lgnum = @iv_lgnum and
+            rsrc_type = @ls_rsrc-rsrc_type.
+    if sy-subrc <> 0.
+      raise robot_not_found.
+    endif.
+  endif.
 
 * Enqueue resource unassignment from warehouse order
   call function 'ENQUEUE_EZEWM_ASSIGNROBO'
