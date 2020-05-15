@@ -19,6 +19,7 @@ import (
 	versioned "github.com/SAP/ewm-cloud-robotics/go/pkg/client/clientset/versioned"
 	ewm "github.com/SAP/ewm-cloud-robotics/go/pkg/client/informers/externalversions/ewm"
 	internalinterfaces "github.com/SAP/ewm-cloud-robotics/go/pkg/client/informers/externalversions/internalinterfaces"
+	mission "github.com/SAP/ewm-cloud-robotics/go/pkg/client/informers/externalversions/mission"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	runtime "k8s.io/apimachinery/pkg/runtime"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
@@ -166,8 +167,13 @@ type SharedInformerFactory interface {
 	WaitForCacheSync(stopCh <-chan struct{}) map[reflect.Type]bool
 
 	Ewm() ewm.Interface
+	Mission() mission.Interface
 }
 
 func (f *sharedInformerFactory) Ewm() ewm.Interface {
 	return ewm.New(f, f.namespace, f.tweakListOptions)
+}
+
+func (f *sharedInformerFactory) Mission() mission.Interface {
+	return mission.New(f, f.namespace, f.tweakListOptions)
 }

@@ -314,6 +314,64 @@ const (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
+// RunTimeEstimation represents the RunTimeEstimation CRD
+type RunTimeEstimation struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ObjectMeta `json:"metadata,omitempty"`
+
+	Spec RunTimeEstimationSpec `json:"spec"`
+	// +optional
+	Status RunTimeEstimationStatus `json:"status,omitempty"`
+}
+
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
+// RunTimeEstimationList represents the array of RunTimeEstimation CRD
+type RunTimeEstimationList struct {
+	metav1.TypeMeta `json:",inline"`
+	// +optional
+	metav1.ListMeta `json:"metadata,omitempty"`
+
+	Items []RunTimeEstimation `json:"items"`
+}
+
+// RunTimeEstimationSpec represents the spec of RunTimeEstimation CRD
+type RunTimeEstimationSpec struct {
+	Paths         []Path `json:"paths"`
+	StartPosition string `json:"startPosition"`
+}
+
+// RunTimeEstimationStatus represents the status of RunTimeEstimation CRD
+type RunTimeEstimationStatus struct {
+	RunTimes []RunTime                     `json:"runtimes,omitempty"`
+	Status   RunTimeEstimationStatusStatus `json:"status,omitempty"`
+}
+
+// Path represents a path from start to goal#
+type Path struct {
+	Start string `json:"start"`
+	Goal  string `json:"goal"`
+}
+
+// RunTime represents the run time of a path from start to goal
+type RunTime struct {
+	Path
+	Time float64 `json:"time"`
+}
+
+// RunTimeEstimationStatusStatus describes the status of a RunTimeEstimation
+type RunTimeEstimationStatusStatus string
+
+// Values for RunTimeEstimationStatusStatus
+const (
+	RunTimeEstimationStatusRunning   RunTimeEstimationStatusStatus = "RUNNING"
+	RunTimeEstimationStatusProcessed RunTimeEstimationStatusStatus = "PROCESSED"
+)
+
+// +genclient
+// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
+
 // WarehouseOrder represents the WarehouseOrder CRD
 type WarehouseOrder struct {
 	metav1.TypeMeta `json:",inline"`

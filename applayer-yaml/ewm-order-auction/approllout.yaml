@@ -17,6 +17,10 @@ spec:
   - selector:
       matchLabels:
         model: mir100
+    values:
+      image:
+        repository: "ewmcloudrobotics/order-bid-agent"
+        tag: "latest"
   cloud:
     values:
       image:

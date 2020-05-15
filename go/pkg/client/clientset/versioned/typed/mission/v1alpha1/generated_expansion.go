@@ -11,16 +11,4 @@
 
 package v1alpha1
 
-type AuctioneerExpansion interface{}
-
-type OrderAuctionExpansion interface{}
-
-type OrderReservationExpansion interface{}
-
-type RobotConfigurationExpansion interface{}
-
-type RobotRequestExpansion interface{}
-
-type RunTimeEstimationExpansion interface{}
-
-type WarehouseOrderExpansion interface{}
+type MissionExpansion interface{}

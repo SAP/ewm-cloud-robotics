@@ -1,0 +1,6 @@
+schemaVersion: 2.0.0
+
+fileExistenceTests:
+  - name: "verify that go binary order-bid-agent is in '/cmd' directory"
+    path: "/cmd/order-bid-agent"
+    shouldExist: true

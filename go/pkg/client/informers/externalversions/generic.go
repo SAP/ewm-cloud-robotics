@@ -15,6 +15,7 @@ import (
 	"fmt"
 
 	v1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
+	missionv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/mission/v1alpha1"
 	schema "k8s.io/apimachinery/pkg/runtime/schema"
 	cache "k8s.io/client-go/tools/cache"
 )
@@ -56,8 +57,14 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().RobotConfigurations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("robotrequests"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().RobotRequests().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("runtimeestimations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().RunTimeEstimations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("warehouseorders"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().WarehouseOrders().Informer()}, nil
+
+		// Group=mission.cloudrobotics.com, Version=v1alpha1
+	case missionv1alpha1.SchemeGroupVersion.WithResource("missions"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Mission().V1alpha1().Missions().Informer()}, nil
 
 	}
 

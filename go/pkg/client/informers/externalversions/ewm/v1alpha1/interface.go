@@ -27,6 +27,8 @@ type Interface interface {
 	RobotConfigurations() RobotConfigurationInformer
 	// RobotRequests returns a RobotRequestInformer.
 	RobotRequests() RobotRequestInformer
+	// RunTimeEstimations returns a RunTimeEstimationInformer.
+	RunTimeEstimations() RunTimeEstimationInformer
 	// WarehouseOrders returns a WarehouseOrderInformer.
 	WarehouseOrders() WarehouseOrderInformer
 }
@@ -65,6 +67,11 @@ func (v *version) RobotConfigurations() RobotConfigurationInformer {
 // RobotRequests returns a RobotRequestInformer.
 func (v *version) RobotRequests() RobotRequestInformer {
 	return &robotRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+}
+
+// RunTimeEstimations returns a RunTimeEstimationInformer.
+func (v *version) RunTimeEstimations() RunTimeEstimationInformer {
+	return &runTimeEstimationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // WarehouseOrders returns a WarehouseOrderInformer.

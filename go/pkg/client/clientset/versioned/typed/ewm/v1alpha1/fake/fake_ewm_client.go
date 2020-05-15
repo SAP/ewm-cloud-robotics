@@ -41,6 +41,10 @@ func (c *FakeEwmV1alpha1) RobotRequests(namespace string) v1alpha1.RobotRequestI
 	return &FakeRobotRequests{c, namespace}
 }
 
+func (c *FakeEwmV1alpha1) RunTimeEstimations(namespace string) v1alpha1.RunTimeEstimationInterface {
+	return &FakeRunTimeEstimations{c, namespace}
+}
+
 func (c *FakeEwmV1alpha1) WarehouseOrders(namespace string) v1alpha1.WarehouseOrderInterface {
 	return &FakeWarehouseOrders{c, namespace}
 }

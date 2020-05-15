@@ -368,7 +368,7 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 		return reconcile.Result{}, errors.Wrap(err, "update auctioneer status")
 	}
 
-	return r.getReconcileResult(&auctioneer, robotStates, opr), nil
+	return r.getReconcileResult(&auctioneer, robotStates, opr, clres), nil
 }
 
 func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctioneer, rs *robotStates, clres *classifiedReservations, opr ordersPerRobot) error {
@@ -436,16 +436,32 @@ func (r *reconcileAuctioneer) setErrorStatus(ctx context.Context, a *ewm.Auction
 	r.client.Status().Update(ctx, a)
 }
 
-func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotStates, opr ordersPerRobot) reconcile.Result {
+func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotStates, opr ordersPerRobot, clres *classifiedReservations) reconcile.Result {
 
+	var requeueAfter time.Duration = 0
+
+	// Requeue frequently if robots do not have enough work
 	for robot, orders := range opr {
 		if rs.isAvailable[robot] && orders < a.Spec.Configuration.MinOrdersPerRobot {
-			d := time.Second * 30
-			log.Debug().Msgf("Robot %q and maybe others are below spec.configuration.minOrdersPerRobot. Requeue in %v", robot, d)
-			return reconcile.Result{RequeueAfter: d}
+			requeueAfter = time.Second * 30
+			log.Debug().Msgf("Robot %q and maybe others are below spec.configuration.minOrdersPerRobot. Requeue in %v",
+				robot, requeueAfter)
+			break
 		}
 	}
-	return reconcile.Result{}
+
+	// Requeue 20 Seconds before the earliest OrderReservation expires
+	for _, res := range clres.auctionsRunning {
+		if !res.Status.ValidUntil.IsZero() {
+			d := res.Status.ValidUntil.UTC().Sub(metav1.Now().UTC()) - time.Second*20
+			if requeueAfter == 0 || d < requeueAfter {
+				requeueAfter = d
+				log.Debug().Msgf("Running OrderReservation %q expires. Requeue in %v", res.GetName(), requeueAfter)
+			}
+		}
+	}
+
+	return reconcile.Result{RequeueAfter: requeueAfter}
 }
 
 func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) (*robotStates, error) {
@@ -825,7 +841,7 @@ func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Aucti
 					Spec: ewm.OrderAuctionSpec{
 						WarehouseOrders: res.Status.WarehouseOrders,
 						AuctionStatus:   ewm.OrderAuctionAuctionStatusOpen,
-						ValidUntil:      metav1.Time{res.Status.ValidUntil.Add(time.Minute * -1)},
+						ValidUntil:      metav1.Time{res.Status.ValidUntil.Add(time.Second * -30)},
 					},
 				}
 				// Set Controller reference for CR

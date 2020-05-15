@@ -15,17 +15,17 @@ import (
 	"k8s.io/apimachinery/pkg/runtime/schema"
 )
 
-// SchemeGroupVersion for ewm.sap.com
+// SchemeGroupVersion for mission.cloudrobotics.com
 var SchemeGroupVersion = schema.GroupVersion{
-	Group:   "ewm.sap.com",
+	Group:   "mission.cloudrobotics.com",
 	Version: "v1alpha1",
 }
 
 var (
-	// SchemeBuilder for ewm.sap.com
+	// SchemeBuilder for mission.cloudrobotics.com
 	SchemeBuilder      runtime.SchemeBuilder
 	localSchemeBuilder = &SchemeBuilder
-	// AddToScheme for ewm.sap.com
+	// AddToScheme for mission.cloudrobotics.com
 	AddToScheme = localSchemeBuilder.AddToScheme
 )
 
@@ -44,20 +44,8 @@ func Resource(resource string) schema.GroupResource {
 // Adds the list of known types to the given scheme.
 func addKnownTypes(scheme *runtime.Scheme) error {
 	scheme.AddKnownTypes(SchemeGroupVersion,
-		&Auctioneer{},
-		&AuctioneerList{},
-		&OrderReservation{},
-		&OrderReservationList{},
-		&OrderAuction{},
-		&OrderAuctionList{},
-		&RobotConfiguration{},
-		&RobotConfigurationList{},
-		&RobotRequest{},
-		&RobotRequestList{},
-		&RunTimeEstimation{},
-		&RunTimeEstimationList{},
-		&WarehouseOrder{},
-		&WarehouseOrderList{},
+		&Mission{},
+		&MissionList{},
 	)
 
 	scheme.AddKnownTypes(SchemeGroupVersion,

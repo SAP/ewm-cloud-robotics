@@ -7,7 +7,6 @@ image:
 robot:
   name: ""
 
-# Certificate authority used to sign in-cluster certificates.
-certificate_authority:
-  key: ""
-  crt: ""
+envs:
+  zerologconfig: "json"
+  zerologloglevel: "info"

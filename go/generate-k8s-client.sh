@@ -16,7 +16,7 @@ GIT_APIMACHINERY="https://github.com/kubernetes/apimachinery.git"
 GIT_CODEGENERATOR="https://github.com/kubernetes/code-generator.git"
 
 # Versions of apis to be generated
-K8S_GROUPS_VERSIONS="ewm:v1alpha1"
+K8S_GROUPS_VERSIONS="ewm:v1alpha1 mission:v1alpha1"
 
 # Start
 echo "### Using kubernetes code-generator and apimachinery from branch: $K8S_BRANCH ###"
@@ -63,7 +63,7 @@ cd "$DIR/../tmp/.gopath/src"
 ./k8s.io/code-generator/generate-groups.sh all \
     "github.com/SAP/ewm-cloud-robotics/go/pkg/client" \
     "github.com/SAP/ewm-cloud-robotics/go/pkg/apis" \
-    $K8S_GROUPS_VERSIONS \
+    "$K8S_GROUPS_VERSIONS" \
     --go-header-file   "$TEMP_REPO/HEADER"
 
 # Copy generated files

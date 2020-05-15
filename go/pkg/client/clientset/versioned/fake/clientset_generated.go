@@ -15,6 +15,8 @@ import (
 	clientset "github.com/SAP/ewm-cloud-robotics/go/pkg/client/clientset/versioned"
 	ewmv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/client/clientset/versioned/typed/ewm/v1alpha1"
 	fakeewmv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/client/clientset/versioned/typed/ewm/v1alpha1/fake"
+	missionv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/client/clientset/versioned/typed/mission/v1alpha1"
+	fakemissionv1alpha1 "github.com/SAP/ewm-cloud-robotics/go/pkg/client/clientset/versioned/typed/mission/v1alpha1/fake"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/discovery"
@@ -72,4 +74,9 @@ var _ clientset.Interface = &Clientset{}
 // EwmV1alpha1 retrieves the EwmV1alpha1Client
 func (c *Clientset) EwmV1alpha1() ewmv1alpha1.EwmV1alpha1Interface {
 	return &fakeewmv1alpha1.FakeEwmV1alpha1{Fake: &c.Fake}
+}
+
+// MissionV1alpha1 retrieves the MissionV1alpha1Client
+func (c *Clientset) MissionV1alpha1() missionv1alpha1.MissionV1alpha1Interface {
+	return &fakemissionv1alpha1.FakeMissionV1alpha1{Fake: &c.Fake}
 }
