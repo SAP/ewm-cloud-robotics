@@ -86,7 +86,7 @@ class RobotEWMMachine(Machine):
     def __init__(
             self, robot_config: RobotConfigurationController, mission_api: RobCoMissionAPI,
             order_controller: OrderController, robotrequest_controller: RobotRequestController,
-            initial: str = 'noWork') -> None:
+            initial: str = 'notWorking') -> None:
         """Construct."""
         cls = self.__class__
 
@@ -171,8 +171,8 @@ class RobotEWMMachine(Machine):
             robot=self.robot_config.robco_robot_name, state=self.state).observe(retention_time)
 
         # Update timeout depending on max_idle_time
-        if self.states.get('noWork') and self.robot_config.conf.maxIdleTime > 0:
-            self.states['noWork'].timeout = self.robot_config.conf.maxIdleTime
+        if self.states.get('notWorking') and self.robot_config.conf.maxIdleTime > 0:
+            self.states['notWorking'].timeout = self.robot_config.conf.maxIdleTime
 
     def _run_after_state_change(self, event: EventData) -> None:
         """Run these methods after state changed."""
@@ -914,7 +914,7 @@ class RobotEWMMachine(Machine):
         """Decide what's next when arriving at staging area."""
         self._decide_whats_next(event)
 
-    def on_enter_noWork(self, event: EventData) -> None:
+    def on_enter_notWorking(self, event: EventData) -> None:
         """Decide what's next when robot is not working."""
         # There is no active work
         self.active_who = None

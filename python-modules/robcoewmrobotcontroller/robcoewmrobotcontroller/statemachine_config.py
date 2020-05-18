@@ -60,7 +60,7 @@ class RobotEWMConfig:
     states = [
         'robotError', 'movingToStaging', 'charging',
         {'name': 'atStaging', 'timeout': 300, 'on_timeout': t_request_work},
-        {'name': 'noWork', 'timeout': 15, 'on_timeout': t_go_staging},
+        {'name': 'notWorking', 'timeout': 15, 'on_timeout': t_go_staging},
         {'name': p_moveTrolley, 'children': [
             'movingToSourceBin', 'movingToTargetBin', 'loadingTrolley', 'unloadingTrolley',
             'waitingForErrorRecovery']},
@@ -69,7 +69,7 @@ class RobotEWMConfig:
             'waitingForErrorRecovery']}
         ]
 
-    idle_states = ['atStaging', 'noWork']
+    idle_states = ['atStaging', 'notWorking']
     awaiting_who_completion_states = [
         'moveTrolley_waitingForErrorRecovery', 'pickPackPass_waitingForErrorRecovery',
         'pickPackPass_waitingAtTarget']
@@ -81,7 +81,7 @@ class RobotEWMConfig:
     @classmethod
     def is_new_work_state(cls, state: str) -> bool:
         """Identify if request for work has to be created with requestnewwho parameter set."""
-        if state[:state.rfind('_')] in cls.processes or state == 'noWork':
+        if state[:state.rfind('_')] in cls.processes or state == 'notWorking':
             return True
         return False
 
@@ -89,8 +89,8 @@ class RobotEWMConfig:
     transitions: List[Dict] = [
         # Start fresh state machine
         {'trigger': t_start_fresh_machine,
-         'source': 'noWork',
-         'dest': 'noWork'},
+         'source': 'notWorking',
+         'dest': 'notWorking'},
         # Order Manager input
         {'trigger': t_update_warehouseorder,
          'source': '*',
@@ -124,7 +124,7 @@ class RobotEWMConfig:
          'after': '_cancel_active_mission'},
         # general transitions
         {'trigger': t_go_staging,
-         'source': 'noWork',
+         'source': 'notWorking',
          'dest': 'movingToStaging'},
         {'trigger': t_too_many_failed_whos,
          'source': idle_states,
@@ -139,7 +139,7 @@ class RobotEWMConfig:
          'before': '_increase_mission_errorcount'},
         {'trigger': t_mission_failed,
          'source': 'movingToStaging',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'conditions': '_max_mission_errors_reached'},
         {'trigger': t_request_work,
          'source': 'atStaging',
@@ -154,7 +154,7 @@ class RobotEWMConfig:
          'before': '_send_unassign_whos_request'},
         {'trigger': t_mission_succeeded,
          'source': 'charging',
-         'dest': 'noWork'},
+         'dest': 'notWorking'},
         {'trigger': t_mission_failed,
          'source': 'charging',
          'dest': '=',
@@ -162,7 +162,7 @@ class RobotEWMConfig:
          'before': ['_set_next_charger', '_increase_mission_errorcount']},
         {'trigger': t_mission_failed,
          'source': 'charging',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'conditions': '_max_mission_errors_reached',
          'before': '_set_next_charger'},
         {'trigger': t_mission_succeeded,
@@ -175,11 +175,11 @@ class RobotEWMConfig:
          'before': '_increase_mission_errorcount'},
         {'trigger': t_recover_robot,
          'source': 'robotError',
-         'dest': 'noWork'},
+         'dest': 'notWorking'},
         # Start EWM processes transitions
         {'trigger': t_process_warehouseorder,
          'source': [
-             'noWork', 'charging', 'atStaging', 'movingToStaging',
+             'notWorking', 'charging', 'atStaging', 'movingToStaging',
              'moveTrolley_unloadingTrolley', 'pickPackPass_waitingAtTarget'],
          'dest': 'moveTrolley_movingToSourceBin',
          'conditions': '_is_move_trolley_order',
@@ -187,7 +187,7 @@ class RobotEWMConfig:
          'after': '_save_warehouse_order_start'},
         {'trigger': t_process_warehouseorder,
          'source': [
-             'noWork', 'charging', 'atStaging', 'movingToStaging',
+             'notWorking', 'charging', 'atStaging', 'movingToStaging',
              'moveTrolley_unloadingTrolley', 'pickPackPass_waitingAtTarget'],
          'dest': 'pickPackPass_movingtoPickLocation',
          'conditions': '_is_pickpackpass_order',
@@ -196,7 +196,7 @@ class RobotEWMConfig:
         # moveTrolley transitions
         {'trigger': t_warehouseorder_aborted,
          'source': 'moveTrolley_movingToSourceBin',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'before': ['_log_warehouse_order_fail', '_close_active_who']},
         {'trigger': t_mission_failed,
          'source': [
@@ -213,7 +213,7 @@ class RobotEWMConfig:
         {'trigger': t_mission_failed,
          'source': [
              'moveTrolley_movingToSourceBin', 'moveTrolley_loadingTrolley'],
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'conditions': '_max_mission_errors_reached',
          'before': [
              '_send_first_wht_confirmation_error', '_close_active_wht',
@@ -259,14 +259,14 @@ class RobotEWMConfig:
          'before': ['_send_second_wht_confirmation', '_close_active_wht']},
         {'trigger': t_mission_succeeded,
          'source': 'moveTrolley_unloadingTrolley',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'unless': '_more_warehouse_tasks',
          'before': [
              '_send_second_wht_confirmation', '_close_active_wht', '_log_return_trolley_completed',
              '_log_warehouse_order_success', '_close_active_who']},
         {'trigger': t_warehouseorder_confirmed,
          'source': 'moveTrolley_waitingForErrorRecovery',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'before': [
              '_close_active_wht', '_log_return_trolley_completed', '_log_warehouse_order_fail',
              '_close_active_who']},
@@ -332,13 +332,13 @@ class RobotEWMConfig:
          'after': '_request_who_confirmation_notification'},
         {'trigger': t_warehouseorder_confirmed,
          'source': 'pickPackPass_waitingAtTarget',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'before': [
              '_close_active_wht', '_log_warehouse_order_success', '_close_active_who',
              '_close_active_subwho']},
         {'trigger': t_warehouseorder_confirmed,
          'source': 'pickPackPass_waitingForErrorRecovery',
-         'dest': 'noWork',
+         'dest': 'notWorking',
          'before': [
              '_close_active_wht', '_log_warehouse_order_fail', '_close_active_who',
              '_close_active_subwho']}
