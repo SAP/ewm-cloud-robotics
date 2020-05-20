@@ -647,11 +647,14 @@ func (r *reconcileAuctioneer) doCloseAuctions(ctx context.Context, clAuc *classi
 	// Identify winners, then close all auctions with the same label as the corresponding OrderReservation
 	for _, auction := range clAuc.auctionsToClose {
 
+		log.Info().Msgf("Closing auction %q", auction.orderAuction)
+
 		// Get order assignments for the OrderReservation by identifying auction winners
 		orderAssignments := r.getAuctionWinners(auction.reservationCR, auction.auctionCRs, rs)
 
 		// Don't close auction if there are no OrderAssignments
 		if len(orderAssignments) == 0 {
+			log.Info().Msgf("No order assignments. Stop closing auction %q", auction.orderAuction)
 			continue
 		}
 
@@ -696,11 +699,13 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 
 	// Lookup maps for robots and warehouse orders with assignments
 	robotsAssigned := make(map[string]bool)          // Key = robot-name
+	robotsInAuction := make(map[string]bool)         // Key = robot-name
 	warehouseOrdersAssigned := make(map[string]bool) // Key = Who; Safe here because we are planning just one warehouse
 
 	// Collect all biddings from order auctions
 	var biddings []biddingPlusRobot
 	for _, auc := range aucs {
+		robotsInAuction[auc.GetLabels()[robotLabel]] = true
 		for _, b := range auc.Status.Biddings {
 			if !rs.isAvailable[auc.GetLabels()[robotLabel]] {
 				log.Info().Msgf("Robot %q is not available, skipping its biddings of OrderAuction %q", auc.GetLabels()[robotLabel],
@@ -755,7 +760,7 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 		// If there is no bidding assign it to a random robot
 		if !warehouseOrdersAssigned[who.Who] {
 			for robot := range rs.isAvailable {
-				if !robotsAssigned[robot] {
+				if !robotsAssigned[robot] && robotsInAuction[robot] {
 					log.Info().Msgf(
 						"Assigning warehouse order \"%s.%s\" to Rsrc %q. Lsd overdue. No bidding, random robot selection.",
 						who.Lgnum, who.Who, strings.ToUpper(robot))
