@@ -30,8 +30,6 @@ from typing import Dict, Callable, List, Optional
 from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
 
-from retrying import retry
-
 _LOGGER = logging.getLogger(__name__)
 
 TOO_OLD_RESOURCE_VERSION = re.compile(r"too old resource version: .* \((.*)\)")
@@ -168,7 +166,6 @@ class K8sCRHandler:
         # finalizer
         self.finalizer = ''
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def get_status_update_method(self) -> None:
         """
         Get status update method from CRD.
@@ -360,7 +357,6 @@ class K8sCRHandler:
                 if self.thread_run:
                     _LOGGER.debug('%s/%s: Restarting watcher', self.group, self.plural)
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def update_cr_status(self, name: str, status: Dict) -> None:
         """Update the status field of named cr."""
         cls = self.__class__
@@ -383,7 +379,6 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully patched custom resource %s', self.group, self.plural, name)
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def update_cr_spec(self, name: str, spec: Dict, labels: Optional[Dict] = None) -> None:
         """Update the status field of named cr."""
         cls = self.__class__
@@ -409,7 +404,6 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully patched custom resource %s', self.group, self.plural, name)
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def delete_cr(self, name: str) -> None:
         """Delete specific custom resource by name."""
         cls = self.__class__
@@ -430,7 +424,6 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully deleted custom resource %s', self.group, self.plural, name)
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def create_cr(self, name: str, labels: Dict, spec: Dict) -> None:
         """Create custom resource on 'orders' having json parameter as spec."""
         cls = self.__class__
@@ -455,7 +448,6 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully created custom resource %s', self.group, self.plural, name)
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def get_cr(self, name: str) -> Dict:
         """Retrieve a specific custom resource by name."""
         cls = self.__class__
@@ -477,7 +469,6 @@ class K8sCRHandler:
                 '%s/%s: Successfully retrieved custom resource %s', self.group, self.plural, name)
             return api_response
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def check_cr_exists(self, name: str) -> bool:
         """Check if a cr exists by name."""
         cls = self.__class__
@@ -494,7 +485,6 @@ class K8sCRHandler:
         else:
             return True
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def list_all_cr(self) -> Dict:
         """List all currently available custom resources of a kind."""
         cls = self.__class__
@@ -582,7 +572,6 @@ class K8sCRHandler:
         _LOGGER.info('Stopping ThreadPoolExecutor')
         self.executor.shutdown(wait=False)
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def add_finalizer(self, name: str) -> bool:
         """Add a finalizer to a CR."""
         cls = self.__class__
@@ -619,7 +608,6 @@ class K8sCRHandler:
             _LOGGER.error('Unable to add finalizer to CR %s. CR not found', name)
             return False
 
-    @retry(wait_fixed=500, stop_max_attempt_number=10)
     def remove_finalizer(self, name: str) -> bool:
         """Remove a finalizer from a CR."""
         cls = self.__class__
