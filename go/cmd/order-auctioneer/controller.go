@@ -53,36 +53,6 @@ type reconcileAuctioneer struct {
 // Implement reconcile.Reconciler so the controller can reconcile objects
 var _ reconcile.Reconciler = &reconcileAuctioneer{}
 
-// Number of running warehouse orders / auctions per robot
-type ordersPerRobot map[string]int
-type auctionsPerRobot map[string]int
-
-// Map OrderAuctions CRs to OrderAuction
-// An OrderAuction consists of n CRs where n is the number of robots taking part
-type auctionMap map[string][]ewm.OrderAuction
-
-// OrderReservations classified into categories how they are processed
-type classifiedReservations struct {
-	auctionsToCreate    []ewm.OrderReservation
-	auctionsToClose     []ewm.OrderReservation
-	auctionsToComplete  []ewm.OrderReservation
-	auctionsRunning     []ewm.OrderReservation
-	waitForOrderManager []ewm.OrderReservation
-}
-
-// Lookup if robot is in scope and available
-type robotStates struct {
-	isInScope   map[string]bool
-	isAvailable map[string]bool
-}
-
-func newRobotStates() *robotStates {
-	var rs robotStates
-	rs.isInScope = make(map[string]bool)
-	rs.isAvailable = make(map[string]bool)
-	return &rs
-}
-
 // Available states from robot CRD
 var robotAvailable = map[string]bool{
 	string(registry.RobotStateAvailable): true,
@@ -371,7 +341,7 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 	return r.getReconcileResult(&auctioneer, robotStates, opr, clres), nil
 }
 
-func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctioneer, rs *robotStates, clres *classifiedReservations, opr ordersPerRobot) error {
+func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctioneer, rs *robotStates, clAuc *classifiedAuctions, opr ordersPerRobot) error {
 
 	var newStatus ewm.AuctioneerStatus
 
@@ -391,9 +361,9 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 	}
 
 	// Define new status
-	if len(clres.auctionsRunning) > 0 {
+	if len(clAuc.auctionsRunning) > 0 {
 		newStatus.Status = ewm.AuctioneerStatusAuction
-	} else if len(clres.waitForOrderManager) > 0 || len(clres.auctionsToClose) > 0 {
+	} else if len(clAuc.waitForOrderManager) > 0 || len(clAuc.auctionsToClose) > 0 {
 		newStatus.Status = ewm.AuctioneerStatusWaiting
 	} else {
 		newStatus.Status = ewm.AuctioneerStatusWatching
@@ -436,7 +406,7 @@ func (r *reconcileAuctioneer) setErrorStatus(ctx context.Context, a *ewm.Auction
 	r.client.Status().Update(ctx, a)
 }
 
-func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotStates, opr ordersPerRobot, clres *classifiedReservations) reconcile.Result {
+func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotStates, opr ordersPerRobot, clAuc *classifiedAuctions) reconcile.Result {
 
 	var requeueAfter time.Duration = 0
 
@@ -451,12 +421,12 @@ func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotSta
 	}
 
 	// Requeue 20 Seconds before the earliest OrderReservation expires
-	for _, res := range clres.auctionsRunning {
-		if !res.Status.ValidUntil.IsZero() {
-			d := res.Status.ValidUntil.UTC().Sub(metav1.Now().UTC()) - time.Second*20
+	for _, auc := range clAuc.auctionsRunning {
+		if !auc.reservationCR.Status.ValidUntil.IsZero() {
+			d := auc.reservationCR.Status.ValidUntil.UTC().Sub(metav1.Now().UTC()) - time.Second*20
 			if requeueAfter == 0 || d < requeueAfter {
 				requeueAfter = d
-				log.Debug().Msgf("Running OrderReservation %q expires. Requeue in %v", res.GetName(), requeueAfter)
+				log.Debug().Msgf("Running OrderReservation %q expires. Requeue in %v", auc.reservationCR.GetName(), requeueAfter)
 			}
 		}
 	}
@@ -533,10 +503,10 @@ func (r *reconcileAuctioneer) mapWarehouseOrders(ctx context.Context, a *ewm.Auc
 	return ordersPerRobot, nil
 }
 
-func (r *reconcileAuctioneer) mapOrderAuctions(ctx context.Context, reservations *ewm.OrderReservationList) (auctionMap, auctionsPerRobot, error) {
+func (r *reconcileAuctioneer) collectAuctions(ctx context.Context, reservations *ewm.OrderReservationList) ([]auction, auctionsPerRobot, error) {
 
 	// An OrderAuction consists of different CRs for each robot taking part. All CRs of an auction share the same label
-	auctionMap := make(auctionMap)
+	var auctions []auction
 
 	auctionsPerRobot := make(auctionsPerRobot)
 
@@ -547,23 +517,25 @@ func (r *reconcileAuctioneer) mapOrderAuctions(ctx context.Context, reservations
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "get OrderAuctions")
 		}
+		auction := auction{orderAuction: res.GetLabels()[orderAuctionLabel], reservationCR: res}
 		for _, oa := range orderAuctions.Items {
-			auction := oa.GetLabels()[orderAuctionLabel]
-			auctionMap[auction] = append(auctionMap[auction], oa)
+
+			auction.auctionCRs = append(auction.auctionCRs, oa)
 			robot := oa.GetLabels()[robotLabel]
 			// Increase counter if OrderAuction is not completed yet
 			if oa.Spec.AuctionStatus != ewm.OrderAuctionAuctionStatusCompleted {
 				auctionsPerRobot[robot]++
 			}
 		}
+		auctions = append(auctions, auction)
 	}
 
 	log.Debug().Msgf("Got this map of running order auctions per robot: %v", auctionsPerRobot)
 
-	return auctionMap, auctionsPerRobot, nil
+	return auctions, auctionsPerRobot, nil
 }
 
-func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer, rs *robotStates) (*classifiedReservations, ordersPerRobot, error) {
+func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer, rs *robotStates) (*classifiedAuctions, ordersPerRobot, error) {
 
 	// Get data to run auctions
 	// Get OrderReservations for this Auctioneer
@@ -573,14 +545,14 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 		return nil, nil, errors.Wrap(err, "get OrderReservations")
 	}
 
-	// Map OrderAuction CRs to order auctions and robots
-	auctionMap, auctionsPerRobot, err := r.mapOrderAuctions(ctx, &orderReservations)
+	// Collect auctions from OrderReservation and OrderAuction CRs
+	auctions, auctionsPerRobot, err := r.collectAuctions(ctx, &orderReservations)
 	if err != nil {
-		return nil, nil, errors.Wrap(err, "map OrderAuctions")
+		return nil, nil, errors.Wrap(err, "collect auctions")
 	}
 
-	// Classify OrderReservations to categories which decide what to to next
-	classifiedReservations := r.classifyOrderReservations(&orderReservations, auctionMap, rs)
+	// Classify auctions to categories which decide what to to next
+	classifiedAuctions := r.classifyAuctions(auctions, rs)
 
 	// Map warehouse orders in process to robots in scope of this Auctioneer
 	ordersPerRobot, err := r.mapWarehouseOrders(ctx, a, rs)
@@ -591,70 +563,70 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 	// Run Auctions
 	// First complete auctions, second close auctions, third create auctions, forth reserve more warehouse orders if needed, fifth cleanup
 	// First step
-	r.doCompleteAuctions(ctx, classifiedReservations, auctionMap, auctionsPerRobot)
+	r.doCompleteAuctions(ctx, classifiedAuctions, auctionsPerRobot)
 
 	// Second step
-	r.doCloseAuctions(ctx, classifiedReservations, auctionMap, rs)
+	r.doCloseAuctions(ctx, classifiedAuctions, rs)
 
 	// Third step
-	r.doCreateAuctions(ctx, a, classifiedReservations, auctionMap, auctionsPerRobot, ordersPerRobot, rs)
+	r.doCreateAuctions(ctx, a, classifiedAuctions, auctionsPerRobot, ordersPerRobot, rs)
 
 	// Fourth step
-	r.doCreateReservations(ctx, a, classifiedReservations, auctionsPerRobot, ordersPerRobot, rs)
+	r.doCreateReservations(ctx, a, classifiedAuctions, auctionsPerRobot, ordersPerRobot, rs)
 
 	// Fifth step
-	r.doCleanupReservations(ctx, classifiedReservations)
+	r.doCleanupReservations(ctx, classifiedAuctions)
 
-	return classifiedReservations, ordersPerRobot, nil
+	return classifiedAuctions, ordersPerRobot, nil
 }
 
-func (r *reconcileAuctioneer) classifyOrderReservations(orl *ewm.OrderReservationList, oam auctionMap, rs *robotStates) *classifiedReservations {
-	var cor classifiedReservations
-	for _, res := range orl.Items {
-		auctions, auctionAvailable := oam[res.GetLabels()[orderAuctionLabel]]
-		switch res.Status.Status {
+func (r *reconcileAuctioneer) classifyAuctions(auctions []auction, rs *robotStates) *classifiedAuctions {
+	var clAuc classifiedAuctions
+	for _, auc := range auctions {
+		auctionAvailable := len(auc.auctionCRs) > 0
+		switch auc.reservationCR.Status.Status {
 		case ewm.OrderReservationStatusReservations:
 			if !auctionAvailable {
 				// Create case if no OrderAuction CRs exist for this OrderReservation
-				cor.auctionsToCreate = append(cor.auctionsToCreate, res)
-			} else if len(res.Spec.OrderAssignments) > 0 {
+				clAuc.auctionsToCreate = append(clAuc.auctionsToCreate, auc)
+			} else if len(auc.reservationCR.Spec.OrderAssignments) > 0 {
 				// If there are Reservations with OrderAssigments, wait for the order manager to assign them
-				cor.waitForOrderManager = append(cor.waitForOrderManager, res)
+				clAuc.waitForOrderManager = append(clAuc.waitForOrderManager, auc)
 			} else {
 				// Close if all bids of the are completed or expired and wait otherwise. All CRs of an auction should have the same ValidUntil time
 				toClose := true
-				for _, auction := range auctions {
-					if rs.isAvailable[auction.GetLabels()[robotLabel]] && auction.Status.BidStatus != ewm.OrderAuctionBidStatusCompleted && auction.Spec.ValidUntil.After(time.Now()) {
+				for _, auctionCR := range auc.auctionCRs {
+					if rs.isAvailable[auctionCR.GetLabels()[robotLabel]] && auctionCR.Status.BidStatus != ewm.OrderAuctionBidStatusCompleted && auctionCR.Spec.ValidUntil.After(time.Now()) {
 						toClose = false
 					}
 				}
 				if toClose {
-					cor.auctionsToClose = append(cor.auctionsToClose, res)
+					clAuc.auctionsToClose = append(clAuc.auctionsToClose, auc)
 				} else {
-					cor.auctionsRunning = append(cor.auctionsRunning, res)
+					clAuc.auctionsRunning = append(clAuc.auctionsRunning, auc)
 				}
 			}
 		case ewm.OrderReservationStatusSucceeded, ewm.OrderReservationStatusTimeout:
 			// Complete on success or timeout of the OrderReservation for this auction
-			cor.auctionsToComplete = append(cor.auctionsToComplete, res)
+			clAuc.auctionsToComplete = append(clAuc.auctionsToComplete, auc)
 		case ewm.OrderReservationStatusNew, ewm.OrderReservationStatusAccepted, "":
 			// New order auctions for which order manager did not create reservations yet
-			cor.waitForOrderManager = append(cor.waitForOrderManager, res)
+			clAuc.waitForOrderManager = append(clAuc.waitForOrderManager, auc)
 		default:
-			log.Error().Msgf("OrderReservation %q could not been classified", res.GetName())
+			log.Error().Msgf("OrderReservation %q could not been classified", auc.reservationCR.GetName())
 		}
 	}
 
 	log.Debug().Msgf("Classified OrderReservations: auctionsToCreate %v, auctionsRunning %v, auctionsToClose %v, auctionsToComplete %v, waitForOrderManager %v",
-		len(cor.auctionsToCreate), len(cor.auctionsRunning), len(cor.auctionsToClose), len(cor.auctionsToComplete), len(cor.waitForOrderManager))
+		len(clAuc.auctionsToCreate), len(clAuc.auctionsRunning), len(clAuc.auctionsToClose), len(clAuc.auctionsToComplete), len(clAuc.waitForOrderManager))
 
-	return &cor
+	return &clAuc
 }
 
-func (r *reconcileAuctioneer) doCompleteAuctions(ctx context.Context, clres *classifiedReservations, om auctionMap, apr auctionsPerRobot) {
+func (r *reconcileAuctioneer) doCompleteAuctions(ctx context.Context, clAuc *classifiedAuctions, apr auctionsPerRobot) {
 	// Complete all auctions with the same label as the corresponding OrderReservation
-	for _, res := range clres.auctionsToComplete {
-		for _, oa := range om[res.GetLabels()[orderAuctionLabel]] {
+	for _, auction := range clAuc.auctionsToComplete {
+		for _, oa := range auction.auctionCRs {
 			if oa.Spec.AuctionStatus != ewm.OrderAuctionAuctionStatusCompleted {
 				log.Info().Msgf("OrderAuction %q is completed", oa.GetName())
 				// Update AuctionStatus of this auction
@@ -671,12 +643,12 @@ func (r *reconcileAuctioneer) doCompleteAuctions(ctx context.Context, clres *cla
 	}
 }
 
-func (r *reconcileAuctioneer) doCloseAuctions(ctx context.Context, clres *classifiedReservations, am auctionMap, rs *robotStates) {
+func (r *reconcileAuctioneer) doCloseAuctions(ctx context.Context, clAuc *classifiedAuctions, rs *robotStates) {
 	// Identify winners, then close all auctions with the same label as the corresponding OrderReservation
-	for _, res := range clres.auctionsToClose {
+	for _, auction := range clAuc.auctionsToClose {
 
 		// Get order assignments for the OrderReservation by identifying auction winners
-		orderAssignments := r.getAuctionWinners(res, am[res.GetLabels()[orderAuctionLabel]], rs)
+		orderAssignments := r.getAuctionWinners(auction.reservationCR, auction.auctionCRs, rs)
 
 		// Don't close auction if there are no OrderAssignments
 		if len(orderAssignments) == 0 {
@@ -684,15 +656,15 @@ func (r *reconcileAuctioneer) doCloseAuctions(ctx context.Context, clres *classi
 		}
 
 		// Update OrderReservation Spec
-		res.Spec.OrderAssignments = orderAssignments
-		log.Info().Msgf("Adding %v OrderAssignments to OrderReservation %q", len(orderAssignments), res.GetName())
-		err := r.client.Update(ctx, &res)
+		auction.reservationCR.Spec.OrderAssignments = orderAssignments
+		log.Info().Msgf("Adding %v OrderAssignments to OrderReservation %q", len(orderAssignments), auction.reservationCR.GetName())
+		err := r.client.Update(ctx, &auction.reservationCR)
 		if err != nil {
-			log.Error().Err(err).Msgf("Error updating OrderReservationSpec with OrderAssignments %q", res.GetName())
+			log.Error().Err(err).Msgf("Error updating OrderReservationSpec with OrderAssignments %q", auction.reservationCR.GetName())
 			continue
 		}
 
-		for _, oa := range am[res.GetLabels()[orderAuctionLabel]] {
+		for _, oa := range auction.auctionCRs {
 			if oa.Spec.AuctionStatus != ewm.OrderAuctionAuctionStatusClosed {
 				log.Info().Msgf("OrderAuction %q is closed", oa.GetName())
 				// Update AuctionStatus of this auction
@@ -822,57 +794,57 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 	return orderAssignments
 }
 
-func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Auctioneer, clres *classifiedReservations, am auctionMap, apr auctionsPerRobot, opr ordersPerRobot, rs *robotStates) {
+func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Auctioneer, clAuc *classifiedAuctions, apr auctionsPerRobot, opr ordersPerRobot, rs *robotStates) {
 	// Create OrderAuction CRs for auctions which only have a OrderReservation CR
 	// Boundary conditions:
 	//   - Each robot can only have one (running) OrderAuction which is not in state COMPLETED
 	//   - maxOrdersPerRobot must be exceeded. Calculation "runningWarehouseOrders + runningAuctions"
 
-	for _, res := range clres.auctionsToCreate {
+	for _, auction := range clAuc.auctionsToCreate {
 		for robot := range rs.isAvailable {
 			if opr[robot] < a.Spec.Configuration.MaxOrdersPerRobot && apr[robot] == 0 {
 				// Create OrderAuction CR
 				oa := ewm.OrderAuction{
 					ObjectMeta: metav1.ObjectMeta{
-						Name:      fmt.Sprintf("%s-%s", res.GetLabels()[orderAuctionLabel], robot),
+						Name:      fmt.Sprintf("%s-%s", auction.orderAuction, robot),
 						Namespace: metav1.NamespaceDefault,
-						Labels:    map[string]string{robotLabel: robot, orderAuctionLabel: res.GetLabels()[orderAuctionLabel]},
+						Labels:    map[string]string{robotLabel: robot, orderAuctionLabel: auction.orderAuction},
 					},
 					Spec: ewm.OrderAuctionSpec{
-						WarehouseOrders: res.Status.WarehouseOrders,
+						WarehouseOrders: auction.reservationCR.Status.WarehouseOrders,
 						AuctionStatus:   ewm.OrderAuctionAuctionStatusOpen,
-						ValidUntil:      metav1.Time{res.Status.ValidUntil.Add(time.Second * -30)},
+						ValidUntil:      metav1.Time{auction.reservationCR.Status.ValidUntil.Add(time.Second * -30)},
 					},
 				}
 				// Set Controller reference for CR
-				controllerutil.SetControllerReference(&res, &oa, r.scheme)
+				controllerutil.SetControllerReference(&auction.reservationCR, &oa, r.scheme)
 
 				// Create CR
 				err := r.client.Create(ctx, &oa)
 				if err != nil {
-					log.Error().Err(err).Msgf("Error creating CRs for OrderAuction %q", res.GetLabels()[orderAuctionLabel])
+					log.Error().Err(err).Msgf("Error creating CRs for OrderAuction %q", auction.orderAuction)
 				} else {
 					log.Debug().Msgf("OrderAuction CR %q created", oa.GetName())
-					am[res.GetLabels()[orderAuctionLabel]] = append(am[res.GetLabels()[orderAuctionLabel]], oa)
+					auction.auctionCRs = append(auction.auctionCRs, oa)
 					apr[robot]++
 				}
 			}
 		}
-		log.Info().Msgf("%v OrderAuction CRs created for order auction %q", len(am[res.GetLabels()[orderAuctionLabel]]),
-			res.GetLabels()[orderAuctionLabel])
+		log.Info().Msgf("%v OrderAuction CRs created for order auction %q", len(auction.auctionCRs),
+			auction.orderAuction)
 	}
 }
 
-func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.Auctioneer, clres *classifiedReservations, apr auctionsPerRobot, opr ordersPerRobot, rs *robotStates) {
+func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.Auctioneer, clAuc *classifiedAuctions, apr auctionsPerRobot, opr ordersPerRobot, rs *robotStates) {
 	// Request more warehouse orders from order manager when one available robot is below its minimum number of warehouse orders
 
-	for _, res := range clres.waitForOrderManager {
-		eq := res.Spec.OrderRequest.Lgnum == a.Spec.Scope.Lgnum
-		eq = eq && res.Spec.OrderRequest.Rsrctype == a.Spec.Scope.Rsrctype
-		eq = eq && res.Spec.OrderRequest.Rsrcgrp == a.Spec.Scope.Rsrcgrp
+	for _, auction := range clAuc.waitForOrderManager {
+		eq := auction.reservationCR.Spec.OrderRequest.Lgnum == a.Spec.Scope.Lgnum
+		eq = eq && auction.reservationCR.Spec.OrderRequest.Rsrctype == a.Spec.Scope.Rsrctype
+		eq = eq && auction.reservationCR.Spec.OrderRequest.Rsrcgrp == a.Spec.Scope.Rsrcgrp
 		if eq {
 			log.Debug().Msgf("There is already an open reservation %q in status %q awaiting response from order manager",
-				res.GetName(), res.Status.Status)
+				auction.reservationCR.GetName(), auction.reservationCR.Status.Status)
 			return
 		}
 	}
@@ -928,21 +900,21 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 	}
 }
 
-func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clres *classifiedReservations) {
+func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clAuc *classifiedAuctions) {
 	// Sort reservations by creation time (descending)
-	sort.SliceStable(clres.auctionsToComplete, func(i, j int) bool {
-		return clres.auctionsToComplete[i].GetCreationTimestamp().UTC().After(clres.auctionsToComplete[j].GetCreationTimestamp().UTC())
+	sort.SliceStable(clAuc.auctionsToComplete, func(i, j int) bool {
+		return clAuc.auctionsToComplete[i].reservationCR.GetCreationTimestamp().UTC().After(clAuc.auctionsToComplete[j].reservationCR.GetCreationTimestamp().UTC())
 	})
 
 	// Keep a maximum of 50 OrderReservations. Corresponding OrderAuction CRs will be deleted by garbage collector based on OwnerReferences
-	for i, res := range clres.auctionsToComplete {
+	for i, auction := range clAuc.auctionsToComplete {
 		if i > 49 {
 			policy := metav1.DeletePropagationBackground
-			err := r.client.Delete(ctx, &res, &ctrlclient.DeleteOptions{PropagationPolicy: &policy})
+			err := r.client.Delete(ctx, &auction.reservationCR, &ctrlclient.DeleteOptions{PropagationPolicy: &policy})
 			if err != nil {
-				log.Error().Err(err).Msgf("Error cleaning up OrderReservation %q", res.GetName())
+				log.Error().Err(err).Msgf("Error cleaning up OrderReservation %q", auction.reservationCR.GetName())
 			} else {
-				log.Info().Msgf("Cleaned up OrderReservation %q", res.GetName())
+				log.Info().Msgf("Cleaned up OrderReservation %q", auction.reservationCR.GetName())
 			}
 		}
 	}
