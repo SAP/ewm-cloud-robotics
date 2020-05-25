@@ -16,6 +16,7 @@ import logging
 import datetime
 import sys
 import time
+import os
 import threading
 import traceback
 
@@ -78,6 +79,9 @@ class MissionController(K8sCRHandler):
             {}
         )
 
+        # Get config options from environment variables
+        self.init_robot_fromenv()
+
         # Register CR callbacks
         self.register_callback('ADDED_MODIFIED', ['ADDED', 'MODIFIED'], self.robco_mission_cb)
         self.register_callback('DELETED', ['DELETED'], self.robco_mission_deleted_cb)
@@ -87,14 +91,26 @@ class MissionController(K8sCRHandler):
             target=self._watch_missions_loop, daemon=True)
         self._controller_upstart = True
 
-        # Robot status watcher thread
-        self.robot_status_watcher_thread = threading.Thread(target=self._watch_robot_status_loop)
+        # Robot error reset thread
+        self.robot_error_reset_thread = threading.Thread(target=self._reset_robot_error_loop)
+
+    def init_robot_fromenv(self) -> None:
+        """Initialize EWM Robot from environment variables."""
+        # Read environment variables
+        envvar = {}
+        envvar['AUTO_RESET_ERRORS'] = os.environ.get('AUTO_RESET_ERRORS')
+
+        self.auto_reset_errors = False
+        if envvar['AUTO_RESET_ERRORS'] is not None:
+            self.auto_reset_errors = bool(envvar['AUTO_RESET_ERRORS'].lower() == "true")
 
     def run(self, watcher: bool = True, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
         """Start running everything."""
         self.mission_watcher_thread.start()
-        self.robot_status_watcher_thread.start()
+        if self.auto_reset_errors:
+            _LOGGER.info('Automatically resetting errors on MiR robot')
+            self.robot_error_reset_thread.start()
 
         super().run(
             watcher=watcher, reprocess=reprocess,
@@ -214,10 +230,10 @@ class MissionController(K8sCRHandler):
         if missions:
             self._controller_upstart = False
 
-    def _watch_robot_status_loop(self) -> None:
-        """Run watch status of the robot in a loop."""
+    def _reset_robot_error_loop(self) -> None:
+        """Check and reset robot errors in a loop."""
         loop_control = MainLoopController()
-        _LOGGER.info('Watch robot status loop started')
+        _LOGGER.info('Reset robot errors loop started')
         while self.thread_run:
             try:
                 # Reset potential MiR error
@@ -226,11 +242,11 @@ class MissionController(K8sCRHandler):
             except Exception as exc:  # pylint: disable=broad-except
                 exc_info = sys.exc_info()
                 _LOGGER.error(
-                    '%s/%s: Error watching status of robot - Exception: "%s" / "%s" - '
+                    '%s/%s: Error resetting robot errors of robot - Exception: "%s" / "%s" - '
                     'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
                     traceback.format_exception(*exc_info))
                 # On uncovered exception in thread save the exception
-                self.thread_exceptions['status_loop'] = exc
+                self.thread_exceptions['robot_error_loop'] = exc
                 # Stop the watcher
                 self.stop_watcher()
 
