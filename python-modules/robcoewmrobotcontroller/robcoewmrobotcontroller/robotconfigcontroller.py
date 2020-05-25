@@ -66,6 +66,13 @@ class RobotConfigurationController(K8sCRHandler):
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
         self.rsrc = envvar['ROBCO_ROBOT_NAME'].upper()  # type: ignore
 
+        # Optional values
+        self.max_retry_count = 1
+        envvar['MAX_RETRY_COUNT'] = os.environ.get('MAX_RETRY_COUNT')
+        if envvar['MAX_RETRY_COUNT'] is not None:
+            if int(envvar['MAX_RETRY_COUNT']) > 0:
+                self.max_retry_count = int(envvar['MAX_RETRY_COUNT'])
+
     def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
         """Process robot configuration CR."""
         self.conf = structure(custom_res['spec'], RobotConfigurationSpec)

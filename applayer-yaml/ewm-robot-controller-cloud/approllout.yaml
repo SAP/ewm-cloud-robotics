@@ -17,11 +17,7 @@ spec:
         repository: "ewmcloudrobotics/robot-controller"
         tag: "latest"
       envs:
-        ewmlgnum: "" # Warehouse Number in SAP EWM the robot is operating
-        chargerlist: "" # Names of chargers available for the robots separated by commas
-        batterymin: 10 # If battery is below this level, a charging mission will be created next
-        batteryok: 80 # Battery level to which a robot will be charged during charging mission
-        batteryidle: 40 # If battery is below this level, a charging mission will be created if robot is idling
+        maxretrycount: 1 # Maximum number of retries for failed missions
   ## Select only those robot models that require cloud controllers
   ## such as Fetch robots. Do not select robots running edge clusters.
   robots:

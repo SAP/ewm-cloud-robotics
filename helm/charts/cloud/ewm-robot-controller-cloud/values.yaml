@@ -5,3 +5,6 @@ image:
   tag: "latest"
 
 robots: []
+
+envs:
+  maxretrycount: 1

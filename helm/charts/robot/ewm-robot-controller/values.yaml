@@ -6,3 +6,6 @@ image:
 
 robot:
   name: ""
+
+envs:
+  maxretrycount: 1

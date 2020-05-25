@@ -21,6 +21,8 @@ spec:
       image:
         repository: "ewmcloudrobotics/robot-controller"
         tag: "latest"
+      envs:
+        maxretrycount: 1 # Maximum number of retries for failed missions
   cloud:
     values:
       image:
