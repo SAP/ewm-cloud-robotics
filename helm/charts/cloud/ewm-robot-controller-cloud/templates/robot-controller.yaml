@@ -22,7 +22,7 @@ spec:
         - name: ROBCO_ROBOT_NAME
           value: "{{ .name }}"
         - name: MAX_RETRY_COUNT
-          value: "{{ .Values.envs.maxretrycount }}"
+          value: "{{ $.Values.envs.maxretrycount }}"
 ---
 apiVersion: v1
 kind: Service
