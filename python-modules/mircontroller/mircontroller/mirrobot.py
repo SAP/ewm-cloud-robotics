@@ -122,6 +122,8 @@ class MiRRobot:
         self.pos_y = 0.0
         self.pos_orientation = 0.0
         self.pos_theta = 0.0
+        # Error handling
+        self.error_resetted = False
         # Init attributes from environment variables
         self.init_robot_fromenv()
 
@@ -376,7 +378,7 @@ class MiRRobot:
         else:
             self.trolley_attached = not http_resp.json()['value'] == 0
 
-    def unpause_robot_reset_error(self, reset_error: bool = False) -> None:
+    def unpause_robot_reset_error(self) -> None:
         """Unpause robot and reset error on MiR."""
         state_id = None
 
@@ -389,23 +391,37 @@ class MiRRobot:
         else:
             state_id = http_resp.json()['state_id']
 
-        # Check if error occured
-        if state_id == 12 and reset_error:
-            ws_msg = {
-                'op': 'call_service',
-                'service': '/mirsupervisor/requestErrorReset'}
-            _LOGGER.info('Reset error request sent via websocket')
-            try:
-                self._mir_api.send_ws_message(ws_msg)
-            except RequestException:
-                _LOGGER.error('Error state could not been reset')
-            else:
-                _LOGGER.info('Error successfully reset')
-                # Assume state is "pause" after reset
-                state_id = 4
+        # Check if error raised by MiR MissionController module
+        if state_id == 12:
+            reset = False
+            errors = http_resp.json()['errors']
+            # Reset if there are only errors raised by MissionController module
+            for error in errors:
+                if error.get('module') == 'MissionController':
+                    _LOGGER.info('Error raised by MiR MissionController module occurred.')
+                    reset = True
+                else:
+                    reset = False
+                    self.error_resetted = False
+                    break
 
-        # If mission queue is in state 4 (pause)
-        if state_id == 4:
+            if reset:
+                ws_msg = {
+                    'op': 'call_service',
+                    'service': '/mirsupervisor/requestErrorReset'}
+                _LOGGER.info('Reset error request sent via websocket')
+                try:
+                    self._mir_api.send_ws_message(ws_msg)
+                except RequestException:
+                    _LOGGER.error('Error state could not been reset')
+                else:
+                    _LOGGER.info('Error successfully reset')
+                    self.error_resetted = True
+                    # Assume state is "pause" after reset
+                    state_id = 4
+
+        # If mission queue is in state 4 (pause) and error was resetted
+        if state_id == 4 and self.error_resetted:
             # Set robot state to 3 to continue the queued missions
             json_body = {'state_id': 3}
             try:
@@ -413,4 +429,5 @@ class MiRRobot:
             except RequestException:
                 _LOGGER.error('Mission could not be continued')
             else:
+                self.error_resetted = False
                 _LOGGER.info('Mission continued')

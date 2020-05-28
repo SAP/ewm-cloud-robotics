@@ -8,7 +8,6 @@ envs:
   miruser: "admin"
   mirpassword: ""
   mirhost: "mir-api.default.svc.cluster.local"
-  autoreseterrors: "false"
 
 robot:
   name: ""

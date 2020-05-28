@@ -48,8 +48,6 @@ spec:
           value: "{{ .Values.robot.name }}"
         - name: PLC_TROLLEY_ATTACHED
           value: "{{ .Values.envs.plctrolley }}"
-        - name: AUTO_RESET_ERRORS
-          value: "{{ .Values.envs.autoreseterrors }}"
 ---
 apiVersion: v1
 kind: Service

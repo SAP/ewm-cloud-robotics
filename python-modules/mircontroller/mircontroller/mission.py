@@ -16,7 +16,6 @@ import logging
 import datetime
 import sys
 import time
-import os
 import threading
 import traceback
 
@@ -79,9 +78,6 @@ class MissionController(K8sCRHandler):
             {}
         )
 
-        # Get config options from environment variables
-        self.init_robot_fromenv()
-
         # Register CR callbacks
         self.register_callback('ADDED_MODIFIED', ['ADDED', 'MODIFIED'], self.robco_mission_cb)
         self.register_callback('DELETED', ['DELETED'], self.robco_mission_deleted_cb)
@@ -94,23 +90,12 @@ class MissionController(K8sCRHandler):
         # Robot error reset thread
         self.robot_error_reset_thread = threading.Thread(target=self._reset_robot_error_loop)
 
-    def init_robot_fromenv(self) -> None:
-        """Initialize EWM Robot from environment variables."""
-        # Read environment variables
-        envvar = {}
-        envvar['AUTO_RESET_ERRORS'] = os.environ.get('AUTO_RESET_ERRORS')
-
-        self.auto_reset_errors = False
-        if envvar['AUTO_RESET_ERRORS'] is not None:
-            self.auto_reset_errors = bool(envvar['AUTO_RESET_ERRORS'].lower() == "true")
-
     def run(self, watcher: bool = True, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
         """Start running everything."""
         self.mission_watcher_thread.start()
-        if self.auto_reset_errors:
-            _LOGGER.info('Automatically resetting errors on MiR robot')
-            self.robot_error_reset_thread.start()
+        _LOGGER.info('Automatically resetting errors from MissionController module on MiR robot')
+        self.robot_error_reset_thread.start()
 
         super().run(
             watcher=watcher, reprocess=reprocess,
@@ -237,7 +222,7 @@ class MissionController(K8sCRHandler):
         while self.thread_run:
             try:
                 # Reset potential MiR error
-                self._mir_robot.unpause_robot_reset_error(reset_error=True)
+                self._mir_robot.unpause_robot_reset_error()
                 loop_control.sleep(2.0)
             except Exception as exc:  # pylint: disable=broad-except
                 exc_info = sys.exc_info()
