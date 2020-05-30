@@ -18,7 +18,7 @@ import (
 )
 
 // This follows the approach of Time implementation in k8s.io/apimachinery/pkg/apis/meta/v1 for time format used in EWM
-// It is in integer format follow this schema int(YYYYMMDDhhmmss) used for properties like Lsd (Latest start date)
+// It is in integer format follow this schema int64(YYYYMMDDhhmmss) used for properties like Lsd (Latest start date)
 
 // EwmTime is a timp stamp from EWM YYYYMMDDhhmmss. Const according to layout definition of time.Time.
 const EwmTime = "20060102150405"
@@ -104,7 +104,7 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 		return nil
 	}
 
-	var integer int
+	var integer int64
 	err := json.Unmarshal(b, &integer)
 	if err != nil {
 		return err
@@ -116,7 +116,7 @@ func (t *Time) UnmarshalJSON(b []byte) error {
 	}
 
 	// str has format YYYYMMDDhhmmss now, which is EwmTime
-	str := strconv.Itoa(integer)
+	str := strconv.FormatInt(integer, 10)
 
 	pt, err := time.Parse(EwmTime, str)
 	if err != nil {

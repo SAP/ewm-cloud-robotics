@@ -55,6 +55,10 @@ build:
       context: .
       docker:
         dockerfile: docker/order-bid-agent/Dockerfile
+    - image: mir-runtime-estimator
+      context: .
+      docker:
+        dockerfile: docker/mir-runtime-estimator/Dockerfile
   local: 
     push: false
 test:
@@ -88,6 +92,9 @@ test:
   - image: order-bid-agent
     structureTests:
       - docker/order-bid-agent/test/container-structure-test/prod.yaml
+  - image: mir-runtime-estimator
+    structureTests:
+      - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
 deploy:
   kubectl:
     manifests:
@@ -165,6 +172,12 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: mir-runtime-estimator
+          custom:
+            buildCommand: ./scripts/gcr-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
   ## Tests are executed to verify that correct Dockerfiles were used
   ## Deploy is left blank since this profile is for updating the container registry.
@@ -232,6 +245,12 @@ profiles:
         - image: order-bid-agent
           custom:
             buildCommand: ./scripts/dockerhub-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: mir-runtime-estimator
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -358,6 +377,23 @@ profiles:
       - image: mir-mission-controller
         structureTests:
           - docker/mir-mission-controller/test/container-structure-test/prod.yaml
+  ## mir-runtime-estimator
+  - name: mir-runtime-estimator
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: mir-runtime-estimator
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .      
+    test:
+      - image: mir-runtime-estimator
+        structureTests:
+          - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
   ## dummy-mission-controller
   - name: dummy-mission-controller
     build:

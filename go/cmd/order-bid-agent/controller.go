@@ -240,6 +240,9 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 		}
 	}
 
+	// Bid agent closes bid 30 seconds before auction ends, so give it 10 seconds time
+	spec.ValidUntil = metav1.NewTime(auction.Spec.ValidUntil.UTC().Add(time.Second * -40))
+
 	if len(spec.Paths) == 0 {
 		log.Info().Msgf("No valid paths identified for OrderAuction %q", auction.GetName())
 		return nil

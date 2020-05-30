@@ -18,11 +18,10 @@ import (
 
 // Auctioneer represents the Auctioneer CRD
 type Auctioneer struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec AuctioneerSpec `json:"spec"`
+	Spec AuctioneerSpec `json:"spec,omitempty"`
 	// +optional
 	Status AuctioneerStatus `json:"status,omitempty"`
 }
@@ -32,7 +31,6 @@ type Auctioneer struct {
 // AuctioneerList represents the array of Auctioneer CRD
 type AuctioneerList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []Auctioneer `json:"items"`
@@ -46,11 +44,11 @@ type AuctioneerSpec struct {
 
 // AuctioneerStatus represents the status of Auctioneer CRD
 type AuctioneerStatus struct {
-	AvailableRobots          []string               `json:"availableRobots,omitempty"`
-	RobotsInScope            []string               `json:"robotsInScope,omitempty"`
-	WarehouseOrdersInProcess int                    `json:"warehouseOrdersInProcess,omitempty"`
-	RunningAuctions          int                    `json:"runningAuctions,omitempty"`
-	Status                   AuctioneerStatusStatus `json:"status,omitempty"`
+	AvailableRobots          []string               `json:"availableRobots"`
+	RobotsInScope            []string               `json:"robotsInScope"`
+	WarehouseOrdersInProcess int                    `json:"warehouseOrdersInProcess"`
+	RunningAuctions          int                    `json:"runningAuctions"`
+	Status                   AuctioneerStatusStatus `json:"status"`
 	Message                  string                 `json:"message,omitempty"`
 	LastStatusChangeTime     metav1.Time            `json:"lastStatusChangeTime,omitempty"`
 	UpdateTime               metav1.Time            `json:"updateTime,omitempty"`
@@ -86,11 +84,10 @@ const (
 
 // OrderReservation represents the OrderReservation CRD
 type OrderReservation struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec OrderReservationSpec `json:"spec"`
+	Spec OrderReservationSpec `json:"spec,omitempty"`
 	// +optional
 	Status OrderReservationStatus `json:"status,omitempty"`
 }
@@ -100,7 +97,6 @@ type OrderReservation struct {
 // OrderReservationList represents the array of OrderReservation CRD
 type OrderReservationList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []OrderReservation `json:"items"`
@@ -154,11 +150,10 @@ const (
 
 // OrderAuction represents the OrderAuction CRD
 type OrderAuction struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec OrderAuctionSpec `json:"spec"`
+	Spec OrderAuctionSpec `json:"spec,omitempty"`
 	// +optional
 	Status OrderAuctionStatus `json:"status,omitempty"`
 }
@@ -168,7 +163,6 @@ type OrderAuction struct {
 // OrderAuctionList represents the array of OrderAuction CRD
 type OrderAuctionList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []OrderAuction `json:"items"`
@@ -218,11 +212,10 @@ const (
 
 // RobotConfiguration represents the RobotConfiguration CRD
 type RobotConfiguration struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec RobotConfigurationSpec `json:"spec"`
+	Spec RobotConfigurationSpec `json:"spec,omitempty"`
 	// +optional
 	Status RobotConfigurationStatus `json:"status,omitempty"`
 }
@@ -232,7 +225,6 @@ type RobotConfiguration struct {
 // RobotConfigurationList represents the array of RobotConfiguration CRD
 type RobotConfigurationList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []RobotConfiguration `json:"items"`
@@ -253,12 +245,12 @@ type RobotConfigurationSpec struct {
 
 // RobotConfigurationStatus represents the status of RobotConfiguration CRD
 type RobotConfigurationStatus struct {
-	Lgnum        string `json:"lgnum,omitempty"`
-	Mission      string `json:"mission,omitempty"`
-	Statemachine string `json:"statemachine,omitempty"`
-	SubWho       string `json:"subwho,omitempty"`
-	Tanum        string `json:"tanum,omitempty"`
-	Who          string `json:"who,omitempty"`
+	Lgnum        string `json:"lgnum"`
+	Mission      string `json:"mission"`
+	Statemachine string `json:"statemachine"`
+	SubWho       string `json:"subwho"`
+	Tanum        string `json:"tanum"`
+	Who          string `json:"who"`
 }
 
 // +genclient
@@ -266,11 +258,10 @@ type RobotConfigurationStatus struct {
 
 // RobotRequest represents the RobotRequest CRD
 type RobotRequest struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec RobotRequestSpec `json:"spec"`
+	Spec RobotRequestSpec `json:"spec,omitempty"`
 	// +optional
 	Status RobotRequestStatus `json:"status,omitempty"`
 }
@@ -280,7 +271,6 @@ type RobotRequest struct {
 // RobotRequestList represents the array of RobotRequest CRD
 type RobotRequestList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []RobotRequest `json:"items"`
@@ -316,11 +306,10 @@ const (
 
 // RunTimeEstimation represents the RunTimeEstimation CRD
 type RunTimeEstimation struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec RunTimeEstimationSpec `json:"spec"`
+	Spec RunTimeEstimationSpec `json:"spec,omitempty"`
 	// +optional
 	Status RunTimeEstimationStatus `json:"status,omitempty"`
 }
@@ -330,7 +319,6 @@ type RunTimeEstimation struct {
 // RunTimeEstimationList represents the array of RunTimeEstimation CRD
 type RunTimeEstimationList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []RunTimeEstimation `json:"items"`
@@ -338,8 +326,9 @@ type RunTimeEstimationList struct {
 
 // RunTimeEstimationSpec represents the spec of RunTimeEstimation CRD
 type RunTimeEstimationSpec struct {
-	Paths         []Path `json:"paths"`
-	StartPosition string `json:"startPosition"`
+	Paths         []Path      `json:"paths"`
+	StartPosition string      `json:"startPosition"`
+	ValidUntil    metav1.Time `json:"validuntil"`
 }
 
 // RunTimeEstimationStatus represents the status of RunTimeEstimation CRD
@@ -356,8 +345,9 @@ type Path struct {
 
 // RunTime represents the run time of a path from start to goal
 type RunTime struct {
-	Path
-	Time float64 `json:"time"`
+	Start string  `json:"start"`
+	Goal  string  `json:"goal"`
+	Time  float64 `json:"time"`
 }
 
 // RunTimeEstimationStatusStatus describes the status of a RunTimeEstimation
@@ -374,11 +364,10 @@ const (
 
 // WarehouseOrder represents the WarehouseOrder CRD
 type WarehouseOrder struct {
-	metav1.TypeMeta `json:",inline"`
-	// +optional
+	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec WarehouseOrderSpec `json:"spec"`
+	Spec WarehouseOrderSpec `json:"spec,omitempty"`
 	// +optional
 	Status WarehouseOrderStatus `json:"status,omitempty"`
 }
@@ -388,7 +377,6 @@ type WarehouseOrder struct {
 // WarehouseOrderList represents the array of WarehouseOrder CRD
 type WarehouseOrderList struct {
 	metav1.TypeMeta `json:",inline"`
-	// +optional
 	metav1.ListMeta `json:"metadata,omitempty"`
 
 	Items []WarehouseOrder `json:"items"`

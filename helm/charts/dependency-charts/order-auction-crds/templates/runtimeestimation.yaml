@@ -16,8 +16,8 @@ spec:
       storage: true
   # either Namespaced or Cluster
   scope: Namespaced
-  # subresources:
-  #  status: {}
+  subresources:
+    status: {}
   names:
     # plural name to be used in the URL: /apis/<group>/<version>/<plural>
     plural: runtimeestimations
@@ -39,6 +39,7 @@ spec:
           required:
             - paths
             - startPosition
+            - validuntil
           properties:
             paths:
               type: array
@@ -53,6 +54,8 @@ spec:
                   goal:
                     type: string
             startPosition:
+              type: string
+            validuntil:
               type: string
         status:
           type: object
