@@ -206,11 +206,11 @@ class MiRRobot:
         cls = self.__class__
 
         if pos_type == cls.POSTYPE_DOCK:
-            type_ids = [5, 9, 11]
+            type_ids = [1, 5, 9, 11]
         elif pos_type == cls.POSTYPE_CHARGER:
             type_ids = [7]
         elif pos_type == cls.POSTYPE_POSITION:
-            type_ids = [0]
+            type_ids = [0, 42]
         else:
             raise ValueError('Position type "{}" is not known'.format(pos_type))
 
