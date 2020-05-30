@@ -35,7 +35,9 @@ type mirEstimator struct {
 }
 
 // Lookup table with position type IDs which can be added to path guides
-var posTypeIDForPathGuides = map[int]bool{0: true, 8: true, 12: true}
+var posTypeIDForPathGuides = map[int]bool{
+	0: true, 1: true, 5: true, 8: true, 10: true, 12: true, 14: true, 15: true, 19: true, 21: true, 22: true, 23: true, 42: true,
+}
 
 // newMirEstimator returns a new instance of mirEstimator
 func newMirEstimator(robotName string, mirClient *mirclientv2.Client, clientset *crclient.Clientset, eventChan <-chan runtimeEstimationEvent) *mirEstimator {
@@ -257,34 +259,14 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 			log.Info().Msg("Running out of time, precalculation must be stopped")
 			break
 		}
-		pathGuide, err := m.mirClient.PostPathGuides(&mirapisv2.PostPathGuides{MapID: mapID, Name: crPathGuidesName})
+
+		// Prepare path guide for precalculation. This is a) an existing one for these start and goal positions or a new temporary one
+		pathGuide, err := prepareMirPathGuide(m.mirClient, mapID, posMaps.posToGUID[ewmPath.Start], posMaps.posToGUID[ewmPath.Goal])
 		if err != nil {
 			log.Error().Err(err).Msg("Creating PathGuide")
 			continue
 		}
-		// Add positions from requested path to path guide
-		// startPos
-		startPos := &mirapisv2.PostPathGuidesPositions{
-			PathGuideGUID: pathGuide.GUID,
-			PosGUID:       posMaps.posToGUID[ewmPath.Start],
-			PosType:       "start"}
-		log.Debug().Msgf("StartPos %+v", *startPos)
-		_, err = m.mirClient.PostPathGuidesPositions(pathGuide.GUID, startPos)
-		if err != nil {
-			log.Error().Err(err).Msg("Posting start position to PathGuide")
-			continue
-		}
-		// goalPos
-		goalPos := &mirapisv2.PostPathGuidesPositions{
-			PathGuideGUID: pathGuide.GUID,
-			PosGUID:       posMaps.posToGUID[ewmPath.Goal],
-			PosType:       "goal"}
-		log.Debug().Msgf("GoalPos %+v", *goalPos)
-		_, err = m.mirClient.PostPathGuidesPositions(pathGuide.GUID, goalPos)
-		if err != nil {
-			log.Error().Err(err).Msg("Posting goal position to PathGuide")
-			continue
-		}
+
 		// Start precalculation for path guide
 		preCalc, err := m.mirClient.PostPathGuidesPrecalc(&mirapisv2.PostPathGuidesPrecalc{Command: "start", GUID: pathGuide.GUID})
 		if err != nil {
@@ -301,7 +283,7 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 			// Check status of precalulation and wait until it is finished
 			for {
 				// Existance of path must be checked because GET path_guides_precalc endpoint does not give a helpful response when the robot is moving
-				pathFound := m.checkPathCreated(mapID, startPos.PosGUID, goalPos.PosGUID)
+				pathFound := m.checkPathCreated(mapID, posMaps.posToGUID[ewmPath.Start], posMaps.posToGUID[ewmPath.Goal])
 
 				// Break the loop when path was found
 				if pathFound {

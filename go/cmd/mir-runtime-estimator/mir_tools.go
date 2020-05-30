@@ -11,7 +11,9 @@ package main
 
 import (
 	"fmt"
+	mirapisv2 "github.com/SAP/ewm-cloud-robotics/go/pkg/mir-interface/apis/v2"
 	mirclientv2 "github.com/SAP/ewm-cloud-robotics/go/pkg/mir-interface/client/v2"
+	"github.com/pkg/errors"
 	"strings"
 )
 
@@ -129,4 +131,82 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 	}
 
 	return false
+}
+
+func prepareMirPathGuide(m *mirclientv2.Client, mapID string, startPosGUID, goalPosGUID string) (*mirapisv2.GetPathGuidesItem, error) {
+
+	// Check for existing path guides with these positions
+	pathGuides, err := m.GetPathGuides()
+	if err != nil {
+		return nil, errors.Wrap(err, "Get PathGuides")
+	}
+
+	// Check if existing path guides include start and goal positions
+	for _, pathGuide := range *pathGuides {
+		positions, err := m.GetPathGuidesGUIDPositions(pathGuide.GUID)
+		if err != nil {
+			log.Error().Err(err).Msg("Get PathGuidesGUIDPositions")
+			continue
+		}
+		startPosFound := false
+		goalPosFound := false
+		for _, position := range *positions {
+			if position.PosType == "start" && startPosFound == false {
+				p, err := m.GetPathGuidesGUIDPositionsGUID(pathGuide.GUID, position.GUID)
+				if err != nil {
+					log.Error().Err(err).Msg("Get PathGuidesGUIDPositionsGUID")
+					continue
+				}
+				if p.PosGUID == startPosGUID {
+					startPosFound = true
+				}
+			} else if position.PosType == "goal" && goalPosFound == false {
+				p, err := m.GetPathGuidesGUIDPositionsGUID(pathGuide.GUID, position.GUID)
+				if err != nil {
+					log.Error().Err(err).Msg("Get PathGuidesGUIDPositionsGUID")
+					continue
+				}
+				if p.PosGUID == goalPosGUID {
+					goalPosFound = true
+				}
+			}
+		}
+		// If start and goal positions are both found, return this path guide
+		if startPosFound == true && goalPosFound == true {
+			log.Debug().Msgf("Using existing path guide with name %s", pathGuide.Name)
+			return &pathGuide, nil
+		}
+	}
+
+	// Create new path guide
+	newPathGuide, err := m.PostPathGuides(&mirapisv2.PostPathGuides{MapID: mapID, Name: crPathGuidesName})
+	if err != nil {
+		return nil, errors.Wrap(err, "Creating PathGuide")
+	}
+
+	// start pos
+	startPos := &mirapisv2.PostPathGuidesPositions{
+		PathGuideGUID: newPathGuide.GUID,
+		PosGUID:       startPosGUID,
+		PosType:       "start"}
+
+	// goalPos
+	goalPos := &mirapisv2.PostPathGuidesPositions{
+		PathGuideGUID: newPathGuide.GUID,
+		PosGUID:       goalPosGUID,
+		PosType:       "goal"}
+
+	_, err = m.PostPathGuidesPositions(newPathGuide.GUID, startPos)
+	if err != nil {
+		return nil, errors.Wrap(err, "Posting start position to PathGuide")
+	}
+
+	_, err = m.PostPathGuidesPositions(newPathGuide.GUID, goalPos)
+	if err != nil {
+		return nil, errors.Wrap(err, "Posting goal position to PathGuide")
+	}
+
+	log.Debug().Msg("Using new temporary path guide")
+	return newPathGuide, nil
+
 }
