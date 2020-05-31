@@ -26,9 +26,9 @@ from prometheus_client import Counter, Histogram
 import attr
 from cattr import structure, unstructure
 
-from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
 from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus, RequestFromRobot
-from robcoewmtypes.warehouseorder import WarehouseOrder, WarehouseTask, ConfirmWarehouseTask
+from robcoewmtypes.warehouseorder import (
+    WarehouseOrder, WarehouseOrderCRDSpec, WarehouseTask, ConfirmWarehouseTask)
 
 from .ordercontroller import OrderController
 from .robco_mission_api import RobCoMissionAPI
@@ -37,9 +37,6 @@ from .robotrequestcontroller import RobotRequestController
 from .statemachine_config import RobotEWMConfig
 
 _LOGGER = logging.getLogger(__name__)
-
-ROBOTREQUEST_TYPE = create_robcoewmtype_str(RequestFromRobot('lgnum', 'rsrc'))
-WAREHOUSEORDER_TYPE = create_robcoewmtype_str(WarehouseOrder('lgnum', 'who'))
 
 STATE_SUCCEEDED = 'SUCCEEDED'
 STATE_FAILED = 'FAILED'
@@ -113,11 +110,11 @@ class RobotEWMMachine(Machine):
         # EWM
         # List of warehouse order assigned to this robot
         self.warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
-            WhoIdentifier, WarehouseOrder] = OrderedDict()
+            WhoIdentifier, WarehouseOrderCRDSpec] = OrderedDict()
         # List of sub warehouse orders of robot's warehouse orders for Pick, Pack and Pass
         # Scenario. Those are not assigned to the robot
         self.sub_warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
-            WhoIdentifier, WarehouseOrder] = OrderedDict()
+            WhoIdentifier, WarehouseOrderCRDSpec] = OrderedDict()
         # Warehouse order / warehouse task currently in process
         self.active_who: Optional[WarehouseOrder] = None
         self.active_wht: Optional[WarehouseTask] = None
@@ -236,8 +233,13 @@ class RobotEWMMachine(Machine):
                     # Cancel charge mission
                     self.cancel_active_mission()
                     # Process warehouse order
-                    self.process_warehouseorder(
-                        warehouseorder=next(iter(self.warehouseorders.values())))
+                    next_who_crd = next(iter(self.warehouseorders.values()))
+                    if isinstance(next_who_crd, WarehouseOrderCRDSpec):
+                        self.process_warehouseorder(warehouseorder=next_who_crd.data)
+                    else:
+                        raise TypeError(
+                            'self.warehouseorders includes an element of type "{}"'.format(
+                                type(next_who_crd)))
 
     def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
         """Process robotconfiguration messages."""
@@ -252,66 +254,33 @@ class RobotEWMMachine(Machine):
         """Process robotrequest messages."""
         status = custom_res.get('status', {})
         if status.get('data'):
-            # Get robco ewm data classes
-            try:
-                robcoewmtype = get_robcoewmtype(ROBOTREQUEST_TYPE)
-            except TypeError as err:
-                _LOGGER.error(
-                    'Message type "%s" is invalid - %s - message SKIPPED: %s',
-                    ROBOTREQUEST_TYPE, err, status.get('data'))
-                return
-            # Convert message data to robcoewmtypes data classes
-            robocoewmdata = structure(status['data'], robcoewmtype)
+            # Convert message data to RequestFromRobot data class
+            robot_request = structure(status['data'], RequestFromRobot)
 
             if self.state in self.conf.awaiting_who_completion_states and self.active_who:
-                if (robocoewmdata.lgnum == self.active_who.lgnum
-                        and robocoewmdata.notifywhocompletion == self.active_who.who):
+                if (robot_request.lgnum == self.active_who.lgnum
+                        and robot_request.notifywhocompletion == self.active_who.who):
                     _LOGGER.info(
                         'Warehouse order %s was confirmed in EWM - robot is proceeding now',
                         self.active_who.who)
                     self.warehouseorder_confirmed()
 
             if self.state in self.conf.awaiting_wht_completion_states and self.active_wht:
-                if (robocoewmdata.lgnum == self.active_wht.lgnum
-                        and robocoewmdata.notifywhtcompletion == self.active_wht.tanum):
+                if (robot_request.lgnum == self.active_wht.lgnum
+                        and robot_request.notifywhtcompletion == self.active_wht.tanum):
                     _LOGGER.info(
                         'Warehouse task %s was confirmed in EWM - robot is proceeding now',
                         self.active_wht.tanum)
                     self.warehousetask_confirmed()
 
-    def warehouseorder_cb(self, name: str, data: Dict) -> None:
+    def warehouseorder_cb(self, name: str, spec: Dict) -> None:
         """Process warehouse order CRs."""
-        # Get robco ewm data classes
-        try:
-            robcoewmtype = get_robcoewmtype(WAREHOUSEORDER_TYPE)
-        except TypeError as err:
-            _LOGGER.error(
-                'Message type "%s" is invalid - %s - message SKIPPED: %s', WAREHOUSEORDER_TYPE,
-                err, data)
-            return
-        # Convert message data to robcoewmtypes data classes
-        robocoewmdata = structure(data, robcoewmtype)
+        # Convert message data to WarehouseOrderCRDSpec type
+        who_crd_spec = structure(spec, WarehouseOrderCRDSpec)
 
-        # if data set is not a list yet, convert it for later processing
-        if not isinstance(robocoewmdata, list):
-            robocoewmdata = [robocoewmdata]
+        self.update_warehouseorder(warehouseorder=who_crd_spec)
 
-        # Check if datasets have a supported type before starting to process
-        valid_robcoewmdata = []
-        for dataset in robocoewmdata:
-            if isinstance(dataset, WarehouseOrder):
-                valid_robcoewmdata.append(dataset)
-            else:
-                _LOGGER.error(
-                    'Dataset type "%s" is not type WarehouseOrder. Skipping dataset: %s',
-                    type(dataset), dataset)
-
-        # Process the datasets
-        for dataset in valid_robcoewmdata:
-            if isinstance(dataset, WarehouseOrder):
-                self.update_warehouseorder(warehouseorder=dataset)
-
-    def warehouseorder_deleted_cb(self, name: str, data: Dict) -> None:
+    def warehouseorder_deleted_cb(self, name: str, spec: Dict) -> None:
         """Delete warehouse order from queue."""
         # Objects from EWM have upper case names
         name_split = name.upper().split('.')
@@ -324,36 +293,48 @@ class RobotEWMMachine(Machine):
     def _check_who_kwarg(self, event: EventData) -> bool:
         """Check if warehouseorder is an argument of the transition."""
         obj = event.kwargs.get('warehouseorder')
-        if isinstance(obj, WarehouseOrder):
+        if isinstance(obj, WarehouseOrderCRDSpec):
             return True
         else:
             _LOGGER.error(
-                'An keyword argument "warehouseorder" of type "WarehouseOrder" must be provided '
-                'for the transition')
+                'An keyword argument "warehouseorder" of type "WarehouseOrderCRDSpec" must be '
+                'provided for the transition')
             return False
+
+    def _sort_warehouseorders(self) -> None:
+        """Sort self.warehouseorders by sequence."""
+        try:
+            self.warehouseorders = OrderedDict(sorted(
+                self.warehouseorders.items(), key=lambda items: items[1].sequence))  # type: ignore
+        except AttributeError as err:
+            _LOGGER.error('Sorting self.warehouseorders failed with this AttributeError: %s', err)
 
     def _update_who(self, event: EventData) -> None:
         """Update a warehouse order of this state machine."""
-        warehouseorder = event.kwargs.get('warehouseorder')
+        warehouseorder_spec = event.kwargs.get('warehouseorder')
 
-        if (warehouseorder.lgnum == self.robot_config.conf.lgnum
-                and warehouseorder.rsrc == self.robot_config.rsrc):
+        if (warehouseorder_spec.data.lgnum == self.robot_config.conf.lgnum
+                and warehouseorder_spec.data.rsrc == self.robot_config.rsrc):
             _LOGGER.debug(
                 'Start updating warehouse order "%s" directly assigned to the robot',
-                warehouseorder.who)
-            self._update_robot_who(warehouseorder)
+                warehouseorder_spec.data.who)
+            self._update_robot_who(warehouseorder_spec)
         else:
             _LOGGER.debug(
                 'Start updating warehouse order "%s" not directly assigned to the robot, but a sub'
-                ' warehouse order', warehouseorder.who)
-            self._update_sub_who(warehouseorder)
+                ' warehouse order', warehouseorder_spec.who)
+            self._update_sub_who(warehouseorder_spec)
 
-    def _update_robot_who(self, warehouseorder: WarehouseOrder):
+    def _update_robot_who(self, warehouseorder_spec: WarehouseOrderCRDSpec) -> None:
         """Update warehouse order directly assigned to this robot."""
+        warehouseorder = warehouseorder_spec.data
         who = WhoIdentifier(warehouseorder.lgnum, warehouseorder.who)
 
-        # Update dictionary of all warehouse orders
-        self.warehouseorders[who] = warehouseorder
+        # Update queue of all warehouse order specs
+        self.warehouseorders[who] = warehouseorder_spec
+
+        # Sort warehouse order queue
+        self._sort_warehouseorders()
 
         # Update active warehouse order
         # No warehouse order in process and received order is assigned to robot
@@ -417,12 +398,13 @@ class RobotEWMMachine(Machine):
                     warehouseorder.who)
                 self.pickpackpass_who_with_tasks()
 
-    def _update_sub_who(self, warehouseorder: WarehouseOrder):
+    def _update_sub_who(self, warehouseorder_spec: WarehouseOrderCRDSpec) -> None:
         """Update a sub warehouse order not directly assigned to this robot."""
+        warehouseorder = warehouseorder_spec.data
         who = WhoIdentifier(warehouseorder.lgnum, warehouseorder.who)
 
         # Update dictionary of all warehouse orders
-        self.sub_warehouseorders[who] = warehouseorder
+        self.sub_warehouseorders[who] = warehouseorder_spec
 
         # Update active (sub) warehouse order
         if self.active_who:
@@ -630,7 +612,8 @@ class RobotEWMMachine(Machine):
     def _send_unassign_whos_request(self, event: EventData) -> None:
         """Request to unassign warehouse orders from robot."""
         who_remove: List[WhoIdentifier] = []
-        for whoident, who in self.warehouseorders.items():
+        for whoident, who_crd in self.warehouseorders.items():
+            who = who_crd.data
             # Do not unassign the active warehouse order
             if who == self.active_who:
                 continue
@@ -754,7 +737,13 @@ class RobotEWMMachine(Machine):
             self.too_many_failed_whos()
         elif self.warehouseorders:
             _LOGGER.info('Warehouse order in queue, start processing')
-            self.process_warehouseorder(warehouseorder=next(iter(self.warehouseorders.values())))
+            next_who_crd = next(iter(self.warehouseorders.values()))
+            if isinstance(next_who_crd, WarehouseOrderCRDSpec):
+                self.process_warehouseorder(warehouseorder=next_who_crd.data)
+            else:
+                raise TypeError(
+                    'self.warehouseorders includes an element of type "{}"'.format(
+                        type(next_who_crd)))
         elif self.mission_api.api_check_state_ok():
             self._request_work(event)
 

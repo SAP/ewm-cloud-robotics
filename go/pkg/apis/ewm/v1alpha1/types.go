@@ -387,6 +387,7 @@ type WarehouseOrderSpec struct {
 	Data          EWMWarehouseOrder              `json:"data"`
 	OrderStatus   WarehouseOrderOrderStatus      `json:"order_status"`
 	ProcessStatus []EWMWarehouseTaskConfirmation `json:"process_status,omitempty"`
+	Sequence      int64                          `json:"sequence"`
 }
 
 // WarehouseOrderStatus represents the status of WarehouseOrder CRD

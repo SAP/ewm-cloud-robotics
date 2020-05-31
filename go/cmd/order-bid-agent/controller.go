@@ -289,9 +289,9 @@ func (r *reconcileBidAgent) estimateStartPosition(ctx context.Context) (string, 
 	}
 
 	if len(warehouseOrders.Items) > 0 {
-		// Sort warehouse orders by creation time (descending)
+		// Sort warehouse orders by sequence (descending)
 		sort.SliceStable(warehouseOrders.Items, func(i, j int) bool {
-			return warehouseOrders.Items[i].GetCreationTimestamp().UTC().After(warehouseOrders.Items[j].GetCreationTimestamp().UTC())
+			return warehouseOrders.Items[i].Spec.Sequence > warehouseOrders.Items[j].Spec.Sequence
 		})
 
 		// Estimated position is the destination of the last warehouse task in the first warehouse order

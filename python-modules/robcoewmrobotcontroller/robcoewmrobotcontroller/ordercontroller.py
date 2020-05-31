@@ -69,7 +69,7 @@ class OrderController(K8sCRHandler):
             # If pre check was successfull set iterate over all callbacks
             if process_cr:
                 for callback in self.callbacks[operation].values():
-                    callback(name, custom_res.get('spec', {}).get('data', {}))
+                    callback(name, custom_res.get('spec', {}))
         except Exception:  # pylint: disable=broad-except
             _LOGGER.error(
                 'Error while processing custom resource %s', name)

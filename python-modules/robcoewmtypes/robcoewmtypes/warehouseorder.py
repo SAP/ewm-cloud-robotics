@@ -190,6 +190,7 @@ class WarehouseOrderCRDSpec:
         default=attr.Factory(list), validator=attr.validators.deep_iterable(
             member_validator=attr.validators.instance_of(ConfirmWarehouseTask),
             iterable_validator=attr.validators.instance_of(list)))
+    sequence: int = attr.ib(default=0, validator=validate_annotation, converter=int)
 
     @order_status.validator
     def validate_order_status(self, attribute, value) -> None:

@@ -184,24 +184,24 @@ class OrderController(K8sCRHandler):
         # Robot name and warehouse order CR names must be lower case
         labels['cloudrobotics.com/robot-name'] = robotident.rsrc.lower()
         name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who']).lower()
-        spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
+        # Warehouse order are procssed by the robot in the sequence they are assigned to them
+        spec = {
+            'data': who,
+            'order_status': WarehouseOrderCRDSpec.STATE_RUNNING,
+            'sequence': time.time_ns()}
         if self.check_cr_exists(name):
             _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)
+            cr_old = self.get_cr(name)
+            robot_old = cr_old['metadata'].get('labels', {}).get('cloudrobotics.com/robot-name')
+            order_status_old = cr_old['spec'].get('order_status')
+            # Keep the sequence if it is set and order_status or robot-name label did not change
+            if robot_old == robotident.rsrc.lower() and order_status_old == spec['order_status']:
+                spec['sequence'] = cr_old['spec'].get('sequence', 0)
+            # Update CR
             self.update_cr_spec(name, spec, labels)
         else:
             _LOGGER.debug('Warehouse order CR "%s" not existing. Create it', name)
-            self.create_cr(name, labels, spec)
-
-    def save_who(self, who: Dict) -> None:
-        """Save the warehouse order."""
-        labels: Dict[str, str] = {}
-        name = '{lgnum}.{who}'.format(lgnum=who['lgnum'], who=who['who'])
-        spec = {'data': who, 'order_status': WarehouseOrderCRDSpec.STATE_RUNNING}
-        if self.check_cr_exists(name):
-            _LOGGER.debug('Warehouse order CR "%s" exists. Update it', name)
-            self.update_cr_spec(name, spec, labels)
-        else:
-            _LOGGER.debug('Warehouse order CR "%s" not existing. Create it', name)
+            spec['sequence'] = time.time_ns()
             self.create_cr(name, labels, spec)
 
     def cleanup_who(self, who: Dict) -> None:
