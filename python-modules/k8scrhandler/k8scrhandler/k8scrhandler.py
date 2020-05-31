@@ -315,8 +315,6 @@ class K8sCRHandler:
                         break
 
                 # Skip CRs without a spec or without metadata
-                if not obj.get('spec'):
-                    continue
                 metadata = obj.get('metadata')
                 if not metadata:
                     continue
@@ -324,6 +322,8 @@ class K8sCRHandler:
                     self.resv_watcher = metadata['resourceVersion']
                 name = metadata['name']
                 labels = metadata.get('labels', {})
+                if not obj.get('spec'):
+                    continue
                 _LOGGER.debug(
                     '%s/%s: Handling %s on %s', self.group, self.plural,
                     operation, name)
@@ -521,17 +521,17 @@ class K8sCRHandler:
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: CR process: Got all CRs.', self.group, self.plural)
         if cr_resp:
-            resource_version = ''
+            resource_version = '0'
             for obj in cr_resp['items']:
-                spec = obj.get('spec')
-                if not spec:
-                    continue
                 metadata = obj.get('metadata')
                 if not metadata:
                     continue
-                resource_version = max(resource_version, metadata.get('resourceVersion', ''))
+                rv_temp = max(int(resource_version), int(metadata.get('resourceVersion', '0')))
+                resource_version = str(rv_temp)
                 name = metadata['name']
                 labels = metadata.get('labels', {})
+                if not obj.get('spec'):
+                    continue
                 # Submit callbacks to ThreadPoolExecutor
                 self.executor.submit(
                     self._callback, name, labels, operation, obj)
