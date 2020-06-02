@@ -521,13 +521,21 @@ class K8sCRHandler:
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: CR process: Got all CRs.', self.group, self.plural)
         if cr_resp:
-            resource_version = '0'
+            # Set resource version for watcher to the version of the list. According to
+            # https://github.com/kubernetes-client/python/issues/693#issuecomment-442893494
+            # and https://github.com/kubernetes-client/python/issues/819#issuecomment-491630022
+            if set_resv_watcher:
+                resource_version = cr_resp.get('metadata', {}).get('resourceVersion')
+                if resource_version is None:
+                    _LOGGER.error('Could not determine resourceVersion. Start from the beginning')
+                    self.resv_watcher = ''
+                else:
+                    self.resv_watcher = resource_version
+
             for obj in cr_resp['items']:
                 metadata = obj.get('metadata')
                 if not metadata:
                     continue
-                rv_temp = max(int(resource_version), int(metadata.get('resourceVersion', '0')))
-                resource_version = str(rv_temp)
                 name = metadata['name']
                 labels = metadata.get('labels', {})
                 if not obj.get('spec'):
@@ -535,10 +543,6 @@ class K8sCRHandler:
                 # Submit callbacks to ThreadPoolExecutor
                 self.executor.submit(
                     self._callback, name, labels, operation, obj)
-
-            # Set resource version for watcher to highest version found here
-            if set_resv_watcher:
-                self.resv_watcher = resource_version
 
     def _reprocess_crs_loop(self) -> None:
         """Reprocess existing custom resources in a loop."""
