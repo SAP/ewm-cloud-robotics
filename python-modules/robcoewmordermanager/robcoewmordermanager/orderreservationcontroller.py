@@ -14,7 +14,9 @@
 
 import logging
 
-from typing import List
+from collections import defaultdict
+from threading import RLock
+from typing import DefaultDict, Dict, List
 
 from cattr import structure
 
@@ -43,6 +45,17 @@ class OrderReservationController(K8sCRHandler):
             {}
         )
 
+        # Open reservations per auctioneer
+        self._open_reservations: DefaultDict[str, Dict] = defaultdict(dict)
+        self._open_reservations_lock = RLock()
+
+        # Register callbacks
+        self.register_callback(
+            'GetOpenReservations', ['ADDED', 'MODIFIED', 'REPROCESS'],
+            self._get_open_reservations_cb)
+        self.register_callback(
+            'DeleteOpenReservations', ['DELETED'], self._delete_open_reservations_cb)
+
     def get_reserved_warehouseorders(self) -> List[WarehouseOrderIdent]:
         """Get reserved warehouse orders of reservations which are in process."""
         reserved_whos: List[WarehouseOrderIdent] = []
@@ -63,3 +76,42 @@ class OrderReservationController(K8sCRHandler):
                     reserved_whos.append(who_ident)
 
         return reserved_whos
+
+    def _delete_open_reservations_cb(self, name: str, custom_res: Dict) -> None:
+        """Delete an reservation from auctioneers which owns it."""
+        # Remove the current reservation from all entries in dictionary
+        with self._open_reservations_lock:
+            for res in self.open_reservations.values():
+                if name in res:
+                    res.pop(name)
+
+    def _get_open_reservations_cb(self, name: str, custom_res: Dict) -> None:
+        """Get an open reservation and determine the auctioneer which owns it."""
+        # Remove the current reservation from all entries in dictionary
+        with self._open_reservations_lock:
+            for res in self.open_reservations.values():
+                if name in res:
+                    res.pop(name)
+
+            res_open = False
+            # Reservation is open if it does not have a status
+            if not custom_res.get('status'):
+                res_open = True
+            else:
+                # Evaluate status of reservation
+                status = structure(custom_res.get('status'), OrderReservationStatus)
+                if status.status in OrderReservationStatus.IN_PROCESS_STATUS:
+                    res_open = True
+
+            if res_open:
+                owner_refs = custom_res['metadata'].get('ownerReferences')
+                if owner_refs is not None:
+                    for owner_ref in owner_refs:
+                        if owner_ref['kind'] == 'Auctioneer':
+                            self._open_reservations[owner_ref['name']][name] = True
+
+    @property
+    def open_reservations(self) -> DefaultDict[str, Dict]:
+        """Return open_reservations defaultdict."""
+        with self._open_reservations_lock:
+            return self._open_reservations

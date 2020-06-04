@@ -1,0 +1,21 @@
+{
+  "apiVersion": "ewm.sap.com/v1alpha1",
+  "kind": "Auctioneer",
+  "metadata": {
+    "name": "",
+    "namespace": "default"
+  },
+  "spec": {
+    "scope": {
+      "lgnum": "",
+      "rsrctype": "",
+      "rsrcgrp": "",
+      "quantity": 0},
+    "configuration": {
+      "maxOrdersPerRobot": 0,
+      "minOrdersPerRobot": 0,
+      "minOrdersPerAuction": 0
+    }
+  },
+  "status": {}
+}
