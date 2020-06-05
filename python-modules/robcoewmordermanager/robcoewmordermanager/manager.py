@@ -703,9 +703,10 @@ class EWMOrderManager:
                 spec.orderrequest.rsrctype, spec.orderrequest.rsrcgrp, name, status.validuntil)
         else:
             msg = 'No warehouse orders found for order request {}. Trying again'.format(name)
-            status.message = msg
-            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
-            _LOGGER.info(msg)
+            if status.message != msg:
+                status.message = msg
+                self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+                _LOGGER.info(msg)
 
     def _process_orderres_cr_accepted(
             self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
