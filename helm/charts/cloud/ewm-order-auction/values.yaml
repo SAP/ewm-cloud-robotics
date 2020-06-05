@@ -1,0 +1,16 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/order-auctioneer"
+  tag: "latest"
+
+robots: []
+
+envs:
+  zerologconfig: "json"
+  zerologloglevel: "info"
+
+# Certificate authority used to sign in-cluster certificates.
+certificate_authority:
+  key: ""
+  crt: ""

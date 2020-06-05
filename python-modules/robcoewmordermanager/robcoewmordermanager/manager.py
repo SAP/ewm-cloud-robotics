@@ -15,50 +15,53 @@
 import os
 import logging
 
-from typing import Dict, Tuple, List, Union
+from concurrent.futures import Future, ThreadPoolExecutor
+from datetime import datetime, timezone, timedelta
+from typing import Dict, List
 
 import attr
 from cattr import structure, unstructure
+from dateutil.parser import isoparse
 
 from prometheus_client import Counter
 
-from robcoewmtypes.helper import get_robcoewmtype, create_robcoewmtype_str
 from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus
 from robcoewmtypes.warehouseorder import (
-    ConfirmWarehouseTask, WarehouseOrder, WarehouseOrderCRDSpec)
+    ConfirmWarehouseTask, WarehouseOrder, WarehouseOrderCRDSpec, WarehouseOrderIdent)
+from robcoewmtypes.auction import OrderReservationSpec, OrderReservationStatus, AuctioneerStatus
 
 from robcoewminterface.types import ODataConfig
 from robcoewminterface.odata import ODataHandler
-from robcoewminterface.ewm import WarehouseOData, WarehouseOrderOData
+from robcoewminterface.ewm import WarehouseOrderOData
 from robcoewminterface.exceptions import (
     ODataAPIException, NoOrderFoundError, RobotHasOrderError, WarehouseTaskAlreadyConfirmedError,
-    NotFoundError)
+    NotFoundError, ResourceTypeIsNoRobotError, RobotNotFoundError, WarehouseOrderAssignedError,
+    WarehouseTaskAssignedError, ODATA_ERROR_CODES)
 
 from .helper import ProcessedMessageMemory, RobotIdentifier, WhoIdentifier
 from .ordercontroller import OrderController
 from .robotrequestcontroller import RobotRequestController
+from .orderreservationcontroller import OrderReservationController
+from .orderauctioncontroller import OrderAuctionController
+from .auctioneercontroller import AuctioneerController
 
 _LOGGER = logging.getLogger(__name__)
 
 STATE_SUCCEEDED = 'SUCCEEDED'
 STATE_FAILED = 'FAILED'
 
-ROBOTREQUEST_TYPE = create_robcoewmtype_str(RequestFromRobot('lgnum', 'rsrc'))
-WAREHOUSETASKCONF_TYPE = create_robcoewmtype_str([ConfirmWarehouseTask(
-    'lgnum', 'who', ConfirmWarehouseTask.FIRST_CONF, ConfirmWarehouseTask.CONF_SUCCESS)])
-
 
 class EWMOrderManager:
     """Main order manager class for EWM."""
-
-    ROBOTREQUEST_MSG_TYPES = (RequestFromRobot, )
-    CONFIRMATION_MSG_TYPES = (ConfirmWarehouseTask, )
 
     # Prometheus logging
     who_counter = Counter(
         'sap_ewm_warehouse_orders', 'Completed EWM Warehouse orders', ['robot', 'result'])
 
-    def __init__(self, oc: OrderController, rc: RobotRequestController) -> None:
+    def __init__(
+            self, oc: OrderController, rc: RobotRequestController,
+            orc: OrderReservationController, oac: OrderAuctionController,
+            auc: AuctioneerController) -> None:
         """Construct."""
         self.init_odata_fromenv()
 
@@ -68,12 +71,14 @@ class EWMOrderManager:
         # SAP EWM OData handler
         self.odatahandler = ODataHandler(self.odataconfig)
         # SAP EWM OData APIs
-        self.ewmwarehouse = WarehouseOData(self.odatahandler)
         self.ewmwho = WarehouseOrderOData(self.odatahandler)
 
         # K8s Custom Resource Controller
         self.ordercontroller = oc
         self.robotrequestcontroller = rc
+        self.orderreservationcontroller = orc
+        self.orderauctioncontroller = oac
+        self.auctioneercontroller = auc
 
         # Register callback functions
         # Warehouse order status callback
@@ -82,6 +87,9 @@ class EWMOrderManager:
         # Robot request controller
         self.robotrequestcontroller.register_callback(
             'RobotRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotrequest_callback)
+        # Order reservation controller
+        self.orderreservationcontroller.register_callback(
+            'OrderReservation', ['ADDED', 'MODIFIED', 'REPROCESS'], self.orderreservation_cb)
 
     def init_odata_fromenv(self) -> None:
         """Initialize OData interface from environment variables."""
@@ -98,12 +106,15 @@ class EWMOrderManager:
             envvar['EWM_CLIENTSECRET'] = os.environ.get('EWM_CLIENTSECRET')
             envvar['EWM_TOKENENDPOINT'] = os.environ.get('EWM_TOKENENDPOINT')
 
+        envvar['RESERVATION_TIMEOUT'] = os.environ.get('RESERVATION_TIMEOUT', 5.0)  # type: ignore
+
         # Check if complete
         for var, val in envvar.items():
             if val is None:
                 raise ValueError(
                     'Environment variable "{}" is not set'.format(var))
 
+        # OData config
         if envvar['EWM_AUTH'] == ODataConfig.AUTH_BASIC:
             self.odataconfig = ODataConfig(
                 host=envvar['EWM_HOST'],
@@ -124,35 +135,9 @@ class EWMOrderManager:
 
         _LOGGER.info('Connecting to OData host "%s"', self.odataconfig.host)
 
-    def _structure_callback_data(
-            self, dtype: str, data: Union[Dict, List], valid_types: Tuple) -> List:
-        """Return structured attr data classes for robcoewm data types."""
-        # Get robco ewm data classes
-        try:
-            robcoewmtype = get_robcoewmtype(dtype)
-        except TypeError as err:
-            _LOGGER.error(
-                'Message type "%s" is invalid - %s - message SKIPPED: %s',
-                dtype, err, data)
-            return []
-        # Convert message data to robcoewmtypes data classes
-        robocoewmdata = structure(data, robcoewmtype)
-
-        # if data set is not a list yet, convert it for later processing
-        if not isinstance(robocoewmdata, list):
-            robocoewmdata = [robocoewmdata]
-
-        # Check if datasets have a supported type before starting to process
-        valid_robcoewmdata = []
-        for dataset in robocoewmdata:
-            if isinstance(dataset, valid_types):
-                valid_robcoewmdata.append(dataset)
-            else:
-                _LOGGER.error(
-                    'Dataset includes an unsupported type: "%s". Dataset '
-                    'SKIPPED: %s', type(dataset), dataset)
-
-        return valid_robcoewmdata
+        # Reservation Timeout for order auction
+        self.reservation_timeout = float(envvar['RESERVATION_TIMEOUT'])  # type: ignore
+        _LOGGER.info('Order auction reservation timeout is %s minutes', self.reservation_timeout)
 
     def robotrequest_callback(self, name: str, custom_res: Dict) -> None:
         """
@@ -162,12 +147,8 @@ class EWMOrderManager:
         """
         try:
             self.process_robotrequest_cr(name, custom_res)
-        except NoOrderFoundError:
-            _LOGGER.debug(
-                'No warehouse order was found for robot "%s" - try again later', name)
-        except RobotHasOrderError:
-            _LOGGER.debug(
-                'Warehouse order still assigned to robot "%s" - try again later', name)
+        except (ConnectionError, TimeoutError, IOError) as err:
+            _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
 
     def process_robotrequest_cr(self, name: str, custom_res: Dict) -> None:
         """
@@ -175,29 +156,18 @@ class EWMOrderManager:
 
         Used for K8S CR handler.
         """
-        cls = self.__class__
-
         if custom_res.get('status', {}).get('status') == RequestFromRobotStatus.STATE_PROCESSED:
             return
 
         # Structure the request data
-        robcoewmdata = self._structure_callback_data(
-            ROBOTREQUEST_TYPE, custom_res['spec'], cls.ROBOTREQUEST_MSG_TYPES)
-        if not robcoewmdata:
+        request = structure(custom_res['spec'], RequestFromRobot)
+        if not request:
             return
         # Get statusdata if available
         if custom_res.get('status', {}).get('data'):
-            robcoewmstatusdata = self._structure_callback_data(
-                ROBOTREQUEST_TYPE, custom_res['status']['data'], cls.ROBOTREQUEST_MSG_TYPES)
+            status = structure(custom_res['status']['data'], RequestFromRobot)
         else:
-            robcoewmstatusdata = [RequestFromRobot(robcoewmdata[0].lgnum, robcoewmdata[0].rsrc), ]
-
-        if len(robcoewmdata) > 1 or len(robcoewmstatusdata) > 1:
-            raise ValueError('Robot request must include only one dataset')
-
-        # Process the dataset
-        request = robcoewmdata[0]
-        status = robcoewmstatusdata[0]
+            status = RequestFromRobot(request.lgnum, request.rsrc)
 
         # Return if request was already processed
         if self.msg_mem.check_robotrequest_processed(name, status):
@@ -210,18 +180,29 @@ class EWMOrderManager:
         firstrequest = bool(self.msg_mem.request_count[name] == 1)
         # Request work, when robot is asking
         if request.requestnewwho and not status.requestnewwho:
-            # Get a new warehouse order for the robot
-            success = self.get_and_send_robot_whos(
-                robotident, firstrequest=firstrequest, newwho=True, onlynewwho=True)
-            if success:
+            if self.is_orderauction_running(robotident.rsrc.lower()):
+                _LOGGER.info(
+                    'Order auction process running for robot %s, ignoring robotrequest %s',
+                    robotident.rsrc.lower(), name)
                 status.requestnewwho = True
-                status.requestwork = request.requestwork
+            else:
+                # Get a new warehouse order for the robot
+                success = self.get_and_send_robot_whos(
+                    robotident, firstrequest=firstrequest, newwho=False, onlynewwho=True)
+                if success:
+                    status.requestnewwho = True
         elif request.requestwork and not status.requestwork:
-            # Get existing warehouse orders for the robot. If no exists, get a new warehouse order
-            success = self.get_and_send_robot_whos(
-                robotident, firstrequest=firstrequest, newwho=True, onlynewwho=False)
-            if success:
+            if self.is_orderauction_running(robotident.rsrc.lower()):
+                _LOGGER.info(
+                    'Order auction process running for robot %s, ignoring robotrequest %s',
+                    robotident.rsrc.lower(), name)
                 status.requestwork = True
+            else:
+                # Get existing warehouse orders for the robot. If no exists, get a new one
+                success = self.get_and_send_robot_whos(
+                    robotident, firstrequest=firstrequest, newwho=True, onlynewwho=False)
+                if success:
+                    status.requestwork = True
 
         # Check if warehouse order was completed
         if request.notifywhocompletion and not status.notifywhocompletion:
@@ -255,19 +236,13 @@ class EWMOrderManager:
         # Raise exception if request was not complete
         if request == status:
             self.robotrequestcontroller.update_status(
-                name, create_robcoewmtype_str(status), unstructure(status),
-                process_complete=True)
+                name, unstructure(status), process_complete=True)
             self.msg_mem.memorize_robotrequest(name, status)
             self.msg_mem.delete_robotrequest_from_memory(name, status)
         else:
             self.robotrequestcontroller.update_status(
-                name, create_robcoewmtype_str(status), unstructure(status),
-                process_complete=False)
+                name, unstructure(status), process_complete=False)
             self.msg_mem.memorize_robotrequest(name, status)
-            if request.notifywhocompletion:
-                raise RobotHasOrderError
-            else:
-                raise NoOrderFoundError
 
     def confirm_warehousetask(self, whtask: ConfirmWarehouseTask) -> None:
         """Confirm the warehouse task in SAP EWM using OData service."""
@@ -540,8 +515,7 @@ class EWMOrderManager:
         """
         # Send orders to robot
         for who in whos:
-            dtype = create_robcoewmtype_str(who)
-            self.ordercontroller.send_who_to_robot(robotident, dtype, unstructure(who))
+            self.ordercontroller.send_who_to_robot(robotident, unstructure(who))
 
         # Create success log message
         whos_who = [entry.who for entry in whos]
@@ -573,48 +547,45 @@ class EWMOrderManager:
 
         Used for K8S CR handler.
         """
-        cls = self.__class__
-
         # Get confirmations to be processed
         data = self._get_who_confirmations(custom_res)
 
         # Structure the input data
-        robcoewmdata = self._structure_callback_data(
-            WAREHOUSETASKCONF_TYPE, data, cls.CONFIRMATION_MSG_TYPES)
+        confirmations = structure(data, List[ConfirmWarehouseTask])
 
         # Process the datasets
-        for dataset in robcoewmdata:
+        for conf in confirmations:
             # Check if confirmation was processed before
-            if self.msg_mem.check_who_conf_processed(dataset):
+            if self.msg_mem.check_who_conf_processed(conf):
                 _LOGGER.info(
                     '%s confirmation of warehouse task "%s" from warehouse order "%s" already '
-                    'processed - skip', dataset.confirmationnumber, dataset.tanum, dataset.who)
+                    'processed - skip', conf.confirmationnumber, conf.tanum, conf.who)
                 continue
 
             # Step 1: Confirmation of warehouse task
-            self.confirm_warehousetask(dataset)
+            self.confirm_warehousetask(conf)
 
             # Step 2: Send updated version of warehouse order to robot
-            robotident = RobotIdentifier(dataset.lgnum, dataset.rsrc)
+            robotident = RobotIdentifier(conf.lgnum, conf.rsrc)
             # Request work after successfull first confirmations do not request work after second
             # confirmation, but wait for the robot to request more work
             if (robotident.rsrc is not None
-                    and dataset.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF
-                    and dataset.confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
+                    and conf.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF
+                    and conf.confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=True, newwho=False, onlynewwho=False)
                 if success is False:
                     _LOGGER.error(
                         'Unable to update warehouse order on robot %s. Warehouse order %s in '
-                        'warehouse %s not found or not running', robotident.rsrc, dataset.who,
-                        dataset.lgnum)
+                        'warehouse %s not found or not running', robotident.rsrc, conf.who,
+                        conf.lgnum)
 
             # Memorize the dataset in the end
-            self.msg_mem.memorize_who_conf(dataset)
+            self.msg_mem.memorize_who_conf(conf)
 
         # In case order status is RUNNING and there is nothing to do, verify in EWM
         who_spec = structure(custom_res['spec'], WarehouseOrderCRDSpec)
-        if not robcoewmdata and who_spec.order_status == WarehouseOrderCRDSpec.STATE_RUNNING:
+        if not confirmations and who_spec.order_status == WarehouseOrderCRDSpec.STATE_RUNNING:
             processed = False
             try:
                 who = self.ewmwho.get_warehouseorder(who_spec.data.lgnum, who_spec.data.who)
@@ -648,3 +619,265 @@ class EWMOrderManager:
                 new_confs.append(conf)
 
         return new_confs
+
+    def orderreservation_cb(self, name: str, custom_res: Dict) -> None:
+        """Process Order requests CRs."""
+        spec = structure(custom_res['spec'], OrderReservationSpec)
+
+        status = structure(custom_res['status'], OrderReservationStatus) if custom_res.get(
+            'status') else OrderReservationStatus(
+                OrderReservationStatus.STATUS_NEW, self._datetime_reservation_timeout_iso())
+
+        if status.status == OrderReservationStatus.STATUS_NEW:
+            self._process_orderres_cr_new(name, spec, status)
+        elif status.status == OrderReservationStatus.STATUS_ACCEPTED:
+            self._process_orderres_cr_accepted(name, spec, status)
+        elif status.status == OrderReservationStatus.STATUS_RESERVATIONS:
+            self._process_orderres_cr_reservations(name, spec, status)
+
+    def _datetime_reservation_timeout_iso(self) -> str:
+        """Return datetime now() in ISO format."""
+        timeout = datetime.now(timezone.utc) + timedelta(minutes=self.reservation_timeout)
+        return timeout.isoformat(timespec='seconds')
+
+    def _process_orderres_cr_new(
+            self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
+        """Process an order reservation CR with status new."""
+        # Return if wrong status
+        if status.status != OrderReservationStatus.STATUS_NEW:
+            return
+
+        # Init warehouse order lists
+        whos: List[WarehouseOrder] = []
+        whos_exist: List[WarehouseOrder] = []
+
+        # Get warehouse orders from EWM if not done yet
+        try:
+            whos_exist.extend(self.ewmwho.get_in_process_warehouseorders(
+                spec.orderrequest.lgnum, spec.orderrequest.rsrcgrp, spec.orderrequest.rsrctype))
+        except (ConnectionError, TimeoutError, IOError) as err:
+            _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
+            return
+        except ResourceTypeIsNoRobotError:
+            msg = ODATA_ERROR_CODES.get('ResourceTypeIsNoRobot')
+            status.message = msg
+            status.status = OrderReservationStatus.STATUS_FAILED
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+            return
+        except NoOrderFoundError:
+            _LOGGER.debug('No potential warehouse order reservations found, continuing')
+
+        # Check if warehouse orders are reserved for a different auction
+        whos_reserved = self.orderreservationcontroller.get_reserved_warehouseorders()
+
+        # Use non reserved warehouse orders for this auction
+        for who in whos_exist:
+            whoident = WarehouseOrderIdent(who.lgnum, who.who)
+            if whoident not in whos_reserved:
+                whos.append(who)
+
+        if len(whos) < spec.orderrequest.quantity:
+            try:
+                whos.extend(self.ewmwho.getnew_rtype_warehouseorders(
+                    spec.orderrequest.lgnum, spec.orderrequest.rsrcgrp, spec.orderrequest.rsrctype,
+                    spec.orderrequest.quantity-len(whos)))
+            except NoOrderFoundError:
+                pass
+            except ResourceTypeIsNoRobotError:
+                msg = ODATA_ERROR_CODES.get('ResourceTypeIsNoRobot')
+                status.message = msg
+                status.status = OrderReservationStatus.STATUS_FAILED
+                self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+            except (ConnectionError, TimeoutError, IOError) as err:
+                _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                return
+
+        if whos:
+            # Attach the warehouse order list to CR status
+            status.warehouseorders = whos
+            status.status = OrderReservationStatus.STATUS_ACCEPTED
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+            _LOGGER.info(
+                'Reserved %s warehouse orders in warehouse %s for resource type %s, group %s '
+                'with order reservation %s until %s', len(whos), spec.orderrequest.lgnum,
+                spec.orderrequest.rsrctype, spec.orderrequest.rsrcgrp, name, status.validuntil)
+        else:
+            msg = 'No warehouse orders found for order request {}. Trying again'.format(name)
+            if status.message != msg:
+                status.message = msg
+                self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+                _LOGGER.info(msg)
+
+    def _process_orderres_cr_accepted(
+            self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
+        """Process an order reservation CR with status accepted."""
+        # Return if wrong status
+        if status.status != OrderReservationStatus.STATUS_ACCEPTED:
+            return
+
+        # Get warehouse orders with open warehouse tasks from EWM
+        connection_error = False
+        with ThreadPoolExecutor(max_workers=5) as executor:
+            who_futures: Dict[Future, int] = {}
+            for i, who in enumerate(status.warehouseorders):
+                # Only get warehouse orders which do not include warehouse tasks yet
+                if not who.warehousetasks:
+                    who_futures[executor.submit(
+                        self.ewmwho.get_warehouseorder, who.lgnum, who.who,
+                        openwarehousetasks=True)] = i
+
+            for future, i in who_futures.items():
+                try:
+                    status.warehouseorders[i] = future.result()
+                except (ConnectionError, TimeoutError, IOError) as err:
+                    _LOGGER.error(
+                        'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
+
+        # Update CR status
+        if not connection_error:
+            status.status = OrderReservationStatus.STATUS_RESERVATIONS
+        status.validuntil = self._datetime_reservation_timeout_iso()
+        self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+
+    def _process_orderres_cr_reservations(
+            self, name: str, spec: OrderReservationSpec, status: OrderReservationStatus) -> None:
+        """Process an order reservation CR with status reservations."""
+        # Return if wrong status
+        if status.status != OrderReservationStatus.STATUS_RESERVATIONS:
+            return
+
+        # Check process of the auction once warehouse orders are reserved
+        try:
+            timeout = isoparse(status.validuntil)
+        except ValueError:
+            timeout = datetime.now(timezone.utc)
+
+        # There are warehouse order assignments
+        if spec.orderassignments:
+            _LOGGER.info(
+                'Found %s warehouse order assignments to robots in order request %s',
+                len(spec.orderassignments), name)
+            msg = 'All warehouse orders assigned to robots'
+            reserved: List[WarehouseOrderIdent] = []
+            for who in status.warehouseorders:
+                whoident = WarehouseOrderIdent(who.lgnum, who.who)
+                reserved.append(whoident)
+            connection_error = False
+
+            for ord_as in spec.orderassignments:
+                whoident = WarehouseOrderIdent(ord_as.lgnum, ord_as.who)
+                if whoident not in reserved:
+                    _LOGGER.error(
+                        'Warehouse order %s.%s is not in reservation list - skipping',
+                        ord_as.lgnum, ord_as.who)
+                    continue
+                if ord_as in status.orderassignments:
+                    _LOGGER.info(
+                        'Warehouse order %s.%s already assigned before - skipping', ord_as.lgnum,
+                        ord_as.who)
+                    if whoident in reserved:
+                        reserved.remove(whoident)
+                    continue
+                # Assign warehouse order to robot
+                try:
+                    self.ewmwho.assign_robot_warehouseorder(ord_as.lgnum, ord_as.rsrc, ord_as.who)
+                except (ConnectionError, TimeoutError, IOError) as err:
+                    _LOGGER.error(
+                        'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
+                except (NoOrderFoundError, RobotNotFoundError, WarehouseOrderAssignedError,
+                        WarehouseTaskAssignedError) as err:
+                    _LOGGER.error(
+                        'Unable to assign warehouse order %s.%s to robot %s: %s', ord_as.lgnum,
+                        ord_as.who, ord_as.rsrc, err)
+                else:
+                    if whoident in reserved:
+                        reserved.remove(whoident)
+                    _LOGGER.info(
+                        'Warehouse order %s.%s assigned to robot %s', ord_as.lgnum, ord_as.who,
+                        ord_as.rsrc)
+                    # Append assignment to status
+                    status.orderassignments.append(ord_as)
+                    # Send warehouse order to robot
+                    robotident = RobotIdentifier(ord_as.lgnum, ord_as.rsrc)
+                    try:
+                        self.get_and_send_robot_whos(
+                            robotident, firstrequest=False, newwho=False, onlynewwho=False)
+                    except (ConnectionError, TimeoutError, IOError) as err:
+                        _LOGGER.error(
+                            'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                        connection_error = True
+
+            if reserved and not connection_error:
+                msg = 'Not all warehouse orders assigned to robots, cancel remaining reservations'
+                _LOGGER.info(msg)
+                for whoident in reserved:
+                    # Unset in process status for non assigned orders to cancel reservation
+                    try:
+                        self.ewmwho.unset_warehouseorder_in_process(
+                            whoident.lgnum, whoident.who)
+                    except NoOrderFoundError:
+                        _LOGGER.warning(
+                            'Warehouse order %s.%s not found. Continuing anyway',
+                            whoident.lgnum, whoident.who)
+                    except (ConnectionError, TimeoutError, IOError) as err:
+                        _LOGGER.error(
+                            'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                        connection_error = True
+
+            # CR is processed in this status, until there was no connection error to EWM
+            if not connection_error:
+                status.status = OrderReservationStatus.STATUS_SUCCEEDED
+            status.message = msg
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+        # On timeout cancel the reservations
+        elif timeout < datetime.now(timezone.utc):
+            msg = 'Warehouse order reservations timed out, set status open in EWM again'
+            _LOGGER.info(msg)
+            connection_error = False
+
+            for who in status.warehouseorders:
+                try:
+                    self.ewmwho.unset_warehouseorder_in_process(who.lgnum, who.who)
+                except NoOrderFoundError:
+                    _LOGGER.warning(
+                        'Warehouse order %s.%s not found. Continuing anyway',
+                        who.lgnum, who.who)
+                except (ConnectionError, TimeoutError, IOError) as err:
+                    _LOGGER.error(
+                        'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
+
+            # CR is processed in this status, until there was no connection error to EWM
+            if not connection_error:
+                status.status = OrderReservationStatus.STATUS_TIMEOUT
+            status.message = msg
+            self.orderreservationcontroller.update_cr_status(name, unstructure(status))
+
+    def is_orderauction_running(self, robot: str) -> bool:
+        """Check if the order auction process is setup and running on the robot."""
+        # Is the robot in scope of an auctioneer
+        auctioneer = self.auctioneercontroller.robots_in_scope.get(robot)
+        if auctioneer is None:
+            return False
+
+        # There should be open reservations for every auctioneer not in status WATCHING
+        auctioneer_status = self.auctioneercontroller.auctioneer_status[auctioneer]
+        open_res = len(self.orderreservationcontroller.open_reservations[auctioneer])
+        if ((auctioneer_status != AuctioneerStatus.STATUS_WATCHING
+             and open_res == 0)
+                or auctioneer_status == AuctioneerStatus.STATUS_ERROR):
+            _LOGGER.error(
+                'Robot %s is in scope of auctioneer %s, which seems to work not correctly. '
+                'Auctioneer status is %s with %s open reservations', robot, auctioneer,
+                auctioneer_status, open_res)
+            return False
+
+        if self.orderauctioncontroller.robot_bid_agent_working[robot] is False:
+            _LOGGER.error(
+                'Robot %s is in scope of auctioneer %s, but its bid agent seems to work not '
+                'correctly', robot, auctioneer)
+            return False
+
+        return True

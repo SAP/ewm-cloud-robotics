@@ -45,7 +45,7 @@ class ProcessedMessageMemory:
     def __init__(self) -> None:
         """Construct."""
         # Warehouse order confirmations
-        self.who_confirmations: Dict[WhoIdentifier, List] = defaultdict(list)
+        self.who_confirmations: DefaultDict[WhoIdentifier, List] = defaultdict(list)
         self.deleted_whos: OrderedDict[  # pylint: disable=unsubscriptable-object
             WhoIdentifier, float] = OrderedDict()
         # Robot requests

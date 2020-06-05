@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: order-auctioneer
+spec:
+  replicas: {{ $.Values.replicaCount }}
+  selector:
+    matchLabels:
+      app: order-auctioneer
+  template:
+    metadata:
+      labels:
+        app: order-auctioneer
+    spec:
+      containers:
+      - image: {{ $.Values.image.repository }}{{ if $.Values.image.tag }}:{{ $.Values.image.tag }}{{ end }}
+        imagePullPolicy: Always
+        name: order-auctioneer
+        env:
+        - name: DEPLOYED_ROBOTS
+          value: "{{- range $.Values.robots }}{{ .name }},{{- end }}"
+        - name: ZEROLOG_CONFIG
+          value: "{{ .Values.envs.zerologconfig }}"
+        - name: ZEROLOG_LOGLEVEL
+          value: "{{ .Values.envs.zerologloglevel }}"
+        ports:
+        - name: webhook
+          containerPort: 9876
+        volumeMounts:
+        - mountPath: /tls
+          name: tls
+      volumes:
+      - name: tls
+        secret:
+          secretName: order-auctioneer-tls
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: order-auctioneer
+spec:
+  type: ClusterIP
+  ports:
+  - port: 443
+    protocol: TCP
+    targetPort: webhook
+  selector:
+    app: order-auctioneer
+---
+# The order-auctioneer runs admission webhooks, which need to be served via TLS.
+apiVersion: certmanager.k8s.io/v1alpha1
+kind: Certificate
+metadata:
+  name: order-auctioneer
+spec:
+  secretName: order-auctioneer-tls
+  commonName: order-auctioneer.{{ .Release.Namespace }}.svc
+  issuerRef:
+    kind: ClusterIssuer
+    name: cluster-authority
+---
+apiVersion: admissionregistration.k8s.io/v1beta1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: order-auctioneer
+webhooks:
+- name: auctioneers.ewm.sap.com
+  failurePolicy: Fail
+  clientConfig:
+    service:
+      namespace: {{ .Release.Namespace }}
+      name: order-auctioneer
+      path: /auctioneer/validate
+    caBundle: {{ .Values.certificate_authority.crt }}
+  rules:
+  - apiGroups:
+    - ewm.sap.com
+    apiVersions:
+    - v1alpha1
+    operations:
+    - CREATE
+    - UPDATE
+    resources:
+    - auctioneers

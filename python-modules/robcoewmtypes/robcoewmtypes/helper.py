@@ -199,7 +199,8 @@ def hex_to_str(hexstr: str) -> str:
 def get_sample_cr(crd: str) -> Dict:
     """Get a dictionary with a sample of a CR."""
     valid_crd = [
-        'warehouseorder', 'robotrequest', 'robco_mission', 'robco_robot', 'robotconfiguration']
+        'warehouseorder', 'robotrequest', 'robco_mission', 'robco_robot', 'robotconfiguration',
+        'orderreservation', 'auctioneer', 'orderauction']
     if crd not in valid_crd:
         raise ValueError('There is no sample for CRD "{}"'.format(crd))
     path = os.path.dirname(__file__)

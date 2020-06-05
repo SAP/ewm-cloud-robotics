@@ -25,7 +25,7 @@ import threading
 from concurrent.futures import ThreadPoolExecutor
 from collections import defaultdict, OrderedDict
 
-from typing import Dict, Callable, List, Optional
+from typing import DefaultDict, Dict, Callable, List, Optional
 
 from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
@@ -153,7 +153,7 @@ class K8sCRHandler:
         self.raw_cr = template_cr
 
         # Lock objects to synchronize processing of CRs
-        self.cr_locks: Dict[str, threading.RLock] = defaultdict(threading.RLock)
+        self.cr_locks: DefaultDict[str, threading.RLock] = defaultdict(threading.RLock)
         # Dict to save thread exceptions
         self.thread_exceptions: Dict[str, Exception] = {}
         # Init threads

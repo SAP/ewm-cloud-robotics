@@ -43,6 +43,7 @@ spec:
           required:
             - data
             - order_status
+            - sequence
           properties:
             data:
               type: object
@@ -183,6 +184,8 @@ spec:
               enum:
                 - RUNNING
                 - PROCESSED
+            sequence:
+              type: integer
         status:
           type: object
           properties:

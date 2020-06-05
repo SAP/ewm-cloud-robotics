@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Run time estimator for order auction process with MiR robots
+name: mir-runtime-estimator
+version: 0.0.1

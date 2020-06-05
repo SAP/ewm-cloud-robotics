@@ -1,0 +1,16 @@
+{
+  "apiVersion": "ewm.sap.com/v1alpha1",
+  "kind": "OrderReservation",
+  "metadata": {
+    "name": "",
+    "namespace": "default"
+  },
+  "spec": {
+    "orderrequest": {
+      "lgnum": "",
+      "rsrctype": "",
+      "rsrcgrp": "",
+      "quantity": 0}
+  },
+  "status": {}
+}

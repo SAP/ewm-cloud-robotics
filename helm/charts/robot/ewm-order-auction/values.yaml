@@ -1,0 +1,12 @@
+replicaCount: 1
+
+image:
+  repository: "ewmcloudrobotics/order-bid-agent"
+  tag: "latest"
+
+robot:
+  name: ""
+
+envs:
+  zerologconfig: "json"
+  zerologloglevel: "info"

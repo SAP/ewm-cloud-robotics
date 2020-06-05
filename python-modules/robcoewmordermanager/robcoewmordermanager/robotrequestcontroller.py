@@ -41,8 +41,7 @@ class RobotRequestController(K8sCRHandler):
         )
 
     def update_status(
-            self, name: str, dtype: str, status_data: Dict,
-            process_complete: bool = False) -> bool:
+            self, name: str, status_data: Dict, process_complete: bool = False) -> bool:
         """Cleanup robotrequest when work when it was processed."""
         status = {}
         status['data'] = status_data

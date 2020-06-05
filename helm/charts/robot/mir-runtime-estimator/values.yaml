@@ -1,0 +1,15 @@
+replicaCount: 1
+image:
+  repository: "ewmcloudrobotics/mir-runtime-estimator"
+  tag: "latest"
+
+envs:
+  miruser: "admin"
+  mirpassword: ""
+  mirhost: "mir-api.default.svc.cluster.local"
+  mirpreservepathguides: "false"
+  zerologconfig: "json"
+  zerologloglevel: "info"
+
+robot:
+  name: ""

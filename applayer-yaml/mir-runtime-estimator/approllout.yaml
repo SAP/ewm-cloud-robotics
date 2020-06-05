@@ -1,0 +1,27 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: mir-runtime-estimator
+  labels:
+    app: mir-runtime-estimator
+spec:
+  appName: mir-runtime-estimator-$APP_VERSION
+  robots:
+  - selector:
+      matchLabels:
+        model: mir100
+    values:
+      image:
+        repository: "ewmcloudrobotics/mir-runtime-estimator"
+        tag: "latest"
+      envs:
+        miruser: "" # User to connect to MiR API
+        mirpassword: "" # Password for MiR user
+        mirhost: "" # Host name of MiR API
+        mirpreservepathguides: "false" # Preserve temporary created Path Guides on MiR Robot (only for debugging)
+---

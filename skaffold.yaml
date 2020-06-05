@@ -47,6 +47,18 @@ build:
       context: .
       docker:
         dockerfile: docker/monitoring-ui/Dockerfile
+    - image: order-auctioneer
+      context: .
+      docker:
+        dockerfile: docker/order-auctioneer/Dockerfile
+    - image: order-bid-agent
+      context: .
+      docker:
+        dockerfile: docker/order-bid-agent/Dockerfile
+    - image: mir-runtime-estimator
+      context: .
+      docker:
+        dockerfile: docker/mir-runtime-estimator/Dockerfile
   local: 
     push: false
 test:
@@ -74,6 +86,15 @@ test:
   - image: monitoring-ui
     structureTests:
       - docker/monitoring-ui/test/container-structure-test/prod.yaml
+  - image: order-auctioneer
+    structureTests:
+      - docker/order-auctioneer/test/container-structure-test/prod.yaml
+  - image: order-bid-agent
+    structureTests:
+      - docker/order-bid-agent/test/container-structure-test/prod.yaml
+  - image: mir-runtime-estimator
+    structureTests:
+      - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
 deploy:
   kubectl:
     manifests:
@@ -139,6 +160,24 @@ profiles:
             dependencies:
               paths: 
                 - .
+        - image: order-auctioneer
+          custom:
+            buildCommand: ./scripts/gcr-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-bid-agent
+          custom:
+            buildCommand: ./scripts/gcr-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: mir-runtime-estimator
+          custom:
+            buildCommand: ./scripts/gcr-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
   ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
   ## Tests are executed to verify that correct Dockerfiles were used
   ## Deploy is left blank since this profile is for updating the container registry.
@@ -194,6 +233,24 @@ profiles:
         - image: monitoring-ui
           custom:
             buildCommand: ./scripts/dockerhub-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-auctioneer
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-bid-agent
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: mir-runtime-estimator
+          custom:
+            buildCommand: ./scripts/dockerhub-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -260,6 +317,32 @@ profiles:
       - image: monitoring-ui
         structureTests:
           - docker/monitoring-ui/test/container-structure-test/prod.yaml
+    ## ewm-order-auction
+  - name: ewm-order-auction
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: order-auctioneer
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+        - image: order-bid-agent
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            dependencies:
+              paths: 
+                - .
+    test:
+      - image: order-auctioneer
+        structureTests:
+          - docker/order-auctioneer/test/container-structure-test/prod.yaml
+      - image: order-bid-agent
+        structureTests:
+          - docker/order-bid-agent/test/container-structure-test/prod.yaml
   ## ewm-sim        
   - name: ewm-sim
     build:
@@ -294,6 +377,23 @@ profiles:
       - image: mir-mission-controller
         structureTests:
           - docker/mir-mission-controller/test/container-structure-test/prod.yaml
+  ## mir-runtime-estimator
+  - name: mir-runtime-estimator
+    build:
+      tagPolicy:
+        envTemplate:
+          template: "{{.IMAGE_NAME}}:dirty"
+      artifacts:
+        - image: mir-runtime-estimator
+          custom:
+            buildCommand: ./scripts/custom-cr-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            dependencies:
+              paths: 
+                - .      
+    test:
+      - image: mir-runtime-estimator
+        structureTests:
+          - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
   ## dummy-mission-controller
   - name: dummy-mission-controller
     build:

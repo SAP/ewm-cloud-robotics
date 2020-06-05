@@ -18,6 +18,7 @@ REQUIRES = [
     'cattrs==1.0.0',
     'retrying',
     'prometheus-client',
+    'python-dateutil',
     'k8scrhandler',
     'robcoewmtypes',
     'robcoewminterface'
