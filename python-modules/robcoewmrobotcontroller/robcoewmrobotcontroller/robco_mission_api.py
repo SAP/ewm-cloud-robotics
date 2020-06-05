@@ -88,7 +88,7 @@ class RobCoMissionAPI(K8sCRHandler):
         # OrderedDict must not be changed when iterating (self.mission_status)
         with self.mission_status_lock:
             # if status is set, update the dictionary
-            if custom_res['status']:
+            if custom_res.get('status'):
                 new_mstatus = self.mission_status.get(name, RobotMission(name))
                 new_mstatus.status = custom_res['status'].get('status', '')
                 new_mstatus.active_action = custom_res[
@@ -144,7 +144,7 @@ class RobCoMissionAPI(K8sCRHandler):
     def update_robot_status_cb(self, name: str, custom_res: Dict) -> None:
         """Update robot status attributes."""
         # if status is set, update the attributes
-        if custom_res['status']:
+        if custom_res.get('status'):
             try:
                 self.battery_percentage = custom_res['status']['robot']['batteryPercentage']
             except KeyError:
