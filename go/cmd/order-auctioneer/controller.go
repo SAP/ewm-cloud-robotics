@@ -12,7 +12,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"math"
 	"reflect"
 	"sort"
 	"strings"
@@ -872,7 +871,7 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 
 	if createReservations {
 		// Try to reserve more orders than robots, that there is space for optimization
-		x := int(math.Round(float64(len(robotMightWork)) * 1.5))
+		x := len(robotMightWork) * 3
 		numberOfOrders := maxInt(x, a.Spec.Configuration.MinOrdersPerAuction)
 
 		// Create OrderReservation CR
