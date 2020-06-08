@@ -302,6 +302,8 @@ func (r *reconcileAuctioneer) enqueueFromLabel(m metav1.Object, q workqueue.Rate
 
 func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
+	log.Debug().Msgf("Starting reconcile for Auctioneer %+v", request.NamespacedName)
+
 	// Context
 	ctx := context.Background()
 
@@ -311,14 +313,17 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 
 	if k8serrors.IsNotFound(err) {
 		// Auctioneer was already deleted, nothing to do.
+		log.Debug().Msgf("Finished reconcile for Auctioneer %+v. Auctioneer was already deleted", request.NamespacedName)
 		return reconcile.Result{}, nil
 	} else if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "get Auctioneer %q", request.NamespacedName)
+		log.Error().Err(err).Msgf("Error get Auctioneer %+v", request.NamespacedName)
+		return reconcile.Result{}, errors.Wrapf(err, "get Auctioneer %+v", request.NamespacedName)
 	}
 
 	// Get robots for this Auctioneer
 	robotStates, err := r.getRobots(ctx, &auctioneer)
 	if err != nil {
+		log.Error().Err(err).Msg("Error get robots")
 		r.setErrorStatus(ctx, &auctioneer, err)
 		return reconcile.Result{}, errors.Wrap(err, "get robots")
 	}
@@ -326,6 +331,7 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 	// Run auctions for this Auctioneer
 	clres, opr, err := r.runAuctions(ctx, &auctioneer, robotStates)
 	if err != nil {
+		log.Error().Err(err).Msg("Error run auctions")
 		r.setErrorStatus(ctx, &auctioneer, err)
 		return reconcile.Result{}, errors.Wrap(err, "run auctions")
 	}
@@ -333,9 +339,12 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 	// Update status
 	err = r.updateStatus(ctx, &auctioneer, robotStates, clres, opr)
 	if err != nil {
+		log.Error().Err(err).Msg("Error update auctioneer status")
 		r.setErrorStatus(ctx, &auctioneer, err)
 		return reconcile.Result{}, errors.Wrap(err, "update auctioneer status")
 	}
+
+	log.Debug().Msgf("Finished reconcile for Auctioneer %+v", request.NamespacedName)
 
 	return r.getReconcileResult(&auctioneer, robotStates, opr, clres), nil
 }
@@ -345,10 +354,12 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 	var newStatus ewm.AuctioneerStatus
 
 	// Collect robots
+	newStatus.RobotsInScope = make([]string, 0)
 	for robot := range rs.isInScope {
 		newStatus.RobotsInScope = append(newStatus.RobotsInScope, robot)
 	}
 	sort.Strings(newStatus.RobotsInScope)
+	newStatus.AvailableRobots = make([]string, 0)
 	for robot := range rs.isAvailable {
 		newStatus.AvailableRobots = append(newStatus.AvailableRobots, robot)
 	}

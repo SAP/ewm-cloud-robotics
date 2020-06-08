@@ -132,6 +132,8 @@ func indexWarehouseOrderOrderStatus(o runtime.Object) (refs []string) {
 
 func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Result, error) {
 
+	log.Debug().Msgf("Starting reconcile for OrderAuction %+v", request.NamespacedName)
+
 	// Context
 	ctx := context.Background()
 
@@ -141,18 +143,22 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	if k8serrors.IsNotFound(err) {
 		// OrderAuction was already deleted, nothing to do.
+		log.Debug().Msgf("Finished reconcile for OrderAuction %+v. OrderAuction was already deleted", request.NamespacedName)
 		return reconcile.Result{}, nil
 	} else if err != nil {
-		return reconcile.Result{}, errors.Wrapf(err, "get OrderAuction %q", request.NamespacedName)
+		log.Error().Err(err).Msgf("Error get OrderAuction %+v", request.NamespacedName)
+		return reconcile.Result{}, errors.Wrapf(err, "get OrderAuction %+v", request.NamespacedName)
 	}
 
 	// There is nothing to do, if OrderAuction is not open anymore
 	if auction.Spec.AuctionStatus != ewm.OrderAuctionAuctionStatusOpen {
+		log.Debug().Msgf("Finished reconcile for OrderAuction %+v. AuctionStatus is not open", request.NamespacedName)
 		return reconcile.Result{}, nil
 	}
 
 	// There is nothing to do, if bid was already sent
 	if auction.Status.BidStatus == ewm.OrderAuctionBidStatusCompleted {
+		log.Debug().Msgf("Finished reconcile for OrderAuction %+v. BidStatus is completed", request.NamespacedName)
 		return reconcile.Result{}, nil
 	}
 
@@ -160,6 +166,7 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 	var runTimeEstimations ewm.RunTimeEstimationList
 	err = r.client.List(ctx, &runTimeEstimations, ctrlclient.MatchingFields{ownerReferencesUID: string(auction.UID)})
 	if err != nil {
+		log.Error().Err(err).Msg("Error get RunTimeEstimations")
 		return reconcile.Result{}, errors.Wrap(err, "get RunTimeEstimations")
 	}
 
@@ -168,11 +175,13 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 		log.Info().Msgf("No RunTimeEstimation CR for OrderAuction %s found, creating a new request", auction.GetName())
 		err = r.requestRunTimeEstimation(ctx, &auction)
 		if err != nil {
+			log.Error().Err(err).Msg("Error request RunTimeEstimation")
 			return reconcile.Result{}, errors.Wrap(err, "request RunTimeEstimation")
 		}
 
 		// Reconcile latest 30 seconds before the auction closes
 		requeueAfter := auction.Spec.ValidUntil.UTC().Sub(metav1.Now().UTC()) - time.Duration(time.Second*30)
+		log.Debug().Msgf("Finished reconcile for OrderAuction %+v, requeue after %v", request.NamespacedName, requeueAfter)
 		return reconcile.Result{RequeueAfter: requeueAfter}, nil
 	}
 
@@ -198,9 +207,12 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 	if closeBid {
 		err = r.closeBid(ctx, &auction, startPosition, collectedEstimations)
 		if err != nil {
+			log.Error().Err(err).Msg("Error close bid")
 			return reconcile.Result{}, errors.Wrap(err, "close bid")
 		}
 	}
+
+	log.Debug().Msgf("Finished reconcile for OrderAuction %+v", request.NamespacedName)
 
 	return reconcile.Result{}, nil
 }

@@ -44,7 +44,7 @@ class OrderAuctionController(K8sCRHandler):
         )
 
         # Robots where the bid agent seems to work
-        self._robot_bid_agent_working: DefaultDict[str, bool] = defaultdict(bool)
+        self._robot_bid_agent_working: DefaultDict[str, bool] = defaultdict(lambda: True)
 
         # Register callbacks
         self.register_callback(

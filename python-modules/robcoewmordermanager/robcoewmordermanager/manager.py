@@ -180,7 +180,7 @@ class EWMOrderManager:
         firstrequest = bool(self.msg_mem.request_count[name] == 1)
         # Request work, when robot is asking
         if request.requestnewwho and not status.requestnewwho:
-            if self.is_orderauction_running(robotident.rsrc.lower()):
+            if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
                 _LOGGER.info(
                     'Order auction process running for robot %s, ignoring robotrequest %s',
                     robotident.rsrc.lower(), name)
@@ -192,7 +192,7 @@ class EWMOrderManager:
                 if success:
                     status.requestnewwho = True
         elif request.requestwork and not status.requestwork:
-            if self.is_orderauction_running(robotident.rsrc.lower()):
+            if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
                 _LOGGER.info(
                     'Order auction process running for robot %s, ignoring robotrequest %s',
                     robotident.rsrc.lower(), name)
@@ -855,7 +855,7 @@ class EWMOrderManager:
             status.message = msg
             self.orderreservationcontroller.update_cr_status(name, unstructure(status))
 
-    def is_orderauction_running(self, robot: str) -> bool:
+    def is_orderauction_running(self, robot: str, firstrequest: bool = False) -> bool:
         """Check if the order auction process is setup and running on the robot."""
         # Is the robot in scope of an auctioneer
         auctioneer = self.auctioneercontroller.robots_in_scope.get(robot)
@@ -868,16 +868,18 @@ class EWMOrderManager:
         if ((auctioneer_status != AuctioneerStatus.STATUS_WATCHING
              and open_res == 0)
                 or auctioneer_status == AuctioneerStatus.STATUS_ERROR):
-            _LOGGER.error(
-                'Robot %s is in scope of auctioneer %s, which seems to work not correctly. '
-                'Auctioneer status is %s with %s open reservations', robot, auctioneer,
-                auctioneer_status, open_res)
+            if firstrequest:
+                _LOGGER.error(
+                    'Robot %s is in scope of auctioneer %s, which seems to work not correctly. '
+                    'Auctioneer status is %s with %s open reservations', robot, auctioneer,
+                    auctioneer_status, open_res)
             return False
 
         if self.orderauctioncontroller.robot_bid_agent_working[robot] is False:
-            _LOGGER.error(
-                'Robot %s is in scope of auctioneer %s, but its bid agent seems to work not '
-                'correctly', robot, auctioneer)
+            if firstrequest:
+                _LOGGER.error(
+                    'Robot %s is in scope of auctioneer %s, but its bid agent seems to work not '
+                    'correctly', robot, auctioneer)
             return False
 
         return True
