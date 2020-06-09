@@ -11,6 +11,7 @@ package main
 
 import (
 	"context"
+	"math/rand"
 	"sort"
 	"time"
 
@@ -224,30 +225,29 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 		return errors.Wrap(err, "estimateStartPosition")
 	}
 
-	// Now request run times for every path from robot. Paths are:
-	// 1) startPosition to source bin of warehouse order
-	// 2) Source bin of warehouse order to destination bin
-	// for each warehouse task in warehouse order and for each warehouse order in the auction
+	// Now request run times for every path from robot, which is:
+	// - startPosition to source bin of first warehouse task from warehouse order
+	// for each warehouse order in the auction
+	// This approach optimizes warehouse order processing by reducing empty drives of the robots
 
 	spec := ewm.RunTimeEstimationSpec{StartPosition: startPosition}
 
 	existingPaths := make(map[ewm.Path]bool)
 
-	for _, w := range auction.Spec.WarehouseOrders {
-		lastPosition := startPosition
-		for _, task := range w.Warehousetasks {
-			// Create potential paths
-			path1 := ewm.Path{Start: lastPosition, Goal: task.Vlpla}
-			path2 := ewm.Path{Start: task.Vlpla, Goal: task.Nlpla}
-			lastPosition = task.Nlpla
+	// Shuffle warehouse orders before determining paths that not all robots bid for the same orders
+	// if there is not enough time for path calculation
+	warehouseOrders := auction.Spec.WarehouseOrders
+	rand.Seed(time.Now().UnixNano())
+	rand.Shuffle(len(warehouseOrders), func(i, j int) { warehouseOrders[i], warehouseOrders[j] = warehouseOrders[j], warehouseOrders[i] })
+
+	for _, w := range warehouseOrders {
+		if len(w.Warehousetasks) > 0 {
+			// Create potential path from startPosition to source bin of first warehouse task
+			path := ewm.Path{Start: startPosition, Goal: w.Warehousetasks[0].Vlpla}
 			// Append to spec if not appended yet
-			if !existingPaths[path1] {
-				spec.Paths = append(spec.Paths, path1)
-				existingPaths[path1] = true
-			}
-			if !existingPaths[path2] {
-				spec.Paths = append(spec.Paths, path2)
-				existingPaths[path2] = true
+			if !existingPaths[path] {
+				spec.Paths = append(spec.Paths, path)
+				existingPaths[path] = true
 			}
 		}
 	}
@@ -364,44 +364,28 @@ func (r *reconcileBidAgent) closeBid(ctx context.Context, auction *ewm.OrderAuct
 
 	// Calculate bid results for each warehouse order in auction
 	for _, w := range auction.Spec.WarehouseOrders {
-		var bidding float64
-		createBid := true
-		lastPosition := startPosition
-		for _, task := range w.Warehousetasks {
-			// Create paths for warehouse task
-			path1 := ewm.Path{Start: lastPosition, Goal: task.Vlpla}
-			path2 := ewm.Path{Start: task.Vlpla, Goal: task.Nlpla}
-			lastPosition = task.Nlpla
+		if len(w.Warehousetasks) > 0 {
+			var bidding float64
+			createBid := true
+			// Create potential path from startPosition to source bin of first warehouse task
+			path := ewm.Path{Start: startPosition, Goal: w.Warehousetasks[0].Vlpla}
 
-			// Add run times to bidding. If not found do not create a bid for this warehouse order
-			if value, existing := runTimeEstimations[path1]; existing {
-				log.Debug().Msgf("Path %+v of warehouse order %s.%s found with bidding %v", path1, w.Lgnum, w.Who, value)
-				bidding += value
-			} else if path1.Start == path1.Goal {
+			// Create bidding from runtime. If path is not found do not create a bid for this warehouse order
+			if value, existing := runTimeEstimations[path]; existing {
+				log.Debug().Msgf("Path %+v of warehouse order %s.%s found with bidding %v", path, w.Lgnum, w.Who, value)
+				bidding = value
+			} else if path.Start == path.Goal {
 				log.Debug().Msgf("Path %+v of warehouse order %s.%s not found, but start and goal are the same. Bidding set to 1",
-					path1, w.Lgnum, w.Who)
-				bidding++
+					path, w.Lgnum, w.Who)
+				bidding = 1
 			} else {
-				log.Debug().Msgf("Path %+v of warehouse order %s.%s not found", path1, w.Lgnum, w.Who)
+				log.Debug().Msgf("Path %+v of warehouse order %s.%s not found", path, w.Lgnum, w.Who)
 				createBid = false
-				break
 			}
-			if value, existing := runTimeEstimations[path2]; existing {
-				log.Debug().Msgf("Path %+v of warehouse order %s.%s found with bidding %v", path2, w.Lgnum, w.Who, value)
-				bidding += value
-			} else if path2.Start == path2.Goal {
-				log.Debug().Msgf("Path %+v of warehouse order %s.%s not found, but start and goal are the same. Bidding set to 1",
-					path2, w.Lgnum, w.Who)
-				bidding++
-			} else {
-				log.Debug().Msgf("Path %+v of warehouse order %s.%s not found", path2, w.Lgnum, w.Who)
-				createBid = false
-				break
+			if createBid {
+				wBidding := ewm.WarehouseOrderBidding{Lgnum: w.Lgnum, Who: w.Who, Bidding: bidding}
+				bidResults = append(bidResults, wBidding)
 			}
-		}
-		if createBid {
-			wBidding := ewm.WarehouseOrderBidding{Lgnum: w.Lgnum, Who: w.Who, Bidding: bidding}
-			bidResults = append(bidResults, wBidding)
 		}
 	}
 
