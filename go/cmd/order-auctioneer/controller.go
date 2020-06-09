@@ -339,9 +339,9 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 	// Update status
 	err = r.updateStatus(ctx, &auctioneer, robotStates, clres, opr)
 	if err != nil {
-		log.Error().Err(err).Msg("Error update auctioneer status")
+		log.Error().Err(err).Msg("Error update auctioneer status - requeue")
 		r.setErrorStatus(ctx, &auctioneer, err)
-		return reconcile.Result{}, errors.Wrap(err, "update auctioneer status")
+		return reconcile.Result{Requeue: true}, errors.Wrap(err, "update auctioneer status")
 	}
 
 	log.Debug().Msgf("Finished reconcile for Auctioneer %+v", request.NamespacedName)

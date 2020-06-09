@@ -175,8 +175,8 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 		log.Info().Msgf("No RunTimeEstimation CR for OrderAuction %s found, creating a new request", auction.GetName())
 		err = r.requestRunTimeEstimation(ctx, &auction)
 		if err != nil {
-			log.Error().Err(err).Msg("Error request RunTimeEstimation")
-			return reconcile.Result{}, errors.Wrap(err, "request RunTimeEstimation")
+			log.Error().Err(err).Msg("Error request RunTimeEstimation - requeue")
+			return reconcile.Result{Requeue: true}, errors.Wrap(err, "request RunTimeEstimation")
 		}
 
 		// Reconcile latest 30 seconds before the auction closes
@@ -207,8 +207,8 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 	if closeBid {
 		err = r.closeBid(ctx, &auction, startPosition, collectedEstimations)
 		if err != nil {
-			log.Error().Err(err).Msg("Error close bid")
-			return reconcile.Result{}, errors.Wrap(err, "close bid")
+			log.Error().Err(err).Msg("Error close bid - requeue")
+			return reconcile.Result{Requeue: true}, errors.Wrap(err, "close bid")
 		}
 	}
 
