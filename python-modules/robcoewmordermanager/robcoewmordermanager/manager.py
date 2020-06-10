@@ -182,27 +182,31 @@ class EWMOrderManager:
         if request.requestnewwho and not status.requestnewwho:
             if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
                 _LOGGER.info(
-                    'Order auction process running for robot %s, ignoring robotrequest %s',
-                    robotident.rsrc.lower(), name)
-                status.requestnewwho = True
+                    'Order auction process running for robot %s, only looking for already assigned'
+                    ' warehouse orders for robot request %s', robotident.rsrc.lower(), name)
+                # Ensure that the warehouse orders already assigned to the robot are there
+                success = self.get_and_send_robot_whos(
+                    robotident, firstrequest=firstrequest, newwho=False, onlynewwho=False)
             else:
                 # Get a new warehouse order for the robot
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=firstrequest, newwho=False, onlynewwho=True)
-                if success:
-                    status.requestnewwho = True
+            if success:
+                status.requestnewwho = True
         elif request.requestwork and not status.requestwork:
             if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
                 _LOGGER.info(
-                    'Order auction process running for robot %s, ignoring robotrequest %s',
-                    robotident.rsrc.lower(), name)
-                status.requestwork = True
+                    'Order auction process running for robot %s, only looking for already assigned'
+                    ' warehouse orders for robot request %s', robotident.rsrc.lower(), name)
+                # Ensure that the warehouse orders already assigned to the robot are there
+                success = self.get_and_send_robot_whos(
+                    robotident, firstrequest=firstrequest, newwho=False, onlynewwho=False)
             else:
                 # Get existing warehouse orders for the robot. If no exists, get a new one
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=firstrequest, newwho=True, onlynewwho=False)
-                if success:
-                    status.requestwork = True
+            if success:
+                status.requestwork = True
 
         # Check if warehouse order was completed
         if request.notifywhocompletion and not status.notifywhocompletion:
