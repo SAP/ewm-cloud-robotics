@@ -370,6 +370,21 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 		newStatus.WarehouseOrdersInProcess += wip
 	}
 
+	// Running auctions
+	auctionsLookup := make(map[string]bool)
+	for _, auc := range clAuc.auctionsToCreate {
+		if !auctionsLookup[auc.reservationCR.GetLabels()[orderAuctionLabel]] {
+			newStatus.RunningAuctions++
+			auctionsLookup[auc.reservationCR.GetLabels()[orderAuctionLabel]] = true
+		}
+	}
+	for _, auc := range clAuc.auctionsRunning {
+		if !auctionsLookup[auc.reservationCR.GetLabels()[orderAuctionLabel]] {
+			newStatus.RunningAuctions++
+			auctionsLookup[auc.reservationCR.GetLabels()[orderAuctionLabel]] = true
+		}
+	}
+
 	// Define new status
 	if len(clAuc.auctionsRunning) > 0 {
 		newStatus.Status = ewm.AuctioneerStatusAuction
@@ -716,6 +731,8 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 	var biddings []biddingPlusRobot
 	for _, auc := range aucs {
 		robotsInAuction[auc.GetLabels()[robotLabel]] = true
+		log.Info().Msgf("Robot %q created %v biddings for the %v warehouse orders of auction %q", auc.GetLabels()[robotLabel],
+			len(auc.Status.Biddings), len(auc.Spec.WarehouseOrders), auc.GetName())
 		for _, b := range auc.Status.Biddings {
 			if !rs.isAvailable[auc.GetLabels()[robotLabel]] {
 				log.Info().Msgf("Robot %q is not available, skipping its biddings of OrderAuction %q", auc.GetLabels()[robotLabel],
