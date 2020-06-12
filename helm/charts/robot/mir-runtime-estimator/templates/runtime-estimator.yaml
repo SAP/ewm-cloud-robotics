@@ -48,6 +48,8 @@ spec:
           value: "{{ .Values.robot.name }}"
         - name: MIR_PERSERVE_PATHGUIDES
           value: "{{ .Values.envs.mirpreservepathguides }}"
+        - name: PRECALC_PATHS_WHEN_IDLE
+          value: "{{ .Values.envs.precalcpathswhenidle }}"
         - name: ZEROLOG_CONFIG
           value: "{{ .Values.envs.zerologconfig }}"
         - name: ZEROLOG_LOGLEVEL

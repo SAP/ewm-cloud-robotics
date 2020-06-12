@@ -31,7 +31,9 @@ type mirEstimator struct {
 	mirClient          *mirclientv2.Client
 	clientset          *crclient.Clientset
 	eventChan          <-chan runtimeEstimationEvent
+	moveBaseChecker    *mirMoveBaseChecker
 	preservePathGuides bool
+	ewmPathQueue       ewmPathLookup
 }
 
 // Lookup table with position type IDs which can be added to path guides
@@ -43,6 +45,8 @@ var posTypeIDForPathGuides = map[int]bool{
 func newMirEstimator(robotName string, mirClient *mirclientv2.Client, clientset *crclient.Clientset, eventChan <-chan runtimeEstimationEvent) *mirEstimator {
 
 	estimator := &mirEstimator{robotName: robotName, mirClient: mirClient, clientset: clientset, eventChan: eventChan, preservePathGuides: false}
+	estimator.moveBaseChecker = newMirMoveBaseChecker(mirClient)
+	estimator.ewmPathQueue = make(ewmPathLookup)
 	return estimator
 }
 
@@ -53,9 +57,16 @@ func (m *mirEstimator) setPreservePathGuides(p bool) *mirEstimator {
 }
 
 // Run the estimator until done channel closes
-func (m *mirEstimator) run(done <-chan struct{}) {
+func (m *mirEstimator) run(done <-chan struct{}, precalcPathsWhenIdle bool) {
 	// Main loop
 	log.Info().Msg("Starting MiR estimator")
+
+	precalcPathWhenIdleChan := make(chan struct{})
+	if precalcPathsWhenIdle {
+		log.Info().Msg("Path precalculation when robot is charging or idle is enabled")
+		go func() { precalcPathWhenIdleChan <- struct{}{} }()
+	}
+
 	for running := true; running == true; {
 		select {
 		// Handle app close with higher priority
@@ -66,10 +77,12 @@ func (m *mirEstimator) run(done <-chan struct{}) {
 			case <-done:
 				running = false
 			case e := <-m.eventChan:
-				// Handle events from channel
+				// Handle events from CR event channel
 				if e.eventType == watch.Added && e.runtimeEstimation.Status.Status != ewm.RunTimeEstimationStatusProcessed {
 					m.processCRAdded(e.runtimeEstimation)
 				}
+			case <-precalcPathWhenIdleChan:
+				m.precalcPathsWhenIdle(precalcPathWhenIdleChan)
 			}
 		}
 	}
@@ -243,11 +256,10 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 		}
 
 		log.Info().Msg("Wait until robot is able to precalculate paths")
-		moveBaseChecker := newMirMoveBaseChecker(m.mirClient)
 
 		// Wait until move base is idle or we are running out out time
 		for !stopAt.UTC().Before(time.Now().UTC()) {
-			if moveBaseChecker.isIdle() {
+			if m.moveBaseChecker.isIdle() {
 				log.Info().Msgf("Move base of robot %s is idle, start precalculating paths", m.robotName)
 				break
 			}
@@ -271,9 +283,14 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 		preCalc, err := m.mirClient.PostPathGuidesPrecalc(&mirapisv2.PostPathGuidesPrecalc{Command: "start", GUID: pathGuide.GUID})
 		if err != nil {
 			log.Error().Err(err).Msg("Starting precalculation of PathGuide")
+			delete(m.ewmPathQueue, ewmPath)
 		} else {
 			if preCalc.PathGuideGUID == "" {
-				log.Info().Msgf("Precalculation not started: %q", preCalc.Message)
+				log.Error().Msgf("Precalculation not started: %q", preCalc.Message)
+				delete(m.ewmPathQueue, ewmPath)
+				continue
+			} else if preCalc.PathGuideGUID != pathGuide.GUID {
+				log.Info().Msg("Precalculation not started, a different precalculation is in process")
 				continue
 			}
 
@@ -297,6 +314,8 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 					time.Sleep(1 * time.Second)
 				}
 			}
+			// Delete path from precalculation queue if it is listed
+			delete(m.ewmPathQueue, ewmPath)
 		}
 	}
 
@@ -361,4 +380,85 @@ func (m *mirEstimator) updateCRWithResult(rte *ewm.RunTimeEstimation, mirPaths *
 		}
 	}
 	log.Info().Msgf("Found results for %v of %v run time estimation requests", len(rte.Status.RunTimes), len(rte.Spec.Paths))
+}
+
+func (m *mirEstimator) precalcPathsWhenIdle(precalcPathWhenIdleChan chan<- struct{}) {
+
+	// Send message to channel of main loop
+	requeue := func(t time.Duration) {
+		go func(t time.Duration) {
+			time.Sleep(t)
+			precalcPathWhenIdleChan <- struct{}{}
+		}(t)
+	}
+
+	// Fill queue in background if empty
+	if len(m.ewmPathQueue) == 0 {
+		go func() {
+			log.Info().Msg("No queue for path precalculation when robot is idle. Create queue in background")
+			defer requeue(time.Second * 10)
+
+			// Get Map ID from MiR API
+			mirStatus, err := m.mirClient.GetStatus()
+			if err != nil {
+				log.Error().Err(err).Msgf("Error getting status of robot %q", m.robotName)
+				return
+			}
+
+			// Get GUIDs for all positions on active map
+			posMaps, err := m.getPosMaps(mirStatus.MapID)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error getting positions from active map on robot %q", m.robotName)
+				return
+			}
+
+			// Collect paths from MiR
+			ewmPaths := newPathLookupForPosMaps(posMaps)
+			mirPaths, err := m.collectMirPaths(mirStatus.MapID, posMaps, ewmPaths)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error getting paths from active map on robot %q", m.robotName)
+				return
+			}
+			m.ewmPathQueue = mirPaths.unknownPaths
+			log.Info().Msgf("Queue with %v paths for precalculation created on robot %q", len(m.ewmPathQueue), m.robotName)
+		}()
+		return
+	}
+
+	// Run only when move base is idle
+	if !m.moveBaseChecker.isIdle() {
+		// Check again 10 seconds after finishing
+		requeue(time.Second * 10)
+		return
+	}
+	// and the robot is charging or does not run a mission
+	if m.moveBaseChecker.actionType != "charging" && m.moveBaseChecker.missionQueueID != 0 {
+		// Check again 10 seconds after finishing
+		requeue(time.Second * 10)
+		return
+	}
+
+	// Start precalculation of the first path and requeue when finished
+	defer requeue(time.Millisecond * 500)
+
+	if m.moveBaseChecker.actionType == "charging" {
+		log.Info().Msg("Robot is charging, precalculate random paths meanwhile")
+	} else {
+		log.Info().Msg("Robot is idling, precalculate random paths meanwhile")
+	}
+
+	// Get GUIDs for all positions on active map
+	posMaps, err := m.getPosMaps(m.moveBaseChecker.mapID)
+	if err != nil {
+		log.Error().Err(err).Msgf("Error getting positions from active map on robot %q", m.robotName)
+		return
+	}
+
+	for k, v := range m.ewmPathQueue {
+		calculatePath := ewmPathLookup{k: v}
+		m.precalculatePaths(m.moveBaseChecker.mapID, posMaps, calculatePath, metav1.Time{time.Now().Add(5 * time.Minute)})
+		// Go back to main loop after each precalculation
+		break
+	}
+	log.Info().Msgf("%v paths are still in queue for precalculation", len(m.ewmPathQueue))
 }

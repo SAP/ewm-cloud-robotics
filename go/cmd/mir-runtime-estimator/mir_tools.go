@@ -54,6 +54,9 @@ type mirMoveBaseChecker struct {
 	mirClient      *mirclientv2.Client
 	missionQueueID int
 	actionID       int
+	actionType     string
+	stateID        int
+	mapID          string
 }
 
 // newMirMoveBaseChecker return a new instance of mirMoveBaseChecker
@@ -71,7 +74,9 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 		return false
 	}
 
+	m.mapID = status.MapID
 	// If robot is idle(3), paused(4), docked(8), docking(9) or error(12), move base is idle
+	m.stateID = status.StateID
 	if stateIDsMoveBaseIdle[status.StateID] {
 		log.Debug().Msgf("Robot is state %q, move base is idle", status.StateText)
 		return true
@@ -80,6 +85,9 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 	// If there is no running mission at all, move base is idling
 	if status.MissionQueueID == 0 {
 		log.Debug().Msg("No mission in queue, move base is idle")
+		m.missionQueueID = 0
+		m.actionID = 0
+		m.actionType = ""
 		return true
 	}
 
@@ -90,6 +98,7 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 		// Refresh missionQueueID from result of GET /status endpoint
 		m.missionQueueID = status.MissionQueueID
 		m.actionID = 0
+		m.actionType = ""
 
 		// If there is a mission running, check which action is active at the moment
 		actions, err := m.mirClient.GetMissionQueueIDActions(m.missionQueueID)
@@ -117,6 +126,8 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 		m.actionID = 0
 		return false
 	}
+
+	m.actionType = action.ActionType
 
 	if action.State != "Executing" {
 		log.Debug().Msgf("Action ID %v of mission queue ID %v is in state %v, starting all over again", m.actionID, m.missionQueueID, action.State)

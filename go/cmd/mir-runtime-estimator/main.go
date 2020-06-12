@@ -125,9 +125,14 @@ func main() {
 		log.Fatal().Err(err).Msg("Error initializing informer for CRs")
 	}
 
+	precalcPathsWhenIdle := false
+	if strings.ToLower(os.Getenv("PRECALC_PATHS_WHEN_IDLE")) == "true" {
+		precalcPathsWhenIdle = true
+	}
+
 	// Initialize MiR estimator
 	estimator := newMirEstimator(robotName, mirClient, clientset, eventChan)
-	go estimator.run(done)
+	go estimator.run(done, precalcPathsWhenIdle)
 
 	// Enable preserving pathguides if requested (debugging only)
 	mirPreservPathGuides := os.Getenv("MIR_PERSERVE_PATHGUIDES")

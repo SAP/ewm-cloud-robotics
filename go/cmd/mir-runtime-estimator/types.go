@@ -38,6 +38,21 @@ func newPathLookup(paths []ewm.Path) ewmPathLookup {
 	return lookup
 }
 
+// newPathLookupForPosMaps return a new lookup table for an entire posMap
+func newPathLookupForPosMaps(posMaps *posMaps) ewmPathLookup {
+	lookup := make(ewmPathLookup)
+	for path1 := range posMaps.posToGUID {
+		for path2 := range posMaps.posToGUID {
+			if path1 == path2 {
+				continue
+			}
+			ewmpath := ewm.Path{Start: path1, Goal: path2}
+			lookup[ewmpath] = true
+		}
+	}
+	return lookup
+}
+
 // Map ewm.Path to MiR Path
 type ewmPathToMiR map[ewm.Path]mirapisv2.GetPath
 

@@ -8,6 +8,7 @@ envs:
   mirpassword: ""
   mirhost: "mir-api.default.svc.cluster.local"
   mirpreservepathguides: "false"
+  precalcpathswhenidle: "true"
   zerologconfig: "json"
   zerologloglevel: "info"
 
