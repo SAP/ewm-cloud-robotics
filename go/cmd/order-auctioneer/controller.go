@@ -37,9 +37,10 @@ import (
 )
 
 const (
-	ownerReferencesUID string = "metadata.ownerReferences.uid"
-	robotLabel         string = "cloudrobotics.com/robot-name"
-	orderAuctionLabel  string = "ewm.sap.com/order-auction"
+	ownerReferencesUID         string        = "metadata.ownerReferences.uid"
+	robotLabel                 string        = "cloudrobotics.com/robot-name"
+	orderAuctionLabel          string        = "ewm.sap.com/order-auction"
+	timeBufferOrderReservation time.Duration = time.Second * 10
 )
 
 // Reconcile controller for auctioneer
@@ -445,10 +446,10 @@ func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotSta
 		}
 	}
 
-	// Requeue 20 Seconds before the earliest OrderReservation expires
+	// Requeue several seconds before the earliest OrderReservation expires
 	for _, auc := range clAuc.auctionsRunning {
 		if !auc.reservationCR.Status.ValidUntil.IsZero() {
-			d := auc.reservationCR.Status.ValidUntil.UTC().Sub(metav1.Now().UTC()) - time.Second*20
+			d := auc.reservationCR.Status.ValidUntil.UTC().Sub(metav1.Now().UTC()) - timeBufferOrderReservation
 			if requeueAfter == 0 || d < requeueAfter {
 				requeueAfter = d
 				log.Debug().Msgf("Running OrderReservation %q expires. Requeue in %v", auc.reservationCR.GetName(), requeueAfter)
@@ -845,7 +846,7 @@ func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Aucti
 					Spec: ewm.OrderAuctionSpec{
 						WarehouseOrders: auction.reservationCR.Status.WarehouseOrders,
 						AuctionStatus:   ewm.OrderAuctionAuctionStatusOpen,
-						ValidUntil:      metav1.Time{auction.reservationCR.Status.ValidUntil.Add(time.Second * -30)},
+						ValidUntil:      metav1.Time{auction.reservationCR.Status.ValidUntil.Add(-timeBufferOrderReservation)},
 					},
 				}
 				// Set Controller reference for CR

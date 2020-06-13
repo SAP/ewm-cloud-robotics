@@ -34,10 +34,11 @@ import (
 )
 
 const (
-	ownerReferencesUID        string = "metadata.ownerReferences.uid"
-	warehouseOrderOrderStatus string = "spec.order_status"
-	robotLabel                string = "cloudrobotics.com/robot-name"
-	orderAuctionLabel         string = "ewm.sap.com/order-auction"
+	ownerReferencesUID        string        = "metadata.ownerReferences.uid"
+	warehouseOrderOrderStatus string        = "spec.order_status"
+	robotLabel                string        = "cloudrobotics.com/robot-name"
+	orderAuctionLabel         string        = "ewm.sap.com/order-auction"
+	timeBufferOrderAuction    time.Duration = time.Second * 20
 )
 
 // Reconcile controller for bid agent
@@ -180,14 +181,14 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 			return reconcile.Result{Requeue: true}, errors.Wrap(err, "request RunTimeEstimation")
 		}
 
-		// Reconcile latest 30 seconds before the auction closes
-		requeueAfter := auction.Spec.ValidUntil.UTC().Sub(metav1.Now().UTC()) - time.Duration(time.Second*30)
+		// Reconcile latest some seconds before the auction closes
+		requeueAfter := auction.Spec.ValidUntil.UTC().Sub(metav1.Now().UTC()) - timeBufferOrderAuction
 		log.Debug().Msgf("Finished reconcile for OrderAuction %+v, requeue after %v", request.NamespacedName, requeueAfter)
 		return reconcile.Result{RequeueAfter: requeueAfter}, nil
 	}
 
-	// Always try to close the bid 30 seconds before its validity ends
-	closeBid := auction.Spec.ValidUntil.UTC().Before(metav1.Now().UTC().Add(time.Second * -30))
+	// Always try to close the bid some seconds before its validity ends
+	closeBid := auction.Spec.ValidUntil.UTC().Before(metav1.Now().UTC().Add(-timeBufferOrderAuction))
 	if closeBid {
 		log.Info().Msgf("OrderAuction CR %q expires soon at %v, closing bid", auction.GetName(), auction.Spec.ValidUntil.Local())
 	}
@@ -252,8 +253,8 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 		}
 	}
 
-	// Bid agent closes bid 30 seconds before auction ends, so give it 10 seconds time
-	spec.ValidUntil = metav1.NewTime(auction.Spec.ValidUntil.UTC().Add(time.Second * -40))
+	// Bid agent closes bid some seconds before auction ends, so give it 10 seconds buffer time
+	spec.ValidUntil = metav1.NewTime(auction.Spec.ValidUntil.UTC().Add(-(timeBufferOrderAuction + time.Second*10)))
 
 	if len(spec.Paths) == 0 {
 		log.Info().Msgf("No valid paths identified for OrderAuction %q", auction.GetName())
