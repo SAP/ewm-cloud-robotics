@@ -139,7 +139,7 @@ func (m *mirEstimator) processCRAdded(rte *ewm.RunTimeEstimation) {
 		}
 
 		// Precalculate paths which are unknown
-		m.precalculatePaths(mirStatus.MapID, posMaps, mirPaths.unknownPaths, rte.Spec.ValidUntil)
+		m.precalculatePaths(mirStatus.MapID, posMaps, mirPaths.unknownPaths, metav1.Time{rte.Spec.ValidUntil.Add(time.Second * -10)})
 
 		// Collect precalculated paths
 		mirPathsPrec, err := m.collectMirPaths(mirStatus.MapID, posMaps, mirPaths.unknownPaths)
@@ -225,9 +225,11 @@ func (m *mirEstimator) collectMirPaths(mapID string, posMaps *posMaps, reqEwmPat
 			}
 			// Save valid path and remove it from requested paths
 			if path.Valid {
-				log.Info().Msgf("Path %+v found in cache", ewmPath)
+				log.Debug().Msgf("Path %+v found in cache", ewmPath)
 				mirPaths.validPaths[ewmPath] = *path
 				delete(reqEwmPaths, ewmPath)
+				// Remove path from queue too to prevent that it is calculated again when robot is charging or idling
+				delete(m.ewmPathQueue, ewmPath)
 			} else {
 				log.Info().Msgf("Path %+v found but in status invalid", ewmPath)
 			}
@@ -255,15 +257,17 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 			continue
 		}
 
-		log.Info().Msg("Wait until robot is able to precalculate paths")
+		if !m.moveBaseChecker.isIdle() {
+			log.Info().Msg("Wait until robot is able to precalculate paths")
 
-		// Wait until move base is idle or we are running out out time
-		for !stopAt.UTC().Before(time.Now().UTC()) {
-			if m.moveBaseChecker.isIdle() {
-				log.Info().Msgf("Move base of robot %s is idle, start precalculating paths", m.robotName)
-				break
+			// Wait until move base is idle or we are running out out time
+			for !stopAt.UTC().Before(time.Now().UTC()) {
+				if m.moveBaseChecker.isIdle() {
+					log.Info().Msgf("Move base of robot %s is idle, start precalculating paths", m.robotName)
+					break
+				}
+				time.Sleep(500 * time.Millisecond)
 			}
-			time.Sleep(500 * time.Millisecond)
 		}
 
 		// Break the loop when calculation must be finished
@@ -395,7 +399,6 @@ func (m *mirEstimator) precalcPathsWhenIdle(precalcPathWhenIdleChan chan<- struc
 	// Fill queue in background if empty
 	if len(m.ewmPathQueue) == 0 {
 		go func() {
-			log.Info().Msg("No queue for path precalculation when robot is idle. Create queue in background")
 			defer requeue(time.Second * 10)
 
 			// Get Map ID from MiR API
@@ -422,6 +425,7 @@ func (m *mirEstimator) precalcPathsWhenIdle(precalcPathWhenIdleChan chan<- struc
 			m.ewmPathQueue = mirPaths.unknownPaths
 			log.Info().Msgf("Queue with %v paths for precalculation created on robot %q", len(m.ewmPathQueue), m.robotName)
 		}()
+		log.Info().Msg("No queue for path precalculation when robot is charging or idling. Create queue in background")
 		return
 	}
 

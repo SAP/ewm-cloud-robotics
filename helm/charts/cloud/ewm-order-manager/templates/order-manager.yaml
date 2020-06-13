@@ -74,6 +74,8 @@ spec:
             secretKeyRef:
               name: ewm-odata-api
               key: ewmtkep
+        - name: RESERVATION_TIMEOUT
+          value: "{{ .Values.envs.reservationtimeout }}"
 ---
 apiVersion: v1
 kind: Service
