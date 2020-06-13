@@ -49,7 +49,8 @@ func getMirClient() (*mirv2.Client, error) {
 		return nil, errors.New("Environment variable MIR_PASSWORD is not set")
 	}
 
-	mirClient, err := mirv2.NewClient(mirHost, mirUser, mirPassword, "mir-runtime-estimator", 5.0)
+	// Big timeout because GET /paths endpoint could get slow
+	mirClient, err := mirv2.NewClient(mirHost, mirUser, mirPassword, "mir-runtime-estimator", 30.0)
 	if err != nil {
 		return nil, errors.Wrapf(err, "NewClient")
 	}
