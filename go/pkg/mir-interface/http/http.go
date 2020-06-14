@@ -113,7 +113,7 @@ func (c *Client) getPostPutDelete(endpoint, method string, requestBody apis.MirR
 	for i := 0; i <= c.maxRetries; i++ {
 
 		if lastErr != nil {
-			log.Error().Err(lastErr).Msgf("Connection to endpoint %s failed - Retrying", c.baseURL.ResolveReference(ref).String())
+			log.Info().Err(lastErr).Msgf("Connection to endpoint %s failed - Retrying", c.baseURL.ResolveReference(ref).String())
 		}
 
 		resp, err := c.httpClient.Do(req)

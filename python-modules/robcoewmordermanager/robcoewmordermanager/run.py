@@ -82,7 +82,7 @@ def run_ordermanager():
     manager.orderauctioncontroller.run(reprocess=False, multiple_executor_threads=False)
     manager.auctioneercontroller.run(reprocess=False, multiple_executor_threads=False)
 
-    _LOGGER.info('SAP EWM Order Manager started - K8S CR mode')
+    _LOGGER.info('SAP EWM Order Manager started')
 
     try:
         # Looping while K8S watchers are running

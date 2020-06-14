@@ -72,7 +72,7 @@ def run_robotconfigurator():
     k8s_rb.run()
     k8s_rc.run(reprocess=True)
 
-    _LOGGER.info('SAP EWM Robot Configurator started - K8S CR mode')
+    _LOGGER.info('SAP EWM Robot Configurator started')
 
     try:
         # Looping while K8S watchers are running

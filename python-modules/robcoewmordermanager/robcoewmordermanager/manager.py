@@ -149,6 +149,8 @@ class EWMOrderManager:
             self.process_robotrequest_cr(name, custom_res)
         except (ConnectionError, TimeoutError, IOError) as err:
             _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
+        except ODataAPIException as err:
+            _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
 
     def process_robotrequest_cr(self, name: str, custom_res: Dict) -> None:
         """
@@ -237,7 +239,7 @@ class EWMOrderManager:
                     'Warehouse task %s was confirmed, notifying robot "%s"',
                     request.notifywhtcompletion, robotident.rsrc)
 
-        # Raise exception if request was not complete
+        # Save processing status to CR
         if request == status:
             self.robotrequestcontroller.update_status(
                 name, unstructure(status), process_complete=True)
@@ -541,6 +543,8 @@ class EWMOrderManager:
             self.process_who_cr(name, custom_res)
         except (ConnectionError, TimeoutError, IOError) as err:
             _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
+        except ODataAPIException as err:
+            _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
         else:
             # Save processed confirmations in custom resource
             self.ordercontroller.save_processed_status(name, custom_res)
@@ -670,6 +674,9 @@ class EWMOrderManager:
             return
         except NoOrderFoundError:
             _LOGGER.debug('No potential warehouse order reservations found, continuing')
+        except ODataAPIException as err:
+            _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
+            return
 
         # Check if warehouse orders are reserved for a different auction
         whos_reserved = self.orderreservationcontroller.get_reserved_warehouseorders()
@@ -694,6 +701,9 @@ class EWMOrderManager:
                 self.orderreservationcontroller.update_cr_status(name, unstructure(status))
             except (ConnectionError, TimeoutError, IOError) as err:
                 _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                return
+            except ODataAPIException as err:
+                _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
                 return
 
         if whos:
@@ -736,6 +746,9 @@ class EWMOrderManager:
                 except (ConnectionError, TimeoutError, IOError) as err:
                     _LOGGER.error(
                         'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
+                except ODataAPIException as err:
+                    _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
                     connection_error = True
 
         # Update CR status
@@ -795,6 +808,9 @@ class EWMOrderManager:
                     _LOGGER.error(
                         'Unable to assign warehouse order %s.%s to robot %s: %s', ord_as.lgnum,
                         ord_as.who, ord_as.rsrc, err)
+                except ODataAPIException as err:
+                    _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
                 else:
                     if whoident in reserved:
                         reserved.remove(whoident)
@@ -812,6 +828,9 @@ class EWMOrderManager:
                         _LOGGER.error(
                             'Error connecting to SAP EWM Backend: "%s" - try again later', err)
                         connection_error = True
+                    except ODataAPIException as err:
+                        _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
+                        connection_error = True
 
             if reserved and not connection_error:
                 msg = 'Not all warehouse orders assigned to robots, cancel remaining reservations'
@@ -828,6 +847,9 @@ class EWMOrderManager:
                     except (ConnectionError, TimeoutError, IOError) as err:
                         _LOGGER.error(
                             'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                        connection_error = True
+                    except ODataAPIException as err:
+                        _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
                         connection_error = True
 
             # CR is processed in this status, until there was no connection error to EWM
@@ -851,6 +873,9 @@ class EWMOrderManager:
                 except (ConnectionError, TimeoutError, IOError) as err:
                     _LOGGER.error(
                         'Error connecting to SAP EWM Backend: "%s" - try again later', err)
+                    connection_error = True
+                except ODataAPIException as err:
+                    _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
                     connection_error = True
 
             # CR is processed in this status, until there was no connection error to EWM

@@ -66,9 +66,9 @@ class ODataHandler:
             # Add a 1 minute buffer for token expiration
             self._token_expires = time.time() + resp_dict.get('expires_in') - 60
         else:
-            _LOGGER.error('Unable to get access token, status code: %s', resp.status_code)
-            raise requests.RequestException(
-                'Unable to get access token, status code: {}'.format(resp.status_code))
+            msg = 'Unable to get access token, status code: {}'.format(resp.status_code)
+            _LOGGER.error(msg)
+            raise requests.RequestException(msg)
 
     def refresh_access_token(self) -> None:
         """Refresh access token before it expires."""
@@ -76,8 +76,7 @@ class ODataHandler:
             try:
                 self.get_access_token()
             except requests.RequestException as err:
-                _LOGGER.error(
-                    'Exception when connecting to token endpoint: %s', err)
+                _LOGGER.error('Exception when connecting to token endpoint: %s', err)
             else:
                 _LOGGER.info('Access token of type %s refreshed', self._token_type)
 
@@ -118,25 +117,23 @@ class ODataHandler:
                 resp = requests.get(
                     uri, params=params, headers=headers, timeout=cls.TIMEOUT)
         except requests.ConnectionError as err:
-            _LOGGER.error(
-                'Connection error on OData GET request to URI %s: %s',
-                uri, err)
+            _LOGGER.debug('Connection error on OData GET request to URI %s: %s', uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            raise ConnectionError(err)
+            msg = 'On OData GET request to URI {}'.format(uri)
+            raise ConnectionError(err, msg)
         except requests.Timeout as err:
-            _LOGGER.error(
-                'Timeout on OData GET request to URI %s: %s',
-                uri, err)
+            _LOGGER.debug('Timeout on OData GET request to URI %s: %s', uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            raise TimeoutError(err)
+            msg = 'On OData GET request to URI {}'.format(uri)
+            raise TimeoutError(err, msg)
         except requests.RequestException as err:
-            _LOGGER.error(
-                'Error on OData GET request to URI %s: %s', uri, err)
+            _LOGGER.debug('Error on OData GET request to URI %s: %s', uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            raise IOError(err)
+            msg = 'On OData GET request to URI {}'.format(uri)
+            raise IOError(err, msg)
         else:
             # Identify authorization error
             self._identify_authorization_error(resp)
@@ -147,9 +144,8 @@ class ODataHandler:
                     self._csrftoken = resp.headers['X-CSRF-Token']
                     self._cookies = resp.cookies
                 except KeyError:
-                    _LOGGER.error('CSRF-Token requested but not returned')
-                    raise ConnectionError(
-                        'CSRF-Token requested but not returned')
+                    _LOGGER.debug('CSRF-Token requested but not returned')
+                    raise ConnectionError('CSRF-Token requested but not returned')
             return resp
 
     def http_patch_post(
@@ -200,23 +196,26 @@ class ODataHandler:
                     uri, json=jsonbody, params=params, headers=headers, cookies=self._cookies,
                     timeout=cls.TIMEOUT)
         except requests.ConnectionError as err:
-            _LOGGER.error(
+            _LOGGER.debug(
                 'Connection error on OData %s request to URI %s: %s', mode.upper(), uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            raise ConnectionError(err)
+            msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
+            raise ConnectionError(err, msg)
         except requests.Timeout as err:
-            _LOGGER.error(
+            _LOGGER.debug(
                 'Timeout on OData %s request to URI %s: %s', mode.upper(), uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            raise TimeoutError(err)
+            msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
+            raise TimeoutError(err, msg)
         except requests.RequestException as err:
-            _LOGGER.error(
+            _LOGGER.debug(
                 'Error on OData %s request to URI %s: %s', mode.upper(), uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            raise IOError(err)
+            msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
+            raise IOError(err, msg)
         else:
             # Identify authorization error
             self._identify_authorization_error(resp)
@@ -243,15 +242,27 @@ class ODataHandler:
                             uri, json=jsonbody, params=params, headers=headers,
                             cookies=self._cookies, timeout=cls.TIMEOUT)
                 except requests.ConnectionError as err:
-                    _LOGGER.error(
-                        'Connection error on OData %s request: %s', mode.upper(), err)
-                    raise ConnectionError(err)
+                    _LOGGER.debug(
+                        'Connection error on OData %s request to URI %s: %s', mode.upper(), uri,
+                        err)
+                    self.odata_counter.labels(  # pylint: disable=no-member
+                        endpoint=endpoint, result=err.__class__.__name__).inc()
+                    msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
+                    raise ConnectionError(err, msg)
                 except requests.Timeout as err:
-                    _LOGGER.error('Timeout on OData %s request: %s', mode.upper(), err)
-                    raise TimeoutError(err)
+                    _LOGGER.debug(
+                        'Timeout on OData %s request to URI %s: %s', mode.upper(), uri, err)
+                    self.odata_counter.labels(  # pylint: disable=no-member
+                        endpoint=endpoint, result=err.__class__.__name__).inc()
+                    msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
+                    raise TimeoutError(err, msg)
                 except requests.RequestException as err:
-                    _LOGGER.error('Error on OData %s request: %s', mode.upper(), err)
-                    raise IOError(err)
+                    _LOGGER.debug(
+                        'Error on OData %s request to URI %s: %s', mode.upper(), uri, err)
+                    self.odata_counter.labels(  # pylint: disable=no-member
+                        endpoint=endpoint, result=err.__class__.__name__).inc()
+                    msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
+                    raise IOError(err, msg)
                 else:
                     # Identify authorization error
                     self._identify_authorization_error(resp)
@@ -271,11 +282,10 @@ class ODataHandler:
         if resp.status_code == 200 and 'application/json' not in resp.headers.get(
                 'content-type', ''):
             self.auth_error = True
-            _LOGGER.error(
-                'Assuming authorization error at %s, content-type not application/json', resp.url)
-            raise ConnectionError(
-                'Assuming authorization error at {}, content-type not application/json'.format(
-                    resp.url))
+            msg = 'Assuming authorization error at {}, content-type not application/json'.format(
+                resp.url)
+            _LOGGER.debug(msg)
+            raise ConnectionError(msg)
 
     def prepare_uri(
             self, endpoint: str, ids: Optional[Dict], navigation: Optional[str] = None) -> str:

@@ -63,7 +63,7 @@ def k8s_cr_callback(func: Callable) -> Callable:
                 if operation == 'DELETED':
                     self.cr_locks.pop(name, None)
         else:
-            _LOGGER.info(
+            _LOGGER.debug(
                 'CR "%s" in process - skipping operation "%s" this run', name, operation)
 
     _LOGGER.debug('Method "%s" is decorated as K8s callback method', func)
@@ -266,13 +266,11 @@ class K8sCRHandler:
             for callback in self.callbacks[operation].values():
                 callback(name, custom_res)
         except Exception:  # pylint: disable=broad-except
-            _LOGGER.error(
-                '%s/%s: Error while processing custom resource %s', self.group,
-                self.plural, name)
             exc_info = sys.exc_info()
             _LOGGER.error(
-                '%s/%s: Error in callback - Exception: "%s" / "%s" - TRACEBACK: %s', self.group,
-                self.plural, exc_info[0], exc_info[1], traceback.format_exception(*exc_info))
+                '%s/%s: Error in callback when processing CR %s - Exception: "%s" / "%s" - '
+                'TRACEBACK: %s', self.group, self.plural, name, exc_info[0], exc_info[1],
+                traceback.format_exception(*exc_info))
         else:
             _LOGGER.debug(
                 '%s/%s: Successfully processed custom resource %s', self.group, self.plural, name)
@@ -372,12 +370,12 @@ class K8sCRHandler:
                 _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling CustomObjectsApi->patch_namespaced_custom_object:'
-                ' %s', self.group, self.plural, err)
+                '%s/%s: Exception when updating CR status of %s: %s', self.group, self.plural,
+                name, err)
             raise
         else:
             _LOGGER.debug(
-                '%s/%s: Successfully patched custom resource %s', self.group, self.plural, name)
+                '%s/%s: Successfully updated status of CR %s', self.group, self.plural, name)
 
     def update_cr_spec(self, name: str, spec: Dict, labels: Optional[Dict] = None) -> None:
         """Update the status field of named cr."""
@@ -397,12 +395,12 @@ class K8sCRHandler:
                 _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling CustomObjectsApi->patch_namespaced_custom_object:'
-                ' %s', self.group, self.plural, err)
+                '%s/%s: Exception when updating CR spec of %s: %s', self.group, self.plural,
+                name, err)
             raise
         else:
             _LOGGER.debug(
-                '%s/%s: Successfully patched custom resource %s', self.group, self.plural, name)
+                '%s/%s: Successfully updated spec of CR %s', self.group, self.plural, name)
 
     def delete_cr(self, name: str) -> None:
         """Delete specific custom resource by name."""
@@ -417,12 +415,12 @@ class K8sCRHandler:
                 _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling CustomObjectsApi->delete_namespaced_custom_object:'
-                ' %s', self.group, self.plural, err)
+                '%s/%s: Exception when deleting CR of %s: %s', self.group, self.plural,
+                name, err)
             raise
         else:
             _LOGGER.debug(
-                '%s/%s: Successfully deleted custom resource %s', self.group, self.plural, name)
+                '%s/%s: Successfully deleted CR %s', self.group, self.plural, name)
 
     def create_cr(self, name: str, labels: Dict, spec: Dict) -> None:
         """Create custom resource on 'orders' having json parameter as spec."""
@@ -441,12 +439,11 @@ class K8sCRHandler:
                 _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling CustomObjectsApi->create_namespaced_custom_object:'
-                ' %s', self.group, self.plural, err)
+                '%s/%s: Exception when creating CR %s: %s', self.group, self.plural, name, err)
             raise
         else:
             _LOGGER.debug(
-                '%s/%s: Successfully created custom resource %s', self.group, self.plural, name)
+                '%s/%s: Successfully created CR %s', self.group, self.plural, name)
 
     def get_cr(self, name: str) -> Dict:
         """Retrieve a specific custom resource by name."""
@@ -461,12 +458,11 @@ class K8sCRHandler:
                 _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling CustomObjectsApi->get_namespaced_custom_object:'
-                ' %s', self.group, self.plural, err)
+                '%s/%s: Exception when retrieving CR %s: %s', self.group, self.plural, name, err)
             raise
         else:
             _LOGGER.debug(
-                '%s/%s: Successfully retrieved custom resource %s', self.group, self.plural, name)
+                '%s/%s: Successfully retrieved CR %s', self.group, self.plural, name)
             return api_response
 
     def check_cr_exists(self, name: str) -> bool:
@@ -499,12 +495,11 @@ class K8sCRHandler:
             )
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling CustomObjectsApi->list_namespaced_custom_object:'
-                ' %s', self.group, self.plural, err)
+                '%s/%s: Exception when listing of CRs: %s', self.group, self.plural, err)
             raise
         else:
             _LOGGER.debug(
-                '%s/%s: Successfully retrieved all custom resources', self.group, self.plural)
+                '%s/%s: Successfully listed all CRs', self.group, self.plural)
             return api_response
 
     def process_all_crs(self, operation: str, set_resv_watcher: bool = False) -> None:
@@ -602,8 +597,8 @@ class K8sCRHandler:
                     _request_timeout=cls.REQUEST_TIMEOUT)
             except ApiException as err:
                 _LOGGER.error(
-                    '%s/%s: Exception when calling CustomObjectsApi->'
-                    'patch_namespaced_custom_object: %s', self.group, self.plural, err)
+                    '%s/%s: Exception when adding finalizer to CR %s: %s', self.group, self.plural,
+                    name, err)
                 raise
             else:
                 _LOGGER.debug('Added finalizer %s to CR %s', self.finalizer, name)
@@ -644,8 +639,8 @@ class K8sCRHandler:
                     _request_timeout=cls.REQUEST_TIMEOUT)
             except ApiException as err:
                 _LOGGER.error(
-                    '%s/%s: Exception when calling CustomObjectsApi->'
-                    'patch_namespaced_custom_object: %s', self.group, self.plural, err)
+                    '%s/%s: Exception when removing finalizer from CR %s: %s', self.group,
+                    self.plural, name, err)
                 raise
             else:
                 _LOGGER.debug('Removed finalizer %s from CR %s', self.finalizer, name)

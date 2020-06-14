@@ -13,6 +13,14 @@
 """Helper functions for robot master."""
 
 
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
+
 def retry_on_connection_error(exc: Exception):
     """Return True if there is an connection error exception."""
-    return isinstance(exc, (ConnectionError, TimeoutError, IOError))
+    try_again = isinstance(exc, (ConnectionError, TimeoutError, IOError))
+    if try_again:
+        _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', exc)
+    return try_again

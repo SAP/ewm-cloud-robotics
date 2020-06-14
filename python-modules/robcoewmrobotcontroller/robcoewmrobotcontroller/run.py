@@ -99,7 +99,7 @@ def robot_main_loop(
     # Start
     robot.ordercontroller.run(reprocess=True)
     robot.robotrequestcontroller.run(reprocess=True)
-    _LOGGER.info('SAP EWM Robot "%s" started - K8S CR mode', robot.robot_config.rsrc)
+    _LOGGER.info('SAP EWM Robot "%s" started', robot.robot_config.rsrc)
 
     try:
         # Looping while K8S stream watchers are running

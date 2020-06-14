@@ -412,8 +412,8 @@ class MiRRobot:
                 _LOGGER.info('Reset error request sent via websocket')
                 try:
                     self._mir_api.send_ws_message(ws_msg)
-                except RequestException:
-                    _LOGGER.error('Error state could not been reset')
+                except RequestException as err:
+                    _LOGGER.error('Error state could not been reset: %s', err)
                 else:
                     _LOGGER.info('Error successfully reset')
                     self.error_resetted = True

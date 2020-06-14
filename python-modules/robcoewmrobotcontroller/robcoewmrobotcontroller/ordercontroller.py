@@ -71,12 +71,11 @@ class OrderController(K8sCRHandler):
                 for callback in self.callbacks[operation].values():
                     callback(name, custom_res.get('spec', {}))
         except Exception:  # pylint: disable=broad-except
-            _LOGGER.error(
-                'Error while processing custom resource %s', name)
             exc_info = sys.exc_info()
             _LOGGER.error(
-                '%s/%s: Error in callback - Exception: "%s" / "%s" - TRACEBACK: %s', self.group,
-                self.plural, exc_info[0], exc_info[1], traceback.format_exception(*exc_info))
+                '%s/%s: Error in callback when processing CR %s - Exception: "%s" / "%s" - '
+                'TRACEBACK: %s', self.group, self.plural, name, exc_info[0], exc_info[1],
+                traceback.format_exception(*exc_info))
         else:
             if operation == 'DELETED':
                 # Cleanup when CR was deleted
@@ -124,7 +123,7 @@ class OrderController(K8sCRHandler):
                             return False
                         if (conf['confirmationnumber'] == ConfirmWarehouseTask.SECOND_CONF
                                 and conf['confirmationtype'] == ConfirmWarehouseTask.CONF_SUCCESS):
-                            _LOGGER.error(
+                            _LOGGER.info(
                                 'Skip "%s" because warehouse task "%s" already got second '
                                 'successful confirmation', name, wht['tanum'])
                             return False

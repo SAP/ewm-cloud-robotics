@@ -32,14 +32,16 @@ class HTTPstatusCodeFailed(requests.RequestException):
 
 
 class HTTPbadPostRequest(requests.RequestException):
-    """HTTP Status Code indicates a bad HTTP POSTrequest."""
+    """HTTP Status Code indicates a bad HTTP POST request."""
 
 
-def identify_conn_exception(exception: BaseException) -> bool:
+def identify_conn_exception(exception: Exception) -> bool:
     """Check if a requests exception occurred."""
-    _LOGGER.error('Exception %s on HTTP request to MiR API, retrying', exception)
-    return isinstance(
+    try_again = isinstance(
         exception, (requests.Timeout, requests.ConnectionError, HTTPstatusCodeFailed))
+    if try_again:
+        _LOGGER.info('Exception %s on HTTP request to MiR API, retrying', exception)
+    return try_again
 
 
 @attr.s(frozen=True)
@@ -90,11 +92,15 @@ class MiRInterface:
             self.mirconfig.user, self.mirconfig.password))
 
         if 400 <= resp.status_code < 500:
-            _LOGGER.error('%s error on DELETE call to %s', resp.status_code, uri)
-            raise HTTPbadPostRequest
-        elif resp.status_code not in HTTP_SUCCESS:
-            _LOGGER.error('%s error on DELETE call to %s', resp.status_code, uri)
-            raise HTTPstatusCodeFailed
+            msg = '{} error on DELETE call to {} - Bad HTTP request'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPbadPostRequest(msg)
+        if resp.status_code not in HTTP_SUCCESS:
+            msg = '{} error on DELETE call to {} - HTTP status failed'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPstatusCodeFailed(msg)
 
     @retry(retry_on_exception=identify_conn_exception, wait_fixed=1000, stop_max_attempt_number=10)
     def http_get(self, endpoint: str) -> requests.Response:
@@ -109,8 +115,10 @@ class MiRInterface:
             uri, headers=headers, timeout=5.0, auth=(self.mirconfig.user, self.mirconfig.password))
 
         if resp.status_code not in HTTP_SUCCESS:
-            _LOGGER.error('%s error on GET call to %s', resp.status_code, uri)
-            raise HTTPstatusCodeFailed
+            msg = '{} error on GET call to {} - HTTP status failed'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPstatusCodeFailed(msg)
 
         return resp
 
@@ -132,11 +140,15 @@ class MiRInterface:
             auth=(self.mirconfig.user, self.mirconfig.password))
 
         if 400 <= resp.status_code < 500:
-            _LOGGER.error('%s error on POST call to %s', resp.status_code, uri)
-            raise HTTPbadPostRequest
-        elif resp.status_code not in HTTP_SUCCESS:
-            _LOGGER.error('%s error on POST call to %s', resp.status_code, uri)
-            raise HTTPstatusCodeFailed
+            msg = '{} error on POST call to {} - Bad HTTP request'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPbadPostRequest(msg)
+        if resp.status_code not in HTTP_SUCCESS:
+            msg = '{} error on POST call to {} - HTTP status failed'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPstatusCodeFailed(msg)
 
         return resp
 
@@ -158,11 +170,15 @@ class MiRInterface:
             auth=(self.mirconfig.user, self.mirconfig.password))
 
         if 400 <= resp.status_code < 500:
-            _LOGGER.error('%s error on PUT call to %s', resp.status_code, uri)
-            raise HTTPbadPostRequest
-        elif resp.status_code not in HTTP_SUCCESS:
-            _LOGGER.error('%s error on PUT call to %s', resp.status_code, uri)
-            raise HTTPstatusCodeFailed
+            msg = '{} error on PUT call to {} - Bad HTTP request'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPbadPostRequest(msg)
+        if resp.status_code not in HTTP_SUCCESS:
+            msg = '{} error on PUT call to {} - HTTP status failed'.format(
+                resp.status_code, uri)
+            _LOGGER.debug(msg)
+            raise HTTPstatusCodeFailed(msg)
 
         return resp
 
@@ -174,7 +190,8 @@ class MiRInterface:
                 host=self.mirconfig.host), timeout=5)
             wsclient.send(json.dumps(message))
         except (WebSocketTimeoutException, TimeoutError):
-            _LOGGER.error('Connection to rosbridge websocket timed out')
-            raise requests.Timeout
+            msg = 'Connection to rosbridge websocket timed out'
+            _LOGGER.debug(msg)
+            raise requests.Timeout(msg)
         else:
             wsclient.close()

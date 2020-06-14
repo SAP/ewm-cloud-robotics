@@ -76,7 +76,7 @@ func NewLogger() *zerolog.Logger {
 		infoWriter := &FilteredWriter{stdoutWriter, zerolog.TraceLevel, zerolog.WarnLevel}
 		errorWriter := &FilteredWriter{stderrWriter, zerolog.ErrorLevel, zerolog.NoLevel}
 		mainWriter := zerolog.MultiLevelWriter(infoWriter, errorWriter)
-		log = zerolog.New(mainWriter).With().Timestamp().Caller().Logger()
+		log = zerolog.New(mainWriter).With().Caller().Logger()
 		log.Info().Msg("Zerolog started with CONSOLE config")
 	}
 

@@ -937,7 +937,6 @@ class RobotEWMMachine(Machine):
     def on_enter_moveTrolley_movingToSourceBin(self, event: EventData) -> None:
         """Start moving to the source bin of a warehouse task."""
         if self.active_wht:
-            _LOGGER.error('Warehouse task %s not closed properly', self.active_wht.tanum)
             self.active_wht = None
 
         # Work on the first warehouse task from the warehouse order
@@ -998,7 +997,6 @@ class RobotEWMMachine(Machine):
     def on_enter_pickPackPass_movingtoPickLocation(self, event: EventData) -> None:
         """Start moving to pick location."""
         if self.active_wht:
-            _LOGGER.error('Warehouse task %s not closed properly', self.active_wht.tanum)
             self.active_wht = None
 
         # Work on the first warehouse task from the sub warehouse order
@@ -1028,7 +1026,6 @@ class RobotEWMMachine(Machine):
     def on_enter_pickPackPass_movingtoTargetLocation(self, event: EventData) -> None:
         """Start moving to target location."""
         if self.active_wht:
-            _LOGGER.error('Warehouse task %s not closed properly', self.active_wht.tanum)
             self.active_wht = None
 
         # Work on the first warehouse task from the warehouse order to go to the target location

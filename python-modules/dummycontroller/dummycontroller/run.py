@@ -64,7 +64,7 @@ def run_missioncontroller():
         _LOGGER.info('System exit - terminating')
     finally:
         # Stop K8S CRD watchers
-        _LOGGER.info('Stopping K8S CRD watchers')
+        _LOGGER.info('Stopping K8S CR watchers')
         k8s_mc.stop_watcher()
         k8s_rc.stop_watcher()
 

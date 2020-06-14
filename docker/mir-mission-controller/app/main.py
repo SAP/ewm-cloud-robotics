@@ -21,12 +21,17 @@ from mircontroller import run as mc
 
 # According to
 # https://medium.com/retailmenot-engineering/formatting-python-logs-for-stackdriver-5a5ddd80761c
-class _MaxLevelFilter(object):
-    def __init__(self, highest_log_level):
+class _MaxLevelFilter(logging.Filter):
+    """MaxLevelFilter filters log entry by their log level."""
+
+    def __init__(self, highest_log_level: int) -> None:
+        """Initialize."""
+        super().__init__()
         self._highest_log_level = highest_log_level
 
-    def filter(self, log_record):
-        return log_record.levelno <= self._highest_log_level
+    def filter(self, record: logging.LogRecord) -> bool:
+        """Filter if log record by log level."""
+        return record.levelno <= self._highest_log_level
 
 
 # Create root logger
@@ -43,9 +48,7 @@ ERROR_HANDLER = logging.StreamHandler(sys.stderr)
 ERROR_HANDLER.setLevel(logging.ERROR)
 
 # Create formatter
-FORMATTER = logging.Formatter(
-    '%(asctime)s - %(name)s - %(levelname)s - [%(filename)s:%(lineno)d] - '
-    '%(message)s')
+FORMATTER = logging.Formatter('- %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s')
 
 # Add formatter to log handlers
 INFO_HANDLER.setFormatter(FORMATTER)
@@ -55,14 +58,21 @@ ERROR_HANDLER.setFormatter(FORMATTER)
 _LOGGER.addHandler(INFO_HANDLER)
 _LOGGER.addHandler(ERROR_HANDLER)
 
-if __name__ == "__main__":
-    # Run mir mission controller
+
+def main() -> None:
+    """Run main program."""
     try:
+        # Run mir mission controller
         mc.run_missioncontroller()
     except Exception:  # pylint: disable=broad-except
-        EXC_INFO = sys.exc_info()
+        exc_info = sys.exc_info()
         _LOGGER.fatal(
-            'Unexpected error "%s" - "%s" - TRACEBACK: \n %s', EXC_INFO[0],
-            EXC_INFO[1], traceback.format_exception(*EXC_INFO))
+            'Unexpected error "%s" - "%s" - TRACEBACK: \n %s', exc_info[0],
+            exc_info[1], traceback.format_exception(*exc_info))
         sys.exit('Application terminated with exception: "{}" - "{}"'.format(
-            EXC_INFO[0], EXC_INFO[1]))
+            exc_info[0], exc_info[1]))
+
+
+if __name__ == '__main__':
+    # Run main program
+    main()
