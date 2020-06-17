@@ -291,7 +291,7 @@ class EWMOrderManager:
                     raise
                 except WarehouseTaskAlreadyConfirmedError:
                     _LOGGER.warning(
-                        'Warehouse task %s has first confirmation already', attr.asdict(whtask))
+                        'Warehouse task %s has already first confirmation', attr.asdict(whtask))
                 except ODataAPIException as err:
                     _LOGGER.error(
                         'Business error "%s" in SAP EWM backend during first confirmation of '
@@ -318,7 +318,7 @@ class EWMOrderManager:
                     raise
                 except WarehouseTaskAlreadyConfirmedError:
                     _LOGGER.warning(
-                        'Warehouse task %s has first confirmation already', attr.asdict(whtask))
+                        'Warehouse task %s has already second confirmation', attr.asdict(whtask))
                 except ODataAPIException as err:
                     _LOGGER.error(
                         'Business error "%s" in SAP EWM backend during second confirmation of '
