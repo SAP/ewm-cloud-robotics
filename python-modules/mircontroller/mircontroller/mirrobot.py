@@ -324,7 +324,7 @@ class MiRRobot:
         try:
             http_resp = self._mir_api.http_get('status')
         except RequestException:
-            self.state = RobcoRobotStates.STATE_UNAVAILABLE
+            self.state = RobcoRobotStates.STATE_UNDEFINED
             _LOGGER.error('Error when updating robot status.')
         else:
             json_resp = http_resp.json()

@@ -209,6 +209,14 @@ func (m *mirEstimator) collectMirPaths(mapID string, posMaps *posMaps, reqEwmPat
 		return nil, errors.Wrap(err, "Get paths for mapID")
 	}
 
+	// Remove paths where start and goal positions are equal, because those cannot be calculated by MiR
+	for ewmPath := range reqEwmPaths {
+		if ewmPath.Start == ewmPath.Goal {
+			log.Info().Msgf("Path has same start and goal position %v. Not looking for this path", ewmPath.Start)
+			delete(reqEwmPaths, ewmPath)
+		}
+	}
+
 	// Check if paths are in needs to be checked for this estimation
 	for _, p := range *paths {
 		// Check if path is in lookup table
@@ -399,7 +407,7 @@ func (m *mirEstimator) precalcPathsWhenIdle(precalcPathWhenIdleChan chan<- struc
 	// Fill queue in background if empty
 	if len(m.ewmPathQueue) == 0 {
 		go func() {
-			defer requeue(time.Second * 10)
+			defer requeue(time.Second * 120)
 
 			// Get Map ID from MiR API
 			mirStatus, err := m.mirClient.GetStatus()

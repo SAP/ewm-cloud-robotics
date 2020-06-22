@@ -120,20 +120,20 @@ class ODataHandler:
             _LOGGER.debug('Connection error on OData GET request to URI %s: %s', uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            msg = 'On OData GET request to URI {}'.format(uri)
-            raise ConnectionError(err, msg)
+            msg = '{} on OData GET request to URI {}'.format(err, uri)
+            raise ConnectionError(msg) from err
         except requests.Timeout as err:
             _LOGGER.debug('Timeout on OData GET request to URI %s: %s', uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            msg = 'On OData GET request to URI {}'.format(uri)
-            raise TimeoutError(err, msg)
+            msg = '{} on OData GET request to URI {}'.format(err, uri)
+            raise TimeoutError(msg) from err
         except requests.RequestException as err:
             _LOGGER.debug('Error on OData GET request to URI %s: %s', uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            msg = 'On OData GET request to URI {}'.format(uri)
-            raise IOError(err, msg)
+            msg = '{} on OData GET request to URI {}'.format(err, uri)
+            raise IOError(msg) from err
         else:
             # Identify authorization error
             self._identify_authorization_error(resp)
@@ -200,22 +200,22 @@ class ODataHandler:
                 'Connection error on OData %s request to URI %s: %s', mode.upper(), uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
-            raise ConnectionError(err, msg)
+            msg = '{} on OData {} request to URI {}'.format(err, mode.upper(), uri)
+            raise ConnectionError(msg) from err
         except requests.Timeout as err:
             _LOGGER.debug(
                 'Timeout on OData %s request to URI %s: %s', mode.upper(), uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
-            raise TimeoutError(err, msg)
+            msg = '{} on OData {} request to URI {}'.format(err, mode.upper(), uri)
+            raise TimeoutError(msg) from err
         except requests.RequestException as err:
             _LOGGER.debug(
                 'Error on OData %s request to URI %s: %s', mode.upper(), uri, err)
             self.odata_counter.labels(  # pylint: disable=no-member
                 endpoint=endpoint, result=err.__class__.__name__).inc()
-            msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
-            raise IOError(err, msg)
+            msg = '{} on OData {} request to URI {}'.format(err, mode.upper(), uri)
+            raise IOError(msg) from err
         else:
             # Identify authorization error
             self._identify_authorization_error(resp)
@@ -247,22 +247,22 @@ class ODataHandler:
                         err)
                     self.odata_counter.labels(  # pylint: disable=no-member
                         endpoint=endpoint, result=err.__class__.__name__).inc()
-                    msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
-                    raise ConnectionError(err, msg)
+                    msg = '{} on OData {} request to URI {}'.format(err, mode.upper(), uri)
+                    raise ConnectionError(msg) from err
                 except requests.Timeout as err:
                     _LOGGER.debug(
                         'Timeout on OData %s request to URI %s: %s', mode.upper(), uri, err)
                     self.odata_counter.labels(  # pylint: disable=no-member
                         endpoint=endpoint, result=err.__class__.__name__).inc()
-                    msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
-                    raise TimeoutError(err, msg)
+                    msg = '{} on OData {} request to URI {}'.format(err, mode.upper(), uri)
+                    raise TimeoutError(msg) from err
                 except requests.RequestException as err:
                     _LOGGER.debug(
                         'Error on OData %s request to URI %s: %s', mode.upper(), uri, err)
                     self.odata_counter.labels(  # pylint: disable=no-member
                         endpoint=endpoint, result=err.__class__.__name__).inc()
-                    msg = 'On OData {} request to URI {}'.format(mode.upper(), uri)
-                    raise IOError(err, msg)
+                    msg = '{} on OData {} request to URI {}'.format(err, mode.upper(), uri)
+                    raise IOError(msg) from err
                 else:
                     # Identify authorization error
                     self._identify_authorization_error(resp)

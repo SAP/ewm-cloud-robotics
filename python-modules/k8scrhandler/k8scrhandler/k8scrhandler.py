@@ -152,6 +152,9 @@ class K8sCRHandler:
         # JSON template used while creating custom resources
         self.raw_cr = template_cr
 
+        # Waiting time to reprocess all custom resource if function is enabled
+        self.reprocess_waiting_time = 10.0
+
         # Lock objects to synchronize processing of CRs
         self.cr_locks: DefaultDict[str, threading.RLock] = defaultdict(threading.RLock)
         # Dict to save thread exceptions
@@ -558,9 +561,9 @@ class K8sCRHandler:
                 # Stop the watcher
                 self.stop_watcher()
             finally:
-                # Wait up to 10 seconds
+                # Wait up to self.reprocess_waiting_time seconds
                 if self.thread_run:
-                    time.sleep(max(0, last_run - time.time() + 10))
+                    time.sleep(max(0, last_run - time.time() + self.reprocess_waiting_time))
                     last_run = time.time()
 
     def stop_watcher(self) -> None:

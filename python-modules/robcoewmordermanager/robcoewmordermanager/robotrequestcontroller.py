@@ -17,7 +17,6 @@ import logging
 from typing import Dict
 
 from robcoewmtypes.helper import get_sample_cr
-from robcoewmtypes.robot import RequestFromRobotStatus
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
@@ -41,14 +40,8 @@ class RobotRequestController(K8sCRHandler):
         )
 
     def update_status(
-            self, name: str, status_data: Dict, process_complete: bool = False) -> bool:
-        """Cleanup robotrequest when work when it was processed."""
-        status = {}
-        status['data'] = status_data
-        if process_complete:
-            status['status'] = RequestFromRobotStatus.STATE_PROCESSED
-        else:
-            status['status'] = RequestFromRobotStatus.STATE_RUNNING
+            self, name: str, status: Dict) -> bool:
+        """Update status of robotrequest ."""
         if self.check_cr_exists(name):
             self.update_cr_status(name, status)
             return True

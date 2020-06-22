@@ -25,7 +25,7 @@ from dateutil.parser import isoparse
 
 from prometheus_client import Counter
 
-from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus
+from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus, RobcoRobotStates
 from robcoewmtypes.warehouseorder import (
     ConfirmWarehouseTask, WarehouseOrder, WarehouseOrderCRDSpec, WarehouseOrderIdent)
 from robcoewmtypes.auction import OrderReservationSpec, OrderReservationStatus, AuctioneerStatus
@@ -44,6 +44,7 @@ from .robotrequestcontroller import RobotRequestController
 from .orderreservationcontroller import OrderReservationController
 from .orderauctioncontroller import OrderAuctionController
 from .auctioneercontroller import AuctioneerController
+from .robotcontroller import RobotController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -61,7 +62,7 @@ class EWMOrderManager:
     def __init__(
             self, oc: OrderController, rc: RobotRequestController,
             orc: OrderReservationController, oac: OrderAuctionController,
-            auc: AuctioneerController) -> None:
+            auc: AuctioneerController, roc: RobotController) -> None:
         """Construct."""
         self.init_odata_fromenv()
 
@@ -79,6 +80,7 @@ class EWMOrderManager:
         self.orderreservationcontroller = orc
         self.orderauctioncontroller = oac
         self.auctioneercontroller = auc
+        self.robotcontroller = roc
 
         # Register callback functions
         # Warehouse order status callback
@@ -167,21 +169,59 @@ class EWMOrderManager:
             return
         # Get statusdata if available
         if custom_res.get('status', {}).get('data'):
-            status = structure(custom_res['status']['data'], RequestFromRobot)
+            status = structure(custom_res['status'], RequestFromRobotStatus)
         else:
-            status = RequestFromRobot(request.lgnum, request.rsrc)
+            status_data = RequestFromRobot(request.lgnum, request.rsrc)
+            status = RequestFromRobotStatus(status_data)
 
         # Return if request was already processed
         if self.msg_mem.check_robotrequest_processed(name, status):
-            _LOGGER.info('Robot request "%s" already processed before - skip', name)
+            _LOGGER.debug('Robot request "%s" already processed in previous run - skip', name)
             return
 
         robotident = RobotIdentifier(request.lgnum, request.rsrc)
+        robot = request.rsrc.lower()
+
+        # If robot is not available or last status update is too old return
+        robot_status = self.robotcontroller.get_robot_status(robot)
+        if robot_status.robot.state != RobcoRobotStates.STATE_AVAILABLE:
+            if status.status != RequestFromRobotStatus.STATE_WAITING:
+                _LOGGER.error(
+                    'Robot %s is in state %s. Wait processing robotrequest %s', robot,
+                    robot_status.robot.state, name)
+                status.status = RequestFromRobotStatus.STATE_WAITING
+                self.robotrequestcontroller.update_status(name, unstructure(status))
+                self.msg_mem.memorize_robotrequest(name, status)
+            return
+
+        try:
+            update_time = isoparse(robot_status.robot.updateTime)
+        except ValueError:
+            if status.status != RequestFromRobotStatus.STATE_WAITING:
+                _LOGGER.error(
+                    'Unable to determine updateTime in CR status of robot %s. Not processing '
+                    'robotrequest %s', robot, name)
+                status.status = RequestFromRobotStatus.STATE_WAITING
+                self.robotrequestcontroller.update_status(name, unstructure(status))
+                self.msg_mem.memorize_robotrequest(name, status)
+            return
+        else:
+            if update_time + timedelta(minutes=2) < datetime.now(timezone.utc):
+                if status.status != RequestFromRobotStatus.STATE_WAITING:
+                    _LOGGER.error(
+                        'Last status update time of robot %s is more older than 2 minutes ago. '
+                        'Wait processing robotrequest %s', robot, name)
+                    status.status = RequestFromRobotStatus.STATE_WAITING
+                    self.robotrequestcontroller.update_status(name, unstructure(status))
+                    self.msg_mem.memorize_robotrequest(name, status)
+                return
+
         # Determine if it is the first request
         self.msg_mem.request_count[name] += 1
         firstrequest = bool(self.msg_mem.request_count[name] == 1)
+
         # Request work, when robot is asking
-        if request.requestnewwho and not status.requestnewwho:
+        if request.requestnewwho and not status.data.requestnewwho:
             if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
                 _LOGGER.info(
                     'Order auction process running for robot %s, only looking for already assigned'
@@ -194,8 +234,8 @@ class EWMOrderManager:
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=firstrequest, newwho=False, onlynewwho=True)
             if success:
-                status.requestnewwho = True
-        elif request.requestwork and not status.requestwork:
+                status.data.requestnewwho = True
+        elif request.requestwork and not status.data.requestwork:
             if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
                 _LOGGER.info(
                     'Order auction process running for robot %s, only looking for already assigned'
@@ -208,10 +248,10 @@ class EWMOrderManager:
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=firstrequest, newwho=True, onlynewwho=False)
             if success:
-                status.requestwork = True
+                status.data.requestwork = True
 
         # Check if warehouse order was completed
-        if request.notifywhocompletion and not status.notifywhocompletion:
+        if request.notifywhocompletion and not status.data.notifywhocompletion:
             notfound = False
             try:
                 who = self.ewmwho.get_warehouseorder(
@@ -222,7 +262,7 @@ class EWMOrderManager:
                 if who.status not in ['D', '']:
                     notfound = True
             if notfound:
-                status.notifywhocompletion = request.notifywhocompletion
+                status.data.notifywhocompletion = request.notifywhocompletion
                 _LOGGER.info(
                     'Warehouse order %s was confirmed, notifying robot "%s"',
                     request.notifywhocompletion, robotident.rsrc)
@@ -230,24 +270,24 @@ class EWMOrderManager:
                 self.cleanup_who(WhoIdentifier(robotident.lgnum, request.notifywhocompletion))
 
         # Check if warehouse task was completed
-        if request.notifywhtcompletion and not status.notifywhtcompletion:
+        if request.notifywhtcompletion and not status.data.notifywhtcompletion:
             try:
                 self.ewmwho.get_openwarehousetask(robotident.lgnum, request.notifywhtcompletion)
             except NotFoundError:
-                status.notifywhtcompletion = request.notifywhtcompletion
+                status.data.notifywhtcompletion = request.notifywhtcompletion
                 _LOGGER.info(
                     'Warehouse task %s was confirmed, notifying robot "%s"',
                     request.notifywhtcompletion, robotident.rsrc)
 
         # Save processing status to CR
-        if request == status:
-            self.robotrequestcontroller.update_status(
-                name, unstructure(status), process_complete=True)
+        if request == status.data:
+            status.status = RequestFromRobotStatus.STATE_PROCESSED
+            self.robotrequestcontroller.update_status(name, unstructure(status))
             self.msg_mem.memorize_robotrequest(name, status)
-            self.msg_mem.delete_robotrequest_from_memory(name, status)
+            self.msg_mem.delete_robotrequest_from_memory(name)
         else:
-            self.robotrequestcontroller.update_status(
-                name, unstructure(status), process_complete=False)
+            status.status = RequestFromRobotStatus.STATE_RUNNING
+            self.robotrequestcontroller.update_status(name, unstructure(status))
             self.msg_mem.memorize_robotrequest(name, status)
 
     def confirm_warehousetask(self, whtask: ConfirmWarehouseTask) -> None:

@@ -133,18 +133,19 @@ class RequestFromRobotStatus:
 
     STATE_PROCESSED = 'PROCESSED'
     STATE_RUNNING = 'RUNNING'
+    STATE_WAITING = 'WAITING'
 
     # Status of request
     data: RequestFromRobot = attr.ib(validator=validate_annotation)
     # Processing status
-    status: str = attr.ib()
+    status: str = attr.ib(default=STATE_RUNNING)
 
     @status.validator
     def validate_status(self, attribute, value) -> None:
         """Validate confirmation."""
         cls = self.__class__
-        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING]:
-            raise ValueError('Attribute "status" must be RUNNING or PROCESSED')
+        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING, cls.STATE_WAITING]:
+            raise ValueError('Attribute "status" must be WATING, RUNNING or PROCESSED')
 
 
 @attr.s
@@ -211,3 +212,28 @@ class RobcoRobotStates:
     STATE_AVAILABLE = 'AVAILABLE'
     STATE_EMERGENCY_STOP = 'EMERGENCY_STOP'
     STATE_ERROR = 'ERROR'
+    VALID_STATES = [
+        STATE_UNDEFINED, STATE_UNAVAILABLE, STATE_AVAILABLE, STATE_EMERGENCY_STOP, STATE_ERROR]
+
+
+@attr.s
+class RobcoRobotCRStatusRobot:
+    """Robot attribute in status of Robco robot CR."""
+
+    # pylint: disable=invalid-name
+    batteryPercentage: float = attr.ib(default=0.0, validator=validate_annotation)
+    lastStateChangeTime: str = attr.ib(
+        default='1970-01-01T00:00:00.000000Z', validator=validate_annotation, converter=strstrip)
+    state: str = attr.ib(
+        default=RobcoRobotStates.STATE_UNDEFINED,
+        validator=attr.validators.in_(RobcoRobotStates.VALID_STATES), converter=strstrip)
+    updateTime: str = attr.ib(
+        default='1970-01-01T00:00:00.000000Z', validator=validate_annotation, converter=strstrip)
+
+
+@attr.s
+class RobcoRobotCRStatus:
+    """Status of Robco robot CR."""
+
+    robot: RobcoRobotCRStatusRobot = attr.ib(
+        default=attr.Factory(RobcoRobotCRStatusRobot), validator=validate_annotation)

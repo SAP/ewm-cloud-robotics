@@ -26,6 +26,7 @@ from robcoewmordermanager.orderreservationcontroller import OrderReservationCont
 from robcoewmordermanager.orderauctioncontroller import OrderAuctionController
 from robcoewmordermanager.auctioneercontroller import AuctioneerController
 from robcoewmordermanager.manager import EWMOrderManager
+from robcoewmordermanager.robotcontroller import RobotController
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -71,16 +72,18 @@ def run_ordermanager():
     k8s_orc = OrderReservationController()
     k8s_oac = OrderAuctionController()
     k8s_auc = AuctioneerController()
+    k8s_roc = RobotController()
 
     # Create order manager instance
-    manager = EWMOrderManager(k8s_oc, k8s_rc, k8s_orc, k8s_oac, k8s_auc)
+    manager = EWMOrderManager(k8s_oc, k8s_rc, k8s_orc, k8s_oac, k8s_auc, k8s_roc)
 
     # Start
-    manager.ordercontroller.run(reprocess=True, multiple_executor_threads=True)
-    manager.robotrequestcontroller.run(reprocess=True, multiple_executor_threads=True)
-    manager.orderreservationcontroller.run(reprocess=True, multiple_executor_threads=True)
-    manager.orderauctioncontroller.run(reprocess=False, multiple_executor_threads=False)
+    manager.robotcontroller.run(reprocess=False, multiple_executor_threads=False)
     manager.auctioneercontroller.run(reprocess=False, multiple_executor_threads=False)
+    manager.orderauctioncontroller.run(reprocess=False, multiple_executor_threads=False)
+    manager.ordercontroller.run(reprocess=True, multiple_executor_threads=True)
+    manager.orderreservationcontroller.run(reprocess=True, multiple_executor_threads=True)
+    manager.robotrequestcontroller.run(reprocess=True, multiple_executor_threads=True)
 
     _LOGGER.info('SAP EWM Order Manager started')
 
@@ -116,6 +119,11 @@ def run_ordermanager():
                     'Uncovered exception in "%s" thread of auctioneercontroller. Raising it'
                     ' in main thread', k)
                 raise exc
+            for k, exc in manager.robotcontroller.thread_exceptions.items():
+                _LOGGER.error(
+                    'Uncovered exception in "%s" thread of robotcontroller. Raising it'
+                    ' in main thread', k)
+                raise exc
             # Sleep maximum 1.0 second
             loop_control.sleep(1.0)
     except KeyboardInterrupt:
@@ -130,6 +138,7 @@ def run_ordermanager():
         manager.orderreservationcontroller.stop_watcher()
         manager.orderauctioncontroller.stop_watcher()
         manager.auctioneercontroller.stop_watcher()
+        manager.robotcontroller.stop_watcher()
 
 
 if __name__ == '__main__':

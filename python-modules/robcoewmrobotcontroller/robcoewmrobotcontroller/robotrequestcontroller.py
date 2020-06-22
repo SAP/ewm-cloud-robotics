@@ -190,7 +190,8 @@ class RobotRequestController(K8sCRHandler):
             # Already in status PROCESSED no need for cleanup
             if self._processed_robotrequests.get(name) == RequestFromRobotStatus.STATE_PROCESSED:
                 return
-        elif custom_res['status'].get('status') == RequestFromRobotStatus.STATE_RUNNING:
+        elif custom_res['status'].get('status') in [
+                RequestFromRobotStatus.STATE_RUNNING, RequestFromRobotStatus.STATE_WAITING]:
             if self._processed_robotrequests.get(name):
                 with self._processed_robotrequests_lock:
                     self._processed_robotrequests.pop(name, None)

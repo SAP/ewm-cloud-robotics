@@ -174,7 +174,8 @@ func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Resu
 
 	// If there is no RunTimeEstimation request, create a new one
 	if len(runTimeEstimations.Items) == 0 {
-		log.Info().Msgf("No RunTimeEstimation CR for OrderAuction %s found, creating a new request", auction.GetName())
+		log.Info().Msgf("New OrderAuction %q with %v warehouse orders arrived", auction.GetName(), len(auction.Spec.WarehouseOrders))
+		log.Info().Msgf("No RunTimeEstimation CR for OrderAuction %q found, creating a new request", auction.GetName())
 		err = r.requestRunTimeEstimation(ctx, &auction)
 		if err != nil {
 			log.Error().Err(err).Msg("Error request RunTimeEstimation")

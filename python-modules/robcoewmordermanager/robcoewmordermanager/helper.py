@@ -19,7 +19,7 @@ from typing import Dict, List, DefaultDict
 
 from collections import defaultdict, namedtuple, OrderedDict
 
-from robcoewmtypes.robot import RequestFromRobot
+from robcoewmtypes.robot import RequestFromRobotStatus
 from robcoewmtypes.warehouseorder import ConfirmWarehouseTask
 from robcoewminterface.exceptions import NoOrderFoundError
 
@@ -49,7 +49,7 @@ class ProcessedMessageMemory:
         self.deleted_whos: OrderedDict[  # pylint: disable=unsubscriptable-object
             WhoIdentifier, float] = OrderedDict()
         # Robot requests
-        self.robotrequests: Dict[str, RequestFromRobot] = {}
+        self.robotrequests: Dict[str, RequestFromRobotStatus] = {}
         self.deleted_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
             str, float] = OrderedDict()
         self.request_count: DefaultDict[str, int] = defaultdict(int)
@@ -75,19 +75,20 @@ class ProcessedMessageMemory:
             who, _ = self.deleted_whos.popitem(last=False)
             self.who_confirmations.pop(who, None)
 
-    def memorize_robotrequest(self, requestident: str, robotrequest: RequestFromRobot) -> None:
+    def memorize_robotrequest(
+            self, requestident: str, robotrequest: RequestFromRobotStatus) -> None:
         """Memorize robot request."""
         self.robotrequests[requestident] = robotrequest
 
     def check_robotrequest_processed(
-            self, requestident: str, robotrequest: RequestFromRobot) -> bool:
+            self, requestident: str, robotrequest: RequestFromRobotStatus) -> bool:
         """Check if robotrequest was processed before."""
-        processed_request = self.robotrequests.get(
-            requestident, RequestFromRobot(robotrequest.lgnum, robotrequest.rsrc))
+        processed_request = self.robotrequests.get(requestident)
+        if processed_request is None:
+            return False
         return bool(robotrequest != processed_request)
 
-    def delete_robotrequest_from_memory(
-            self, requestident: str, robotrequest: RequestFromRobot) -> None:
+    def delete_robotrequest_from_memory(self, requestident: str) -> None:
         """Delete robotrequest from memory."""
         # Save timestamp when the robotrequest was deleted
         self.deleted_robotrequests[requestident] = time.time()

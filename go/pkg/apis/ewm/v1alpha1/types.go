@@ -297,6 +297,7 @@ type RobotRequestStatusStatus string
 
 // Values for RobotRequestStatusStatus
 const (
+	RobotRequestStatusWaiting   RobotRequestStatusStatus = "WAITING"
 	RobotRequestStatusRunning   RobotRequestStatusStatus = "RUNNING"
 	RobotRequestStatusProcessed RobotRequestStatusStatus = "PROCESSED"
 )

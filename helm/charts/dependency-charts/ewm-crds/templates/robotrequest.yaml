@@ -79,6 +79,7 @@ spec:
             status:
               type: string
               enum:
+                - WAITING
                 - RUNNING
                 - PROCESSED
   additionalPrinterColumns:
