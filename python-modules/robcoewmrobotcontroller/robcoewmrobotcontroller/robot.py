@@ -126,6 +126,9 @@ class EWMRobot:
         if not state_restore.statemachine:
             _LOGGER.info('No state to restore')
             return None
+        if state_restore.statemachine in RobotEWMConfig.idle_states:
+            _LOGGER.info('Robot is in an idle state, which is not restored.')
+            return None
 
         valid_state = ValidStateRestore(state_restore)
 
