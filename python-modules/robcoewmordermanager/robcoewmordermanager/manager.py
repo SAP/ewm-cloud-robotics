@@ -209,7 +209,7 @@ class EWMOrderManager:
             if update_time + timedelta(minutes=2) < datetime.now(timezone.utc):
                 if status.status != RequestFromRobotStatus.STATE_WAITING:
                     _LOGGER.error(
-                        'Last status update time of robot %s is more older than 2 minutes ago. '
+                        'Last status update time of robot %s is older than 2 minutes. '
                         'Wait processing robotrequest %s', robot, name)
                     status.status = RequestFromRobotStatus.STATE_WAITING
                     self.robotrequestcontroller.update_status(name, unstructure(status))
