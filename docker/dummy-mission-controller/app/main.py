@@ -65,7 +65,7 @@ def main() -> None:
         mc.run_missioncontroller()
     except Exception:  # pylint: disable=broad-except
         exc_info = sys.exc_info()
-        _LOGGER.fatal(
+        _LOGGER.critical(
             'Unexpected error "%s" - "%s" - TRACEBACK: \n %s', exc_info[0],
             exc_info[1], traceback.format_exception(*exc_info))
         sys.exit('Application terminated with exception: "{}" - "{}"'.format(

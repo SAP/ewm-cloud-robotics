@@ -92,7 +92,7 @@ if __name__ == '__main__':
         run_missioncontroller()
     except Exception:  # pylint: disable=broad-except
         EXC_INFO = sys.exc_info()
-        _LOGGER.fatal(
+        _LOGGER.critical(
             'Unexpected error "%s" - "%s" - TRACEBACK: %s', EXC_INFO[0],
             EXC_INFO[1], traceback.format_exception(*EXC_INFO))
         sys.exit('Application terminated with exception: "{}" - "{}"'.format(
