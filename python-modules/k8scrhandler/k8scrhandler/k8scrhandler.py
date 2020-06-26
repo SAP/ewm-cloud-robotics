@@ -161,7 +161,7 @@ class K8sCRHandler:
         self.thread_exceptions: Dict[str, Exception] = {}
         # Init threads
         self.watcher_thread = threading.Thread(target=self._watch_on_crs_loop, daemon=True)
-        self.reprocess_thread = threading.Thread(target=self._reprocess_crs_loop)
+        self.reprocess_thread = threading.Thread(target=self._reprocess_crs_loop, daemon=True)
         # Control flag for thread
         self.thread_run = True
         self.executor = ThreadPoolExecutor(max_workers=1)
