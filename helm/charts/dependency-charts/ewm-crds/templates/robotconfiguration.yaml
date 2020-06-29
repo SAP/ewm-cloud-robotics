@@ -50,6 +50,7 @@ spec:
             - batteryIdle
             - maxIdleTime
             - recoverFromRobotError
+            - mode
           properties:
             lgnum:
               type: string
@@ -71,6 +72,13 @@ spec:
               type: number
             recoverFromRobotError:
               type: boolean
+            mode:
+              type: string
+              enum:
+                - RUN
+                - IDLE
+                - CHARGE
+                - STOP
         status:
           type: object
           properties:

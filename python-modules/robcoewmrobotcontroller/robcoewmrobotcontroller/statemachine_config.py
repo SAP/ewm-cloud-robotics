@@ -37,9 +37,10 @@ class RobotEWMConfig:
     t_pickpackpass_who_with_tasks = 'pickpackpass_who_with_tasks'
     t_new_active_sub_who = 'new_active_sub_who'
     t_charge_battery = 'charge_battery'
+    t_charging_canceled = 'charging_canceled'
     t_go_staging = 'go_staging'
     t_too_many_failed_whos = 'too_many_failed_whos'
-    t_request_work = 'request_work'
+    t_staging_timeout = 'staging_timeout'
     t_recover_robot = 'recover_robot'
     t_unassign_whos = 'unassign_whos'
 
@@ -59,7 +60,7 @@ class RobotEWMConfig:
     # states for state machine
     states = [
         'robotError', 'movingToStaging', 'charging',
-        {'name': 'atStaging', 'timeout': 300, 'on_timeout': t_request_work},
+        {'name': 'atStaging', 'timeout': 300, 'on_timeout': t_staging_timeout},
         {'name': 'idle', 'timeout': 15, 'on_timeout': t_go_staging},
         {'name': p_moveTrolley, 'children': [
             'movingToSourceBin', 'movingToTargetBin', 'loadingTrolley', 'unloadingTrolley',
@@ -141,7 +142,7 @@ class RobotEWMConfig:
          'source': 'movingToStaging',
          'dest': 'idle',
          'conditions': '_max_mission_errors_reached'},
-        {'trigger': t_request_work,
+        {'trigger': t_staging_timeout,
          'source': 'atStaging',
          'dest': 'atStaging'},
         {'trigger': t_charge_battery,
@@ -149,7 +150,7 @@ class RobotEWMConfig:
          'dest': 'charging',
          'before': ['_cancel_request_work', '_send_unassign_whos_request']},
         {'trigger': t_unassign_whos,
-         'source': 'charging',
+         'source': [*idle_states, 'movingToStaging', 'charging'],
          'dest': None,
          'before': '_send_unassign_whos_request'},
         {'trigger': t_mission_succeeded,
@@ -165,6 +166,9 @@ class RobotEWMConfig:
          'dest': 'idle',
          'conditions': '_max_mission_errors_reached',
          'before': '_set_next_charger'},
+        {'trigger': t_charging_canceled,
+         'source': 'charging',
+         'dest': 'idle'},
         {'trigger': t_mission_succeeded,
          'source': 'robotError',
          'dest': None},

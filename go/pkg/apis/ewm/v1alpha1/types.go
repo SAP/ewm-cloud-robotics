@@ -232,15 +232,16 @@ type RobotConfigurationList struct {
 
 // RobotConfigurationSpec represents the spec of RobotConfiguration CRD
 type RobotConfigurationSpec struct {
-	Lgnum                 string   `json:"lgnum"`
-	Rsrctype              string   `json:"rsrctype"`
-	Rsrcgrp               string   `json:"rsrcgrp"`
-	Chargers              []string `json:"chargers"`
-	BatteryMin            float64  `json:"batteryMin"`
-	BatteryOk             float64  `json:"batteryOk"`
-	BatteryIdle           float64  `json:"batteryIdle"`
-	MaxIdleTime           float64  `json:"maxIdleTime"`
-	RecoverFromRobotError bool     `json:"recoverFromRobotError"`
+	Lgnum                 string                 `json:"lgnum"`
+	Rsrctype              string                 `json:"rsrctype"`
+	Rsrcgrp               string                 `json:"rsrcgrp"`
+	Chargers              []string               `json:"chargers"`
+	BatteryMin            float64                `json:"batteryMin"`
+	BatteryOk             float64                `json:"batteryOk"`
+	BatteryIdle           float64                `json:"batteryIdle"`
+	MaxIdleTime           float64                `json:"maxIdleTime"`
+	RecoverFromRobotError bool                   `json:"recoverFromRobotError"`
+	Mode                  RobotConfigurationMode `json:"mode"`
 }
 
 // RobotConfigurationStatus represents the status of RobotConfiguration CRD
@@ -252,6 +253,17 @@ type RobotConfigurationStatus struct {
 	Tanum        string `json:"tanum"`
 	Who          string `json:"who"`
 }
+
+// RobotConfigurationMode describes the operating mode of a robot
+type RobotConfigurationMode string
+
+// Values for RobotConfigurationMode
+const (
+	RobotConfigurationModeRun    RobotConfigurationMode = "RUN"
+	RobotConfigurationModeIdle   RobotConfigurationMode = "IDLE"
+	RobotConfigurationModeCharge RobotConfigurationMode = "CHARGE"
+	RobotConfigurationModeStop   RobotConfigurationMode = "STOP"
+)
 
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

@@ -176,6 +176,12 @@ class RobotMission:
 class RobotConfigurationSpec:
     """Current spec of warehouse robots state machine."""
 
+    MODE_RUN = 'RUN'
+    MODE_IDLE = 'IDLE'
+    MODE_CHARGE = 'CHARGE'
+    MODE_STOP = 'STOP'
+    VALID_MODES = [MODE_RUN, MODE_IDLE, MODE_CHARGE, MODE_STOP]
+
     # pylint: disable=invalid-name
     lgnum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     rsrctype: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
@@ -185,6 +191,8 @@ class RobotConfigurationSpec:
     batteryIdle: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
     maxIdleTime: float = attr.ib(default=0.0, validator=validate_annotation, converter=float)
     recoverFromRobotError: bool = attr.ib(default=False, validator=validate_annotation)
+    mode: str = attr.ib(
+        default=MODE_STOP, validator=attr.validators.in_(VALID_MODES), converter=strstrip)
     chargers: List[str] = attr.ib(
         default=attr.Factory(list), validator=attr.validators.deep_iterable(
             member_validator=attr.validators.instance_of(str),

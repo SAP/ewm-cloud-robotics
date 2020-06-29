@@ -17,7 +17,8 @@
         "rsrctype": "",
         "maxIdleTime": 0,
         "chargers": [ "" ],
-        "recoverFromRobotError": false
+        "recoverFromRobotError": false,
+        "mode": "STOP"
     },
     "status": {}
 }

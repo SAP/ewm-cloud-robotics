@@ -19,7 +19,7 @@ import time
 import threading
 
 from collections import OrderedDict
-from typing import Dict, Generator
+from typing import Dict, Generator, Optional
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.robot import RobotMission, RobcoRobotStates
@@ -270,12 +270,17 @@ class RobCoMissionAPI(K8sCRHandler):
         # Create mission
         return self._create_mission(spec)
 
-    def api_charge_robot(self) -> str:
+    def api_charge_robot(self, target_battery: Optional[float] = None) -> str:
         """Charge robot at the charging position."""
+        target_b = self.robot_config.conf.batteryOk
+        threshold_b = self.robot_config.conf.batteryIdle
+        if target_battery is not None:
+            target_b = target_battery
+            threshold_b = 100
         # Get relevant parameters
         action = {'charge': {'chargerName': self.charger,
-                             'thresholdBatteryPercent': self.robot_config.conf.batteryIdle,
-                             'targetBatteryPercent': self.robot_config.conf.batteryOk}}
+                             'thresholdBatteryPercent': threshold_b,
+                             'targetBatteryPercent': target_b}}
         spec = {'actions': [action]}
         # Create mission
         return self._create_mission(spec)

@@ -497,7 +497,7 @@ func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) 
 			log.Debug().Msgf("Robot %q is in scope of Auctioneer %q", rc.GetName(), a.GetName())
 			robotStates.isInScope[rc.GetName()] = true
 			// Add robot to available robots if not unavailable according to ewm state machine and available in robot CR
-			if !statemachineUnavailable[rc.Status.Statemachine] && isRobotAvailable[rc.GetName()] {
+			if rc.Spec.Mode == ewm.RobotConfigurationModeRun && !statemachineUnavailable[rc.Status.Statemachine] && isRobotAvailable[rc.GetName()] {
 				log.Debug().Msgf("Robot %q is available", rc.GetName())
 				robotStates.isAvailable[rc.GetName()] = true
 			}

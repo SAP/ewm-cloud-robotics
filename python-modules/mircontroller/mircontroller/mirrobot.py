@@ -329,7 +329,11 @@ class MiRRobot:
         else:
             json_resp = http_resp.json()
             self.active_map = '/v2.0.0/maps/{id}'.format(id=json_resp['map_id'])
-            self.battery_percentage = json_resp['battery_percentage']
+            # Don't update battery percentage when it is -1.
+            # This happens when EMERGENCY_STOP button is pressed
+            self.battery_percentage = json_resp[
+                'battery_percentage'] if json_resp[
+                    'battery_percentage'] != -1 else self.battery_percentage
             self.angular_speed = json_resp['velocity']['angular']
             self.linear_speed = json_resp['velocity']['linear']
             self.pos_x = json_resp['position']['x']

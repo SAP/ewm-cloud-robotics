@@ -148,7 +148,9 @@ class RobotEWMMachine(Machine):
         self.mission_api.register_callback(
             name, ['ADDED', 'MODIFIED', 'DELETED', 'REPROCESS'], self.mission_cb)
         self.robot_config.register_callback(
-            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotconfiguration_cb)
+            name+'_recover', ['ADDED', 'MODIFIED', 'REPROCESS'], self.cfg_recover_cb)
+        self.robot_config.register_callback(
+            name+'_staging_timeout', ['ADDED', 'MODIFIED'], self.cfg_idle_charge_states_cb)
 
     def disconnect_external_events(self) -> None:
         """Disconnect state machine from external events sources of Cloud Robotics."""
@@ -241,14 +243,29 @@ class RobotEWMMachine(Machine):
                             'self.warehouseorders includes an element of type "{}"'.format(
                                 type(next_who_crd)))
 
-    def robotconfiguration_cb(self, name: str, custom_res: Dict) -> None:
-        """Process robotconfiguration messages."""
+    def cfg_recover_cb(self, name: str, custom_res: Dict) -> None:
+        """Process robotconfiguration messages - recover robot."""
         cls = self.__class__
         # Check if robot should recover from robotError state
         if self.state in cls.conf.error_states:
             if custom_res['spec'].get('recoverFromRobotError'):
                 _LOGGER.info('Robot recovery requested from robotconfiguration CR')
                 self.recover_robot()
+
+    def cfg_idle_charge_states_cb(self, name: str, custom_res: Dict) -> None:
+        """Process robotconfiguration messages - request work."""
+        if self.robot_config.conf.mode == self.robot_config.conf.MODE_RUN:
+            # Request work if robot is at staging position
+            if self.state == 'atStaging':
+                self.staging_timeout()
+            # Cancel charging mission if mode is RUN and battery is loaded
+            elif self.state == 'charging':
+                if self.mission_api.battery_percentage >= self.robot_config.conf.batteryOk:
+                    _LOGGER.info(
+                        'Battery is loaded at %s percent, cancel charge mission',
+                        self.mission_api.battery_percentage)
+                    self.cancel_active_mission()
+                    self.charging_canceled()
 
     def robotrequest_cb(self, name: str, custom_res: Dict) -> None:
         """Process robotrequest messages."""
@@ -339,7 +356,12 @@ class RobotEWMMachine(Machine):
         # Update active warehouse order
         # No warehouse order in process and received order is assigned to robot
         if self.active_who is None:
-            if self.state == 'movingToStaging':
+            if self.robot_config.conf.mode != self.robot_config.conf.MODE_RUN:
+                _LOGGER.info(
+                    'Robot is in mode %s and not active, unassign warehouse order %s',
+                    self.robot_config.conf.mode, warehouseorder.who)
+                self.unassign_whos()
+            elif self.state == 'movingToStaging':
                 _LOGGER.info(
                     'New warehouse order %s received while robot is on its way to staging area, '
                     'cancel move mission and start processing', warehouseorder.who)
@@ -722,7 +744,15 @@ class RobotEWMMachine(Machine):
     def _decide_whats_next(self, event: EventData) -> None:
         """Decide what the robot should do next."""
         cls = self.__class__
-        if self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
+        if self.robot_config.conf.mode == self.robot_config.conf.MODE_CHARGE:
+            _LOGGER.info(
+                'Robot is in CHARGE mode, battery percentage is %s, start charging',
+                self.mission_api.battery_percentage)
+            # Cancel active mission before charging if there might be one
+            if event.transition.dest not in cls.conf.idle_states:
+                self.cancel_active_mission()
+            self.charge_battery(target_battery=90.0)
+        elif self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
             _LOGGER.info(
                 'Battery level %s is below minimum of %s, start charging',
                 self.mission_api.battery_percentage, self.robot_config.conf.batteryMin)
@@ -730,6 +760,9 @@ class RobotEWMMachine(Machine):
             if event.transition.dest not in cls.conf.idle_states:
                 self.cancel_active_mission()
             self.charge_battery()
+        elif self.robot_config.conf.mode == self.robot_config.conf.MODE_STOP:
+            _LOGGER.info('Robot is in mode STOP, unassign warehouse orders')
+            self.unassign_whos()
         elif self.failed_warehouseorders > 3:
             _LOGGER.error(
                 'Too many consecutive failed warehouse orders (%s). Robot enters error state',
@@ -744,8 +777,13 @@ class RobotEWMMachine(Machine):
                 raise TypeError(
                     'self.warehouseorders includes an element of type "{}"'.format(
                         type(next_who_crd)))
-        elif self.mission_api.api_check_state_ok():
-            self._request_work(event)
+        elif self.robot_config.conf.mode == self.robot_config.conf.MODE_RUN:
+            if self.mission_api.api_check_state_ok():
+                self._request_work(event)
+            else:
+                _LOGGER.error('Robot is in a not available state, not requesting work')
+        elif self.robot_config.conf.mode == self.robot_config.conf.MODE_IDLE:
+            _LOGGER.info('Robot is in IDLE mode, not requesting work')
 
     def _increase_mission_errorcount(self, event: EventData) -> None:
         """Increase errorcount for the state which triggered the event."""
@@ -786,9 +824,13 @@ class RobotEWMMachine(Machine):
 
     def _create_charge_mission(self, event: EventData) -> None:
         """Create a RobCo charge mission."""
+        target_battery = event.kwargs.get('target_battery')
         if self.active_mission:
             _LOGGER.error('Active mission %s overwritten', self.active_mission)
-        self.active_mission = self.mission_api.api_charge_robot()
+        if isinstance(target_battery, float):
+            self.active_mission = self.mission_api.api_charge_robot(target_battery=target_battery)
+        else:
+            self.active_mission = self.mission_api.api_charge_robot()
         _LOGGER.info('Created charge mission %s', self.active_mission)
 
     def _create_staging_mission(self, event: EventData) -> None:
