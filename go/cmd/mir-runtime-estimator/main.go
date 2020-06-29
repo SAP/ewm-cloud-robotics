@@ -12,6 +12,7 @@ package main
 import (
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -49,8 +50,16 @@ func getMirClient() (*mirv2.Client, error) {
 		return nil, errors.New("Environment variable MIR_PASSWORD is not set")
 	}
 
-	// Big timeout because GET /paths endpoint could get slow
-	mirClient, err := mirv2.NewClient(mirHost, mirUser, mirPassword, "mir-runtime-estimator", 30.0)
+	mirHTTPTimeout := os.Getenv("MIR_HTTP_TIMEOUT")
+
+	httpTimeout, err := strconv.ParseFloat(mirHTTPTimeout, 64)
+	if err != nil {
+		// Big default timeout because GET /paths endpoint could get slow
+		httpTimeout = 60
+	}
+	log.Info().Msgf("Timeout for MiR HTTP API set to %v seconds", httpTimeout)
+
+	mirClient, err := mirv2.NewClient(mirHost, mirUser, mirPassword, "mir-runtime-estimator", httpTimeout)
 	if err != nil {
 		return nil, errors.Wrapf(err, "NewClient")
 	}

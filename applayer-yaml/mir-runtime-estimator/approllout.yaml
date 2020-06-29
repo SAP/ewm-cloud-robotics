@@ -23,5 +23,6 @@ spec:
         miruser: "" # User to connect to MiR API
         mirpassword: "" # Password for MiR user
         mirhost: "" # Host name of MiR API
+        mirhttptimeout: "60" # Timeout in seconds for MIR HTTP API
         mirpreservepathguides: "false" # Preserve temporary created Path Guides on MiR Robot (only for debugging)
 ---

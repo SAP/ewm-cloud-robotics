@@ -46,6 +46,8 @@ spec:
               key: mirpswd
         - name: ROBCO_ROBOT_NAME
           value: "{{ .Values.robot.name }}"
+        - name: MIR_HTTP_TIMEOUT
+          value: "{{ .Values.envs.mirhttptimeout }}"
         - name: MIR_PERSERVE_PATHGUIDES
           value: "{{ .Values.envs.mirpreservepathguides }}"
         - name: PRECALC_PATHS_WHEN_IDLE

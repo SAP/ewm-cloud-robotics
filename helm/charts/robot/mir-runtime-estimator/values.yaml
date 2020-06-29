@@ -7,6 +7,7 @@ envs:
   miruser: "admin"
   mirpassword: ""
   mirhost: "mir-api.default.svc.cluster.local"
+  mirhttptimeout: "60"
   mirpreservepathguides: "false"
   precalcpathswhenidle: "true"
   zerologconfig: "json"
