@@ -2,4 +2,4 @@ module github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig
 
 go 1.14
 
-require github.com/rs/zerolog v1.18.0
+require github.com/rs/zerolog v1.19.0

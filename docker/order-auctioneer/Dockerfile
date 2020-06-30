@@ -5,6 +5,7 @@ FROM golang:1.14-alpine as builder
 RUN apk add --no-cache git ca-certificates
 # Build Go app
 COPY ./go/pkg/zerologconfig $GOPATH/src/pkg/zerologconfig
+COPY ./go/pkg/zerologr $GOPATH/src/pkg/zerologr
 COPY ./go/pkg/apis $GOPATH/src/pkg/apis
 COPY ./go/cmd/order-auctioneer $GOPATH/src/cmd/order-auctioneer
 WORKDIR $GOPATH/src/cmd/order-auctioneer
