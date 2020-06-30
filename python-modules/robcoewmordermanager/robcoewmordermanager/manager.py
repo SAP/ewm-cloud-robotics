@@ -223,9 +223,11 @@ class EWMOrderManager:
         # Request work, when robot is asking
         if request.requestnewwho and not status.data.requestnewwho:
             if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
-                _LOGGER.info(
-                    'Order auction process running for robot %s, only looking for already assigned'
-                    ' warehouse orders for robot request %s', robotident.rsrc.lower(), name)
+                if firstrequest:
+                    _LOGGER.info(
+                        'Order auction process running for robot %s, only looking for already '
+                        'assigned warehouse orders for robot request %s', robotident.rsrc.lower(),
+                        name)
                 # Ensure that the warehouse orders already assigned to the robot are there
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=firstrequest, newwho=False, onlynewwho=False)
@@ -237,9 +239,11 @@ class EWMOrderManager:
                 status.data.requestnewwho = True
         elif request.requestwork and not status.data.requestwork:
             if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
-                _LOGGER.info(
-                    'Order auction process running for robot %s, only looking for already assigned'
-                    ' warehouse orders for robot request %s', robotident.rsrc.lower(), name)
+                if firstrequest:
+                    _LOGGER.info(
+                        'Order auction process running for robot %s, only looking for already '
+                        'assigned warehouse orders for robot request %s', robotident.rsrc.lower(),
+                        name)
                 # Ensure that the warehouse orders already assigned to the robot are there
                 success = self.get_and_send_robot_whos(
                     robotident, firstrequest=firstrequest, newwho=False, onlynewwho=False)

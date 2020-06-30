@@ -64,10 +64,9 @@ class OrderAuctionController(K8sCRHandler):
         spec = structure(custom_res['spec'], OrderAuctionSpec)
         status = structure(custom_res['status'], OrderAuctionStatus)
 
-        # When auction is OPEN bidstatus should be RUNNING or COMPLETED
+        # When auction is OPEN and bidstatus is COMPLETED, the bid agent is working
         if (spec.auctionstatus == OrderAuctionSpec.STATUS_OPEN
-                and (status.bidstatus == OrderAuctionStatus.STATUS_RUNNING
-                     or status.bidstatus == OrderAuctionStatus.STATUS_COMPLETED)):
+                and status.bidstatus == OrderAuctionStatus.STATUS_COMPLETED):
             self._robot_bid_agent_working[robot] = True
             return
 
@@ -76,6 +75,11 @@ class OrderAuctionController(K8sCRHandler):
              or spec.auctionstatus == OrderAuctionSpec.STATUS_CLOSED)
                 and status.bidstatus == OrderAuctionStatus.STATUS_COMPLETED):
             self._robot_bid_agent_working[robot] = True
+            return
+
+        # Don't change the state when auction is OPEN and bidstatus is RUNNING
+        if (spec.auctionstatus == OrderAuctionSpec.STATUS_OPEN
+                and status.bidstatus == OrderAuctionStatus.STATUS_RUNNING):
             return
 
         self._robot_bid_agent_working[robot] = False
