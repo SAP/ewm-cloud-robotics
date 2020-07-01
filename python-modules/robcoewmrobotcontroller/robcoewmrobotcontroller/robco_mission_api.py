@@ -276,7 +276,7 @@ class RobCoMissionAPI(K8sCRHandler):
         threshold_b = self.robot_config.conf.batteryIdle
         if target_battery is not None:
             target_b = target_battery
-            threshold_b = 100
+            threshold_b = target_battery
         # Get relevant parameters
         action = {'charge': {'chargerName': self.charger,
                              'thresholdBatteryPercent': threshold_b,

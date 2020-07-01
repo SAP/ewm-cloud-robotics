@@ -745,13 +745,18 @@ class RobotEWMMachine(Machine):
         """Decide what the robot should do next."""
         cls = self.__class__
         if self.robot_config.conf.mode == self.robot_config.conf.MODE_CHARGE:
-            _LOGGER.info(
-                'Robot is in CHARGE mode, battery percentage is %s, start charging',
-                self.mission_api.battery_percentage)
-            # Cancel active mission before charging if there might be one
-            if event.transition.dest not in cls.conf.idle_states:
-                self.cancel_active_mission()
-            self.charge_battery(target_battery=90.0)
+            if self.mission_api.battery_percentage < 90.0:
+                _LOGGER.info(
+                    'Robot is in CHARGE mode, battery percentage is %s, start charging',
+                    self.mission_api.battery_percentage)
+                # Cancel active mission before charging if there might be one
+                if event.transition.dest not in cls.conf.idle_states:
+                    self.cancel_active_mission()
+                self.charge_battery(target_battery=100.0)
+            else:
+                _LOGGER.info(
+                    'Robot is in CHARGE mode, battery percentage is over 90 at %s, robot waits',
+                    self.mission_api.battery_percentage)
         elif self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
             _LOGGER.info(
                 'Battery level %s is below minimum of %s, start charging',
@@ -959,7 +964,11 @@ class RobotEWMMachine(Machine):
         _LOGGER.info(
             'Robot starts charge mission at battery level %s %%',
             self.mission_api.battery_percentage)
-        self.create_charge_mission()
+        target_battery = event.kwargs.get('target_battery')
+        if isinstance(target_battery, float):
+            self.create_charge_mission(target_battery=target_battery)
+        else:
+            self.create_charge_mission()
 
     def on_enter_movingToStaging(self, event: EventData) -> None:
         """Move to staging area."""
