@@ -327,8 +327,9 @@ class MissionController(K8sCRHandler):
                 else:
                     _LOGGER.warning('CR of mission %s deleted, cannot update status', name)
                 _LOGGER.error(
-                    'Mission %s on robot %s ended in state %s', name,
-                    self._mir_robot.robco_robot_name, result)
+                    'Mission %s on robot %s ended in state %s with message: %s', name,
+                    self._mir_robot.robco_robot_name, result,
+                    self._active_mission['status'].get('message'))
                 return result
 
         # each action ran successfully
@@ -489,8 +490,9 @@ class MissionController(K8sCRHandler):
         message = state_resp[1]
 
         # Wait until movement was successfull or failed
+        loop_control = MainLoopController()
         while status in (RobcoMissionStates.STATE_ACCEPTED, RobcoMissionStates.STATE_RUNNING):
-            time.sleep(2.0)
+            loop_control.sleep(1.0)
             try:
                 state_resp = self._mir_robot.get_mission_state(mission_queue_id)
             except RequestException:

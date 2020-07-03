@@ -142,12 +142,13 @@ class K8sCRHandler:
         self.resv_watcher = ''
 
         # Callback stack for watch on cr
-        self.callbacks: Dict[str, OrderedDict] = {
-            'ADDED': OrderedDict(),
-            'MODIFIED': OrderedDict(),
-            'DELETED': OrderedDict(),
-            'REPROCESS': OrderedDict()
-            }
+        self.callbacks: Dict[
+            str, OrderedDict[str, Callable]] = {  # pylint: disable=unsubscriptable-object
+                'ADDED': OrderedDict(),
+                'MODIFIED': OrderedDict(),
+                'DELETED': OrderedDict(),
+                'REPROCESS': OrderedDict()
+                }
 
         # JSON template used while creating custom resources
         self.raw_cr = template_cr
@@ -197,7 +198,7 @@ class K8sCRHandler:
             _LOGGER.info('There is no status subresource defined in CRD %s', name)
 
     def register_callback(
-            self, name: str, operations: List, callback: Callable[[Dict], None]) -> None:
+            self, name: str, operations: List, callback: Callable[[str, Dict], None]) -> None:
         """
         Register a callback function.
 
