@@ -790,6 +790,10 @@ class RobotEWMMachine(Machine):
         elif self.robot_config.conf.mode == self.robot_config.conf.MODE_IDLE:
             _LOGGER.info('Robot is in IDLE mode, not requesting work')
 
+    def _batter_empty(self, event: EventData) -> bool:
+        """Check if battery is empty."""
+        return self.mission_api.battery_percentage < self.robot_config.conf.batteryMin
+
     def _increase_mission_errorcount(self, event: EventData) -> None:
         """Increase errorcount for the state which triggered the event."""
         self.error_count[event.state.name] += 1

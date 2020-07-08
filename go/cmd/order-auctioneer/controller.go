@@ -473,7 +473,9 @@ func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) 
 
 	// Check if robot is status available in robot CRD
 	isRobotAvailable := make(map[string]bool)
+	robotBattery := make(map[string]float64)
 	for _, rb := range robots.Items {
+		robotBattery[rb.GetName()] = rb.Status.Robot.BatteryPercentage
 		state := string(rb.Status.Robot.State)
 		if r.deployedRobots[rb.GetName()] && robotAvailable[state] {
 			isRobotAvailable[rb.GetName()] = true
@@ -497,9 +499,16 @@ func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) 
 			log.Debug().Msgf("Robot %q is in scope of Auctioneer %q", rc.GetName(), a.GetName())
 			robotStates.isInScope[rc.GetName()] = true
 			// Add robot to available robots if not unavailable according to ewm state machine and available in robot CR
-			if rc.Spec.Mode == ewm.RobotConfigurationModeRun && !statemachineUnavailable[rc.Status.Statemachine] && isRobotAvailable[rc.GetName()] {
-				log.Debug().Msgf("Robot %q is available", rc.GetName())
-				robotStates.isAvailable[rc.GetName()] = true
+			if rc.Spec.Mode == ewm.RobotConfigurationModeRun && isRobotAvailable[rc.GetName()] {
+				if !statemachineUnavailable[rc.Status.Statemachine] {
+					log.Debug().Msgf("Robot %q is available", rc.GetName())
+					robotStates.isAvailable[rc.GetName()] = true
+				}
+				if rc.Status.Statemachine == "charging" && robotBattery[rc.GetName()] > rc.Spec.BatteryIdle {
+					log.Debug().Msgf("Robot %q is available - charging but battery is above BatteryIdle level", rc.GetName())
+					robotStates.isAvailable[rc.GetName()] = true
+				}
+
 			}
 		}
 	}
