@@ -1,4 +1,4 @@
-FROM node:alpine
+FROM node:lts-alpine
 
 RUN adduser -D -g '' appuser
 
@@ -7,21 +7,26 @@ RUN apk upgrade --update-cache --available && \
     apk add openssl && \
     rm -rf /var/cache/apk/*
 
-RUN npm i -g @ui5/cli && \
-    npm i -g concurrently
-
-COPY app /app/
 WORKDIR /app
 
-RUN mkdir /app/cert && \
-    cd /app/cert && \
+RUN mkdir cert && \
+    cd cert && \
     openssl req -x509 -nodes -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365 -subj '/CN=localhost' && \
     cd ../ && \
     chown -R appuser:appuser cert/ && \
     chmod 755 cert/
 
-RUN npm i --no-optional && \ 
-    npm run-script build && \
+RUN npm i -g @ui5/cli && \
+    npm i -g concurrently
+
+COPY app/package.json /app/package.json
+COPY app/package-lock.json /app/package-lock.json
+
+RUN npm i --no-optional 
+
+COPY app /app/
+
+RUN npm run-script build && \
     rm -rf webapp/
 
 USER appuser

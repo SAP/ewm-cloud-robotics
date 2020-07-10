@@ -84,7 +84,7 @@ function initWebServer(socket) {
     var fs = require('fs')
     var compression = require('compression')
     var bodyParser = require('body-parser')
-    var uuidv1 = require('uuid/v1')
+    var uuidv1 = require('uuid').v1
 
     app = express()
     app.use(bodyParser.json())
