@@ -880,6 +880,8 @@ func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Aucti
 func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.Auctioneer, clAuc *classifiedAuctions, apr auctionsPerRobot, opr ordersPerRobot, rs *robotStates) {
 	// Request more warehouse orders from order manager when one available robot is below its minimum number of warehouse orders
 
+	var changeReservation *ewm.OrderReservation
+
 	for _, auction := range clAuc.waitForOrderManager {
 		eq := auction.reservationCR.Spec.OrderRequest.Lgnum == a.Spec.Scope.Lgnum
 		eq = eq && auction.reservationCR.Spec.OrderRequest.Rsrctype == a.Spec.Scope.Rsrctype
@@ -887,12 +889,18 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 		if eq {
 			log.Debug().Msgf("There is already an open reservation %q in status %q awaiting response from order manager",
 				auction.reservationCR.GetName(), auction.reservationCR.Status.Status)
-			return
+			// When reservation CR is in status NEW its quantity could still be changed according to the new situation
+			if auction.reservationCR.Status.Status == ewm.OrderReservationStatusNew {
+				changeReservation = &auction.reservationCR
+				break
+			} else {
+				return
+			}
 		}
 	}
 
 	var robotMightWork []string
-	createReservations := false
+	reserveOrders := false
 
 	for robot := range rs.isAvailable {
 		// First check if robot might request work, because is below maximum number of warehouse orders
@@ -900,44 +908,59 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 			robotMightWork = append(robotMightWork, robot)
 			// Create OrderReservation only if at least one robot is below minimum number of warehouse orders
 			if opr[robot] < a.Spec.Configuration.MinOrdersPerRobot {
-				log.Info().Msgf("Only %v warehouse orders assigned to robot %q. This is below the minimum of %v. Starting a new order auction",
-					opr[robot], robot, a.Spec.Configuration.MinOrdersPerRobot)
-				createReservations = true
+				if changeReservation == nil {
+					log.Info().Msgf("Only %v warehouse orders assigned to robot %q. This is below the minimum of %v. Starting a new order auction",
+						opr[robot], robot, a.Spec.Configuration.MinOrdersPerRobot)
+				}
+				reserveOrders = true
 			}
 		}
 	}
 
-	if createReservations {
+	if reserveOrders {
 		// Try to reserve more orders than robots, that there is space for optimization
 		x := len(robotMightWork) * 3
 		numberOfOrders := maxInt(x, a.Spec.Configuration.MinOrdersPerAuction)
 
-		// Create OrderReservation CR
-		orderAuctionName := fmt.Sprintf("%s.%v", a.Spec.Scope.Lgnum, time.Now().Unix())
-		or := ewm.OrderReservation{
-			ObjectMeta: metav1.ObjectMeta{
-				Name:      orderAuctionName,
-				Namespace: metav1.NamespaceDefault,
-				Labels:    map[string]string{orderAuctionLabel: orderAuctionName},
-			},
-			Spec: ewm.OrderReservationSpec{
-				OrderRequest: ewm.OrderRequest{
-					Lgnum:    a.Spec.Scope.Lgnum,
-					Rsrctype: a.Spec.Scope.Rsrctype,
-					Rsrcgrp:  a.Spec.Scope.Rsrcgrp,
-					Quantity: numberOfOrders,
+		if changeReservation == nil {
+			// Create OrderReservation CR
+			orderAuctionName := fmt.Sprintf("%s.%v", a.Spec.Scope.Lgnum, time.Now().Unix())
+			or := ewm.OrderReservation{
+				ObjectMeta: metav1.ObjectMeta{
+					Name:      orderAuctionName,
+					Namespace: metav1.NamespaceDefault,
+					Labels:    map[string]string{orderAuctionLabel: orderAuctionName},
 				},
-			},
-		}
-		// Set Controller reference for CR
-		controllerutil.SetControllerReference(a, &or, r.scheme)
+				Spec: ewm.OrderReservationSpec{
+					OrderRequest: ewm.OrderRequest{
+						Lgnum:    a.Spec.Scope.Lgnum,
+						Rsrctype: a.Spec.Scope.Rsrctype,
+						Rsrcgrp:  a.Spec.Scope.Rsrcgrp,
+						Quantity: numberOfOrders,
+					},
+				},
+			}
+			// Set Controller reference for CR
+			controllerutil.SetControllerReference(a, &or, r.scheme)
 
-		err := r.client.Create(ctx, &or)
-		if err != nil {
-			log.Error().Err(err).Msgf("Error creating CR for OrderReservation %q", orderAuctionName)
-		} else {
-			log.Info().Msgf("Created CR for OrderReservation %q, requesting reservation for %v warehouse orders",
-				orderAuctionName, numberOfOrders)
+			err := r.client.Create(ctx, &or)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error creating CR for OrderReservation %q", orderAuctionName)
+			} else {
+				log.Info().Msgf("Created CR for OrderReservation %q, requesting reservation for %v warehouse orders",
+					orderAuctionName, numberOfOrders)
+			}
+		} else if changeReservation.Spec.OrderRequest.Quantity != numberOfOrders {
+			// Change OrderReservation CR if quantity changed
+			changeReservation.Spec.OrderRequest.Quantity = numberOfOrders
+
+			err := r.client.Update(ctx, changeReservation)
+			if err != nil {
+				log.Error().Err(err).Msgf("Error changing CR for OrderReservation %q", changeReservation.GetName())
+			} else {
+				log.Info().Msgf("Changed quantity in CR for OrderReservation %q, requesting reservation for %v warehouse orders",
+					changeReservation.GetName(), numberOfOrders)
+			}
 		}
 	}
 }
