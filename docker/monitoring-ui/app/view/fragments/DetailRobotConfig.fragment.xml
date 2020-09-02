@@ -55,6 +55,13 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 							adjustLabelSpan="false" emptySpanXL="6" emptySpanL="6" emptySpanM="6" emptySpanS="6" columnsXL="1" columnsL="1" columnsM="1"
 							singleContainerFullSize="false">
 							<fo:content>
+								<Label text="{i18n>mode}"/>
+								<Select selectedKey="{robotConfig>/mode}">
+									<core:Item key="RUN" text="RUN"/>
+									<core:Item key="IDLE" text="IDLE"/>
+									<core:Item key="CHARGE" text="CHARGE"/>
+									<core:Item key="STOP" text="STOP"/>
+								</Select>
 								<Label text="{i18n>maxIdleTime}"/>
 								<Input value="{robotConfig>/maxIdleTime}" type="Number"/>
 								<Label text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
