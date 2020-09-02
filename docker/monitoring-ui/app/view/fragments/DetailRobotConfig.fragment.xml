@@ -63,13 +63,13 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 									<core:Item key="STOP" text="STOP"/>
 								</Select>
 								<Label text="{i18n>maxIdleTime}"/>
-								<Input value="{robotConfig>/maxIdleTime}" type="Number"/>
+								<Input value="{robotConfig>/maxIdleTime}" type="Number" valueLiveUpdate="true"/>
 								<Label text="{odata>/#WarehouseOrder/Lgnum/@sap:label}"/>
-								<Input id="configLgnum" value="{robotConfig>/lgnum}" showValueHelp="true" valueHelpRequest="handleValueHelpLgnum"/>
+								<Input id="configLgnum" value="{robotConfig>/lgnum}" showValueHelp="true" valueHelpRequest="handleValueHelpLgnum" valueLiveUpdate="true"/>
 								<Label text="{i18n>rsrcgrp}"/>
-								<Input id="configRsrcgrp" value="{robotConfig>/rsrcgrp}" showValueHelp="true" valueHelpRequest="handleValueHelpRsrcgrp"></Input>
+								<Input id="configRsrcgrp" value="{robotConfig>/rsrcgrp}" showValueHelp="true" valueHelpRequest="handleValueHelpRsrcgrp" valueLiveUpdate="true"></Input>
 								<Label text="{i18n>rsrctype}"/>
-								<Input id="configRsrctype" value="{robotConfig>/rsrctype}" showValueHelp="true" valueHelpRequest="handleValueHelpRsrctype"></Input>
+								<Input id="configRsrctype" value="{robotConfig>/rsrctype}" showValueHelp="true" valueHelpRequest="handleValueHelpRsrctype" valueLiveUpdate="true"></Input>
 							</fo:content>
 						</fo:SimpleForm>
 					</u:ObjectPageSubSection>
@@ -83,11 +83,11 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 							singleContainerFullSize="false">
 							<fo:content>
 								<Label text="{i18n>batteryIdle}"/>
-								<Input value="{robotConfig>/batteryIdle}" type="Number"/>
+								<Input value="{robotConfig>/batteryIdle}" type="Number" valueLiveUpdate="true"/>
 								<Label text="{i18n>batteryMin}"/>
-								<Input value="{robotConfig>/batteryMin}" type="Number"></Input>
+								<Input value="{robotConfig>/batteryMin}" type="Number" valueLiveUpdate="true"></Input>
 								<Label text="{i18n>batteryOk}"/>
-								<Input value="{robotConfig>/batteryOk}" type="Number"></Input>
+								<Input value="{robotConfig>/batteryOk}" type="Number" valueLiveUpdate="true"></Input>
 							</fo:content>
 						</fo:SimpleForm>
 					</u:ObjectPageSubSection>
@@ -112,7 +112,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 							<items>
 								<ColumnListItem>
 									<cells>
-										<Input value="{robotConfig>}"/>
+										<Input value="{robotConfig>}" valueLiveUpdate="true"/>
 									</cells>
 								</ColumnListItem>
 							</items>
