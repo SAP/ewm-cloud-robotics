@@ -40,14 +40,14 @@ sap.ui.define([
 
 		updateModels: function() {
 			if(this.getOwnerComponent().getModel("viewType").getProperty("/robot")) {
-				this._bindRobotConfiguration(this._robotName);
+				this._bindRobotConfiguration(this._robotName, false);
 			}
 			else {
 				this._bindWhoConfiguration(this._warhouseOrder);
 			}
 		},
 
-		_bindRobotConfiguration: function (robotName) {
+		_bindRobotConfiguration: function (robotName, refreshConfig) {
 			var that = this;
 			$.get(this.getOwnerComponent().getModel("src").getData().robotConfigurations, function (data) {
 				var robotConfigurationJSON = {};
@@ -59,20 +59,36 @@ sap.ui.define([
 						continue;
 					}
 
-					robotConfigurationJSON = ({
-						"selfLink": data.items[i].metadata.selfLink,
-						"name": data.items[i].metadata.name,
-						"batteryIdle": data.items[i].spec.batteryIdle,
-						"batteryMin": data.items[i].spec.batteryMin,
-						"batteryOk": data.items[i].spec.batteryOk,
-						"lgnum": data.items[i].spec.lgnum,
-						"maxIdleTime": data.items[i].spec.maxIdleTime,
-						"recoverFromRobotError": data.items[i].spec.recoverFromRobotError,
-						"rsrcgrp": data.items[i].spec.rsrcgrp,
-						"rsrctype": data.items[i].spec.rsrctype,
-						"chargers": data.items[i].spec.chargers,
-						"status": data.items[i].status
-					});
+					if(refreshConfig) {
+						var newRobotSelected = true;
+						if(typeof(that.getOwnerComponent().getModel("robotConfig")) !== "undefined") {
+							if(that.getOwnerComponent().getModel("robotConfig").getData().selfLink === data.items[i].metadata.selfLink) {
+								newRobotSelected = false;
+								robotConfigurationJSON = that.getOwnerComponent().getModel("robotConfig").getData();
+							}
+						}
+
+						if(newRobotSelected) {
+							robotConfigurationJSON = ({
+								"selfLink": data.items[i].metadata.selfLink,
+								"name": data.items[i].metadata.name,
+								"batteryIdle": data.items[i].spec.batteryIdle,
+								"batteryMin": data.items[i].spec.batteryMin,
+								"batteryOk": data.items[i].spec.batteryOk,
+								"lgnum": data.items[i].spec.lgnum,
+								"maxIdleTime": data.items[i].spec.maxIdleTime,
+								"recoverFromRobotError": data.items[i].spec.recoverFromRobotError,
+								"rsrcgrp": data.items[i].spec.rsrcgrp,
+								"rsrctype": data.items[i].spec.rsrctype,
+								"chargers": data.items[i].spec.chargers,
+								"status": data.items[i].status,
+								"mode": data.items[i].spec.mode
+							});
+						}	
+					}
+					else {
+						robotConfigurationJSON = that.getOwnerComponent().getModel("robotConfig").getData();
+					}
 					
 					var statemachine_error = false;
 					var statemachine_uistate = "None";
@@ -196,6 +212,7 @@ sap.ui.define([
 			patchData.spec["lgnum"] = configData.lgnum;
 			patchData.spec["rsrcgrp"] = configData.rsrcgrp;
 			patchData.spec["rsrctype"] = configData.rsrctype;
+			patchData.spec["mode"] = configData.mode;
 
 			$.ajax({
 				type: 'PATCH',
@@ -449,7 +466,7 @@ sap.ui.define([
 				"layout": oEvent.getParameter("arguments").layout
 			});
 			this._robotName = oEvent.getParameter("arguments").robot;
-			this._bindRobotConfiguration(this._robotName);
+			this._bindRobotConfiguration(this._robotName, true);
 		},
 
 		_onWhoRouteMatched: function (oEvent) {

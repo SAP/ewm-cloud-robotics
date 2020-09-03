@@ -15,8 +15,9 @@ sap.ui.define([
 	"sap/f/library",
 	"sap/ui/Device",
 	"sap/ui/model/Filter",
-	"sap/ui/model/Sorter"
-], function (Controller, JSONModel, formatter, fioriLibrary, Device, Filter, Sorter) {
+	"sap/ui/model/Sorter",
+	"sap/m/MessageBox"
+], function (Controller, JSONModel, formatter, fioriLibrary, Device, Filter, Sorter, MessageBox) {
 	"use strict";
 
 	return Controller.extend("monitoring.controller.Master", {
@@ -84,6 +85,7 @@ sap.ui.define([
 			var that = this;
 			// load robots data
 			$.get(this.getOwnerComponent().getModel("src").getData().robots, function (data) {
+				that._failedQuery = false;
 				var robotJSON = {};
 				for (var i = 0; i < data.items.length; ++i) {
 					if (data.items[i].kind !== "Robot") {
@@ -142,6 +144,19 @@ sap.ui.define([
 						}
 					});
 				});
+			})
+			.fail(function() {
+				if(that._failedQuery) {
+					that.getOwnerComponent().getModel("uiStates").setData({"automaticUpdates": false, "updateTimer": 30});
+					MessageBox.information(that.getView().getModel("i18n").getResourceBundle().getText("sessionExpired"), {
+						onClose: function() {
+							location.reload();
+						}
+					});
+					return;
+				}
+				that._failedQuery = true;
+				that._bindRobotModel();
 			});
 		},
 
@@ -186,12 +201,15 @@ sap.ui.define([
 					});
 				}
 				var aFilters = [];
+				var aSorters = [];
 				var oBinding = that.getView().byId("idWarehouseOrders").getBinding("items");
 				if(oBinding) {
 					aFilters = oBinding.aFilters;
+					aSorters = oBinding.aSorters;
 				}
 				that.getOwnerComponent().setModel(new JSONModel(warehouseJSON), "who");
 				that.byId("idWarehouseOrders").getBinding("items").filter(aFilters);
+				that.byId("idWarehouseOrders").getBinding("items").sort(aSorters);
 			});
 		},
 
@@ -244,6 +262,15 @@ sap.ui.define([
 		
 		handleSortPressed: function () {
 			this.createViewSettingsDialog("monitoring.view.fragments.MasterSortDialog").open();
+		},
+
+		onResetSortPressed: function() {
+			this.getView().byId("idWarehouseOrders").getBinding("items").sort([
+				new sap.ui.model.Sorter("order_status", true),
+				new sap.ui.model.Sorter("who", true)
+			]);
+			this._mViewSettingsDialogs["monitoring.view.fragments.MasterSortDialog"].destroy();
+			delete this._mViewSettingsDialogs["monitoring.view.fragments.MasterSortDialog"];
 		},
 
 		handleSortDialogConfirm: function (oEvent) {

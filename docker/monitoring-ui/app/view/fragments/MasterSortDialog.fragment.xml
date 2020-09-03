@@ -9,7 +9,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 -->
 
 <core:FragmentDefinition xmlns="sap.m" xmlns:core="sap.ui.core">
-	<ViewSettingsDialog confirm="handleSortDialogConfirm">
+	<ViewSettingsDialog confirm="handleSortDialogConfirm" reset="onResetSortPressed">
 		<sortItems>
 			<ViewSettingsItem text="{odata>/#WarehouseOrder/Who/@sap:label}" key="who" selected="true"/>
 			<ViewSettingsItem text="{odata>/#WarehouseOrder/Areawho/@sap:label}" key="areawho"/>

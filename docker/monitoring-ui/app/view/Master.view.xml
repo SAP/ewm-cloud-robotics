@@ -82,7 +82,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 			<u:ObjectPageSection title="{i18n>warehouseOrders}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: { path: 'order_status', descending: true} }"
+						<Table id="idWarehouseOrders" inset="false" items="{ path: 'who>/rows', sorter: [{ path: 'order_status', descending: true}, { path: 'who', descending: true}] }"
 							growing="true" growingScrollToLoad="false">
 							<headerToolbar>
 								<OverflowToolbar>
