@@ -13,6 +13,8 @@
 """Robot state machine for robcoewm robots."""
 
 import logging
+import inspect
+import re
 import time
 from collections import namedtuple, OrderedDict, defaultdict
 from typing import DefaultDict, Dict, Optional, List
@@ -96,6 +98,8 @@ class RobotEWMMachine(Machine):
                          before_state_change=self._run_before_state_change,
                          after_state_change=self._run_after_state_change,
                          initial=initial)
+        # Initialize state on_enter and on_exit callbacks
+        self._init_state_callbacks()
 
         # Controller
         # configuration of the robot
@@ -133,6 +137,30 @@ class RobotEWMMachine(Machine):
 
         # Timestamps for warehouse order processing
         self.who_ts: Optional[WarehouseOrderTimestamps] = None
+
+    def _init_state_callbacks(self):
+        """
+        Initialize custom on_enter/on_exit callbacks.
+
+        This method adds all methods of this class which begin with _on_enter_ and _on_exit_ as
+        callbacks if there is a corresponding state in this machine.
+        """
+        callback_re = re.compile(r'_on_enter_*|_on_exit_*')
+
+        callbacks = inspect.getmembers(self, predicate=inspect.ismethod)
+
+        for name, callback in callbacks:
+            if callback_re.search(name) is not None:
+                # transitions checks in __getattr__ method of Machine class in core.py if the name
+                # could be a callback. If this is the case it want's to read the state. It raises
+                # a ValueError if it cannot find the state
+                try:
+                    add_callback = getattr(self, name[1:])
+                except (AttributeError, ValueError):
+                    continue
+                if callable(add_callback):
+                    _LOGGER.info('Adding callback %s', name)
+                    add_callback(callback)
 
     def connect_external_events(self) -> None:
         """Connect state machine to external event sources of Cloud Robotics."""
@@ -950,11 +978,11 @@ class RobotEWMMachine(Machine):
             robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
                 event.state.name), result=STATE_SUCCEEDED).inc()
 
-    def on_enter_atStaging(self, event: EventData) -> None:
+    def _on_enter_atStaging(self, event: EventData) -> None:
         """Decide what's next when arriving at staging area."""
         self._decide_whats_next(event)
 
-    def on_enter_idle(self, event: EventData) -> None:
+    def _on_enter_idle(self, event: EventData) -> None:
         """Decide what's next when robot is not working."""
         # There is no active work
         self.active_who = None
@@ -963,7 +991,7 @@ class RobotEWMMachine(Machine):
 
         self._decide_whats_next(event)
 
-    def on_enter_charging(self, event: EventData) -> None:
+    def _on_enter_charging(self, event: EventData) -> None:
         """Create charge mission."""
         _LOGGER.info(
             'Robot starts charge mission at battery level %s %%',
@@ -974,12 +1002,12 @@ class RobotEWMMachine(Machine):
         else:
             self.create_charge_mission()
 
-    def on_enter_movingToStaging(self, event: EventData) -> None:
+    def _on_enter_movingToStaging(self, event: EventData) -> None:
         """Move to staging area."""
         _LOGGER.info('Robot starts moving to staging area')
         self.create_staging_mission()
 
-    def on_enter_robotError(self, event: EventData) -> None:
+    def _on_enter_robotError(self, event: EventData) -> None:
         """Print error message."""
         _LOGGER.error(
             'Too many warehouse orders failed. Please check robot and start recovery with flag in '
@@ -989,7 +1017,7 @@ class RobotEWMMachine(Machine):
         # Wait at staging area
         self.create_staging_mission()
 
-    def on_enter_moveTrolley_movingToSourceBin(self, event: EventData) -> None:
+    def _on_enter_moveTrolley_movingToSourceBin(self, event: EventData) -> None:
         """Start moving to the source bin of a warehouse task."""
         if self.active_wht:
             self.active_wht = None
@@ -1007,7 +1035,7 @@ class RobotEWMMachine(Machine):
         else:
             raise TypeError('No warehouse order object in self.active_who')
 
-    def on_enter_moveTrolley_loadingTrolley(self, event: EventData) -> None:
+    def _on_enter_moveTrolley_loadingTrolley(self, event: EventData) -> None:
         """Start loading the trolley."""
         cls = self.__class__
         if isinstance(self.active_wht, WarehouseTask):
@@ -1018,7 +1046,7 @@ class RobotEWMMachine(Machine):
         else:
             raise TypeError('No warehouse task object in self.active_wht')
 
-    def on_enter_moveTrolley_movingToTargetBin(self, event: EventData) -> None:
+    def _on_enter_moveTrolley_movingToTargetBin(self, event: EventData) -> None:
         """Start moving to the target bin of a warehouse task."""
         if isinstance(self.active_wht, WarehouseTask):
             # Create return trolley mission
@@ -1027,7 +1055,7 @@ class RobotEWMMachine(Machine):
         else:
             raise TypeError('No warehouse task object in self.active_wht')
 
-    def on_enter_moveTrolley_unloadingTrolley(self, event: EventData) -> None:
+    def _on_enter_moveTrolley_unloadingTrolley(self, event: EventData) -> None:
         """Start unloading the trolley."""
         cls = self.__class__
         if isinstance(self.active_wht, WarehouseTask):
@@ -1038,7 +1066,7 @@ class RobotEWMMachine(Machine):
         else:
             raise TypeError('No warehouse task object in self.active_wht')
 
-    def on_enter_moveTrolley_waitingForErrorRecovery(self, event: EventData) -> None:
+    def _on_enter_moveTrolley_waitingForErrorRecovery(self, event: EventData) -> None:
         """Wait for moveTrolley error recovery."""
         if isinstance(self.active_who, WarehouseOrder):
             _LOGGER.error(
@@ -1049,7 +1077,7 @@ class RobotEWMMachine(Machine):
                 'Too many missions failed when returning trolley for moveTrolley warehouse order, '
                 'waiting for recovery')
 
-    def on_enter_pickPackPass_movingtoPickLocation(self, event: EventData) -> None:
+    def _on_enter_pickPackPass_movingtoPickLocation(self, event: EventData) -> None:
         """Start moving to pick location."""
         if self.active_wht:
             self.active_wht = None
@@ -1068,7 +1096,7 @@ class RobotEWMMachine(Machine):
         else:
             _LOGGER.info('No sub warehouse order available, waiting for it')
 
-    def on_enter_pickPackPass_waitingAtPick(self, event: EventData) -> None:
+    def _on_enter_pickPackPass_waitingAtPick(self, event: EventData) -> None:
         """Wait at picking position until pick completed."""
         cls = self.__class__
         if event.event.name == cls.conf.t_warehousetask_confirmed:
@@ -1078,7 +1106,7 @@ class RobotEWMMachine(Machine):
         else:
             _LOGGER.error('Waiting at pick position, but no active warehousetask')
 
-    def on_enter_pickPackPass_movingtoTargetLocation(self, event: EventData) -> None:
+    def _on_enter_pickPackPass_movingtoTargetLocation(self, event: EventData) -> None:
         """Start moving to target location."""
         if self.active_wht:
             self.active_wht = None
@@ -1096,14 +1124,14 @@ class RobotEWMMachine(Machine):
         else:
             raise TypeError('No warehouse order object in self.active_who')
 
-    def on_enter_pickPackPass_waitingAtTarget(self, event: EventData) -> None:
+    def _on_enter_pickPackPass_waitingAtTarget(self, event: EventData) -> None:
         """Wait at target position until robot was unloaded."""
         if isinstance(self.active_wht, WarehouseTask):
             _LOGGER.info('Waiting at storage bin %s for unloading', self.active_wht.nlpla)
         else:
             _LOGGER.error('Waiting at target position, but no active warehousetask')
 
-    def on_enter_pickPackPass_waitingForErrorRecovery(self, event: EventData) -> None:
+    def _on_enter_pickPackPass_waitingForErrorRecovery(self, event: EventData) -> None:
         """Wait for pickPackPass error recovery."""
         if isinstance(self.active_who, WarehouseOrder):
             _LOGGER.error(

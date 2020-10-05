@@ -14,7 +14,7 @@
 from setuptools import find_packages, setup
 
 REQUIRES = [
-    'attrs==19.3.0',
+    'attrs==20.2.0',
     'requests',
     'retrying',
     'k8scrhandler'

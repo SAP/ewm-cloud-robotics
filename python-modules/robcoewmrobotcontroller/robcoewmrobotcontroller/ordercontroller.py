@@ -23,7 +23,7 @@ from cattr import structure
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.warehouseorder import (
-    WarehouseOrder, ConfirmWarehouseTask, WarehouseOrderCRDSpec)
+    ConfirmWarehouseTask, WarehouseOrderCRDSpec)
 
 from k8scrhandler.k8scrhandler import K8sCRHandler, k8s_cr_callback
 
@@ -161,7 +161,7 @@ class OrderController(K8sCRHandler):
         status['data'].append(wht)
         self.update_cr_status(name, status)
 
-    def get_warehouseorder(self, lgnum: str, who: str) -> Optional[WarehouseOrder]:
+    def get_warehouseorder(self, lgnum: str, who: str) -> Optional[WarehouseOrderCRDSpec]:
         """Get a warehouse order from CR."""
         # Warehouse order CR name must be lower case
         name = '{}.{}'.format(lgnum, who).lower()
@@ -169,7 +169,7 @@ class OrderController(K8sCRHandler):
         if self.check_cr_exists(name):
             custom_res = self.get_cr(name)
             if self._warehouse_order_precheck(name, custom_res):
-                return structure(custom_res['spec']['data'], WarehouseOrder)
+                return structure(custom_res['spec'], WarehouseOrderCRDSpec)
             else:
                 return None
         else:

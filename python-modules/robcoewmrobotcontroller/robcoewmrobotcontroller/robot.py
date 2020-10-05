@@ -19,7 +19,7 @@ from typing import Optional
 import attr
 
 from robcoewmtypes.robot import RobotConfigurationStatus
-from robcoewmtypes.warehouseorder import WarehouseOrder
+from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
 
 from .ordercontroller import OrderController
 from .robco_mission_api import RobCoMissionAPI
@@ -37,16 +37,16 @@ class ValidStateRestore:
 
     state: RobotConfigurationStatus = attr.ib(
         validator=attr.validators.instance_of(RobotConfigurationStatus))
-    warehouseorder: WarehouseOrder = attr.ib(
-        default=WarehouseOrder('', ''), validator=attr.validators.instance_of(WarehouseOrder))
-    sub_warehouseorder: WarehouseOrder = attr.ib(
-        default=WarehouseOrder('', ''), validator=attr.validators.instance_of(WarehouseOrder))
+    warehouseorder: WarehouseOrderCRDSpec = attr.ib(
+        default=None, validator=attr.validators.optional(
+            attr.validators.instance_of(WarehouseOrderCRDSpec)))
+    sub_warehouseorder: WarehouseOrderCRDSpec = attr.ib(
+        default=None, validator=attr.validators.optional(
+            attr.validators.instance_of(WarehouseOrderCRDSpec)))
 
 
 class EWMRobot:
     """The EWM robot representation."""
-
-    VALID_QUEUE_MSG_TYPES = (WarehouseOrder,)
 
     def __init__(self, mission_api: RobCoMissionAPI, robot_config: RobotConfigurationController,
                  order_controller: OrderController, robot_request: RobotRequestController) -> None:
@@ -81,15 +81,15 @@ class EWMRobot:
                     valid_state.state.statemachine, valid_state.state.mission)
                 who_ident = WhoIdentifier(valid_state.state.lgnum, valid_state.state.who)
                 self.state_machine.warehouseorders[who_ident] = valid_state.warehouseorder
-                self.state_machine.active_who = valid_state.warehouseorder
+                self.state_machine.active_who = valid_state.warehouseorder.data
                 if valid_state.state.subwho:
                     sub_who_ident = WhoIdentifier(
                         valid_state.state.lgnum, valid_state.state.subwho)
                     self.state_machine.sub_warehouseorders[
                         sub_who_ident] = valid_state.sub_warehouseorder
-                    self.state_machine.active_sub_who = valid_state.sub_warehouseorder
+                    self.state_machine.active_sub_who = valid_state.sub_warehouseorder.data
                     # Availability of sub_warehouse order checked before
-                    for wht in valid_state.sub_warehouseorder.warehousetasks:
+                    for wht in valid_state.sub_warehouseorder.data.warehousetasks:
                         if wht.tanum == valid_state.state.tanum:
                             self.state_machine.active_wht = wht
                             break
@@ -97,7 +97,7 @@ class EWMRobot:
                 # If no active warehouse task found yet, search in warehouse order
                 if not self.state_machine.active_wht:
                     # Availability of warehouse order checked before
-                    for wht in valid_state.warehouseorder.warehousetasks:
+                    for wht in valid_state.warehouseorder.data.warehousetasks:
                         if wht.tanum == valid_state.state.tanum:
                             self.state_machine.active_wht = wht
                             break
