@@ -149,8 +149,8 @@ func (m *mirEstimator) processCRAdded(rte *ewm.RunTimeEstimation) {
 		}
 
 		// Aggregate both maps
-		for k, v := range mirPathsPrec.validPaths {
-			mirPaths.validPaths[k] = v
+		for k, v := range mirPathsPrec.knownPaths {
+			mirPaths.knownPaths[k] = v
 		}
 		mirPaths.unknownPaths = mirPathsPrec.unknownPaths
 	}
@@ -231,23 +231,24 @@ func (m *mirEstimator) collectMirPaths(mapID string, posMaps *posMaps, reqEwmPat
 				log.Error().Err(err).Msgf("Getting path GUID %s failed", p.GUID)
 				continue
 			}
-			// Save valid path and remove it from requested paths
+			// Save path and remove it from requested paths
+			// MiR robots mark very short paths often as invalid, thus they are used until there is a better solution
 			if path.Valid {
 				log.Debug().Msgf("Path %+v found in cache", ewmPath)
-				mirPaths.validPaths[ewmPath] = *path
-				delete(reqEwmPaths, ewmPath)
-				// Remove path from queue too to prevent that it is calculated again when robot is charging or idling
-				delete(m.ewmPathQueue, ewmPath)
 			} else {
 				log.Info().Msgf("Path %+v found but in status invalid", ewmPath)
 			}
+			mirPaths.knownPaths[ewmPath] = *path
+			delete(reqEwmPaths, ewmPath)
+			// Remove path from queue too to prevent that it is calculated again when robot is charging or idling
+			delete(m.ewmPathQueue, ewmPath)
 		}
 	}
 
 	// The remaining paths are unknown and need to be created
 	mirPaths.unknownPaths = reqEwmPaths
 
-	log.Info().Msgf("Found %v valid paths in MiR path cache. %v paths are not known yet", len(mirPaths.validPaths), len(mirPaths.unknownPaths))
+	log.Info().Msgf("Found %v paths in MiR path cache. %v paths are not known yet", len(mirPaths.knownPaths), len(mirPaths.unknownPaths))
 
 	return mirPaths, nil
 
@@ -263,6 +264,8 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 		if ewmPath.Start == ewmPath.Goal {
 			log.Info().Msgf("Skip path %+v because start and goal positions are equal", ewmPath)
 			continue
+		} else {
+			log.Info().Msgf("Precalculate path %+v", ewmPath)
 		}
 
 		if !m.moveBaseChecker.isIdle() {
@@ -320,7 +323,7 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 					break
 				} else if stopAt.UTC().Before(time.Now().UTC()) {
 					// Break the loop when calculation must be finished
-					log.Info().Msg("Running out of time, cannot wait for result of precalculation")
+					log.Info().Msgf("Running out of time, cannot wait for result of precalculation of path %+v", ewmPath)
 					break
 				} else {
 					time.Sleep(1 * time.Second)
@@ -370,12 +373,14 @@ func (m *mirEstimator) checkPathCreated(mapID, startPosGUID, goalPosGUID string)
 				log.Error().Err(err).Msgf("Getting path GUID %s failed", p.GUID)
 				continue
 			}
-			// Path found and valid
+			// Path found
+			// MiR robots mark very short paths often as invalid, thus they are used until there is a better solution
 			if path.Valid {
-				log.Debug().Msgf("Path found")
-				return true
+				log.Debug().Msg("Path found")
+			} else {
+				log.Info().Msg("Path found but in status invalid. Use it anyway")
 			}
-			log.Info().Msg("Path found but in status invalid")
+			return true
 		}
 	}
 	return false
@@ -384,9 +389,9 @@ func (m *mirEstimator) checkPathCreated(mapID, startPosGUID, goalPosGUID string)
 func (m *mirEstimator) updateCRWithResult(rte *ewm.RunTimeEstimation, mirPaths *mirPaths) {
 	// Empty slice first
 	rte.Status.RunTimes = nil
-	// Append run times of all valid paths to CR status
+	// Append run times of all known paths to CR status
 	for _, ewmPath := range rte.Spec.Paths {
-		if path, ok := mirPaths.validPaths[ewmPath]; ok {
+		if path, ok := mirPaths.knownPaths[ewmPath]; ok {
 			ewmRuntime := ewm.RunTime{Start: ewmPath.Start, Goal: ewmPath.Goal, Time: path.Time}
 			rte.Status.RunTimes = append(rte.Status.RunTimes, ewmRuntime)
 		}

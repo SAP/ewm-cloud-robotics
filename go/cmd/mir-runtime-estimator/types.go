@@ -57,11 +57,11 @@ func newPathLookupForPosMaps(posMaps *posMaps) ewmPathLookup {
 type ewmPathToMiR map[ewm.Path]mirapisv2.GetPath
 
 type mirPaths struct {
-	validPaths   ewmPathToMiR
+	knownPaths   ewmPathToMiR
 	unknownPaths ewmPathLookup
 }
 
 func newMirPaths() *mirPaths {
-	mirPaths := &mirPaths{validPaths: make(ewmPathToMiR), unknownPaths: make(ewmPathLookup)}
+	mirPaths := &mirPaths{knownPaths: make(ewmPathToMiR), unknownPaths: make(ewmPathLookup)}
 	return mirPaths
 }
