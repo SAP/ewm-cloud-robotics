@@ -75,12 +75,7 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 	}
 
 	m.mapID = status.MapID
-	// If robot is idle(3), paused(4), docked(8), docking(9) or error(12), move base is idle
 	m.stateID = status.StateID
-	if stateIDsMoveBaseIdle[status.StateID] {
-		log.Debug().Msgf("Robot is state %q, move base is idle", status.StateText)
-		return true
-	}
 
 	// If there is no running mission at all, move base is idling
 	if status.MissionQueueID == 0 {
@@ -88,6 +83,12 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 		m.missionQueueID = 0
 		m.actionID = 0
 		m.actionType = ""
+		return true
+	}
+
+	// If robot is idle(3), paused(4), docked(8), docking(9) or error(12), move base is idle
+	if stateIDsMoveBaseIdle[status.StateID] {
+		log.Debug().Msgf("Robot is state %q, move base is idle", status.StateText)
 		return true
 	}
 

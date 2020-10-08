@@ -232,16 +232,15 @@ func (m *mirEstimator) collectMirPaths(mapID string, posMaps *posMaps, reqEwmPat
 				continue
 			}
 			// Save path and remove it from requested paths
-			// MiR robots mark very short paths often as invalid, thus they are used until there is a better solution
 			if path.Valid {
 				log.Debug().Msgf("Path %+v found in cache", ewmPath)
+				mirPaths.knownPaths[ewmPath] = *path
+				delete(reqEwmPaths, ewmPath)
+				// Remove path from queue too to prevent that it is calculated again when robot is charging or idling
+				delete(m.ewmPathQueue, ewmPath)
 			} else {
-				log.Info().Msgf("Path %+v found but in status invalid", ewmPath)
+				log.Warn().Msgf("Path %+v found but in status invalid. Try to recalculate it", ewmPath)
 			}
-			mirPaths.knownPaths[ewmPath] = *path
-			delete(reqEwmPaths, ewmPath)
-			// Remove path from queue too to prevent that it is calculated again when robot is charging or idling
-			delete(m.ewmPathQueue, ewmPath)
 		}
 	}
 
@@ -378,7 +377,7 @@ func (m *mirEstimator) checkPathCreated(mapID, startPosGUID, goalPosGUID string)
 			if path.Valid {
 				log.Debug().Msg("Path found")
 			} else {
-				log.Info().Msg("Path found but in status invalid. Use it anyway")
+				log.Warn().Msg("Path found but in status invalid. Use it anyway and recalculate it the next time")
 			}
 			return true
 		}
