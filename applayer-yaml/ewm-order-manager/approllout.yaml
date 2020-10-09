@@ -13,9 +13,7 @@ spec:
   appName: ewm-order-manager-$APP_VERSION
   cloud: 
     values:
-      image:
-        repository: "ewmcloudrobotics/order-manager"
-        tag: "latest"
+      image: "ewmcloudrobotics/order-manager:latest"
       envs:
         ewmhost: "" # Host for the OData API endpoint
         ewmuser: "" # Technical user for all warehouseorder related API calls

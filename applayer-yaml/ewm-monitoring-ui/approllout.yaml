@@ -13,9 +13,7 @@ spec:
   appName: ewm-monitoring-ui-$APP_VERSION
   cloud: 
     values:
-      image:
-        repository: "ewmcloudrobotics/monitoring-ui"
-        image.tag: "latest"
+      image: "ewmcloudrobotics/monitoring-ui:latest"
       envs:
         ewmhost: "" # Host for the OData API endpoint
         ewmbasepath: "/odata/SAP/ZEWM_ROBCO_SRV" # Basepath for the OData API matching the service definition

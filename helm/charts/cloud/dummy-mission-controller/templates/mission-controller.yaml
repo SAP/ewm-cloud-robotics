@@ -5,7 +5,7 @@ kind: Deployment
 metadata:
   name: dummy-mission-controller-{{ .name }}
 spec:
-  replicas: {{ $.Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: dummy-mission-controller-{{ .name }}
@@ -16,8 +16,7 @@ spec:
     spec:
       containers:
       - name: dummy-mission-controller-{{ .name }}
-        image: {{ $.Values.image.repository }}{{ if $.Values.image.tag }}:{{ $.Values.image.tag }}{{ end }}
-        imagePullPolicy: Always
+        image: {{ .Values.image }}
         env:
         - name: ROBCO_ROBOT_NAME
           value: "{{ .name }}"

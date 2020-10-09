@@ -1,7 +1,4 @@
-replicaCount: 1
-image:
-  repository: "ewmcloudrobotics/dummy-mission-controller"
-  tag: "latest"
+image: "ewmcloudrobotics/dummy-mission-controller:latest"
 
 robot:
   name: ""

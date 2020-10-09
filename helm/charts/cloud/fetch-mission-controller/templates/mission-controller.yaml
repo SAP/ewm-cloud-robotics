@@ -17,7 +17,7 @@ kind: Deployment
 metadata:
   name: fetch-mission-controller
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: fetch-mission-controller
@@ -28,8 +28,7 @@ spec:
     spec:
       containers:
       - name: fetch-mission-controller
-        image: {{ .Values.image.repository }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}
-        imagePullPolicy: Always
+        image: {{ .Values.image }}
         env:
         - name: FETCHCORE_USER
           valueFrom:

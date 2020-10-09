@@ -1,8 +1,5 @@
 ewmsim:
-  replicaCount: 1
-  image:
-    repository: "ewmcloudrobotics/ewm-sim"
-    tag: "latest"
+  image: "ewmcloudrobotics/ewm-sim:latest"
   envs:
     ewm:
       user: "someuser"

@@ -1,8 +1,4 @@
-replicaCount: 1
-
-image:
-  repository: "ewmcloudrobotics/order-manager"
-  tag: "latest"
+image: "ewmcloudrobotics/order-manager:latest"
 
 envs:
   ewmuser: ""

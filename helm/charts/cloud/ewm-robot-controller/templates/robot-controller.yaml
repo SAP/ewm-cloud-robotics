@@ -20,7 +20,7 @@ kind: Deployment
 metadata:
   name: robot-configurator
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: robot-configurator
@@ -30,8 +30,7 @@ spec:
         app: robot-configurator
     spec:
       containers:
-      - image: {{ .Values.image.repository }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}
-        imagePullPolicy: Always
+      - image: {{ .Values.image }}
         name: robot-configurator
         env:
         - name: EWM_USER

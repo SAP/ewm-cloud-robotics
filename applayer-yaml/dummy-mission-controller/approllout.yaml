@@ -13,9 +13,7 @@ spec:
   appName: dummy-mission-controller-$APP_VERSION
   cloud: 
     values:
-      image:
-        repository: "ewmcloudrobotics/dummy-mission-controller"
-        tag: "latest"
+      image: "ewmcloudrobotics/dummy-mission-controller:latest"
   ## Select dummy robots only!
   robots:
   - selector:

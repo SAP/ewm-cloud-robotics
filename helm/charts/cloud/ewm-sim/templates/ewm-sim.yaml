@@ -17,7 +17,7 @@ spec:
     spec:
       containers:
       - name: ewm-sim
-        image: {{ .Values.ewmsim.image.repository }}{{ if .Values.ewmsim.image.tag }}:{{ .Values.ewmsim.image.tag }}{{ end }}
+        image: {{ .Values.ewmsim.image }}
         ports:
         - containerPort: 8080
           name: odata-api
