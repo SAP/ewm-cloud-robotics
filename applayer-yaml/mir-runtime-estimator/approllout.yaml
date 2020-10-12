@@ -16,9 +16,7 @@ spec:
       matchLabels:
         model: mir100
     values:
-      image:
-        repository: "ewmcloudrobotics/mir-runtime-estimator"
-        tag: "latest"
+      image: "ewmcloudrobotics/mir-runtime-estimator:latest"
       envs:
         miruser: "" # User to connect to MiR API
         mirpassword: "" # Password for MiR user

@@ -57,7 +57,7 @@ kind: Deployment
 metadata:
   name: monitoring-ui
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: monitoring-ui
@@ -81,8 +81,7 @@ spec:
         image: bitnami/kubectl:latest
         args: ["proxy", "--port=8003", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/*", "--reject-methods='DELETE,POST'"]
       - name: nginx-openui5
-        image: {{ .Values.image.repository }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}
-        imagePullPolicy: Always
+        image: {{ .Values.image }}
         ports:
         - containerPort: 80
         volumeMounts:

@@ -1,8 +1,4 @@
-replicaCount: 1
-
-image:
-  repository: "ewmcloudrobotics/robot-configurator"
-  tag: "latest"
+image: "ewmcloudrobotics/robot-configurator:latest"
 
 envs:
   ewmuser: ""

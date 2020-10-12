@@ -18,16 +18,12 @@ spec:
       matchLabels:
         model: mir100
     values:
-      image:
-        repository: "ewmcloudrobotics/robot-controller"
-        tag: "latest"
+      image: "ewmcloudrobotics/robot-controller:latest"
       envs:
         maxretrycount: 1 # Maximum number of retries for failed missions
   cloud:
     values:
-      image:
-        repository: "ewmcloudrobotics/robot-configurator"
-        tag: "latest"
+      image: "ewmcloudrobotics/robot-configurator:latest"
       envs:
         ewmhost: "" # Host for the OData API endpoint
         ewmuser: "" # Technical user for all warehouseorder related API calls

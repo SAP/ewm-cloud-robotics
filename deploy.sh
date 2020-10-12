@@ -9,6 +9,7 @@
 ## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 ##
 
+set -e
 
 
 ## deploy.sh can be used to push and rollout the ewm-cloud-robotics Apps to a Google Cloud Robotics cluster
@@ -48,6 +49,24 @@ package_chart() {
 
     cd "$loc"
     printf "\n"
+}
+
+replace_tags_by_digests() {
+    file_path=$1
+    images=$(grep image: $file_path | sed -e "s/image://" -e 's/[[:space:]"]//g')
+    while IFS= read -ra image; do
+        image_untagged=$(echo $image | sed 's/\(.*\):.*/\1/')
+        # Ensure to have the latest version of the image locally
+        printf 'Pulling docker image '$image'\n'
+        docker pull $image
+        digest=$(docker image inspect $image -f '{{range $r:=.RepoDigests}}{{println $r}}{{end}}' | grep $image_untagged)
+        printf 'Replacing image '$image' by '$digest'\n'
+        if [[ $(uname -s) = "Darwin" ]]; then
+            sed -i '' -e 's#'$image'#'$digest'#' $file_path
+        else
+            sed -i -e 's#'$image'#'$digest'#' $file_path
+        fi
+    done <<< "$images"
 }
 
 ## UTILITIES
@@ -165,7 +184,7 @@ push() {
     fi
 
     ## Apply changes to the App at apps.cloudrobotics.com/v1alpha1
-    kubectl create -f tmp/app.yaml --dry-run=true -o yaml | kubectl apply -f -
+    kubectl create -f tmp/app.yaml --dry-run=client -o yaml | kubectl apply -f -
 
     ## Clean up tmp dir
     rm -rf ./tmp
@@ -191,8 +210,11 @@ rollout() {
         sed -i -e 's#\$APP_VERSION#'$version'#' tmp/approllout.yaml
     fi
     
+    # Replace image tags by digests
+    replace_tags_by_digests tmp/approllout.yaml
+
     ## Apply changes to the AppRollout at approllouts.apps.cloudrobotics.com/v1alpha1
-    kubectl create -f tmp/approllout.yaml --dry-run=true -o yaml | kubectl apply -f -
+    kubectl create -f tmp/approllout.yaml --dry-run=client -o yaml | kubectl apply -f -
 
     ## Clean up (temporary directory)
     rm -rf tmp/

@@ -1,7 +1,4 @@
-replicaCount: 1
-image:
-  repository: "ewmcloudrobotics/mir-mission-controller"
-  tag: "latest"
+image: "ewmcloudrobotics/mir-mission-controller:latest"
 
 envs:
   plctrolley: 5
@@ -10,4 +7,4 @@ envs:
   mirhost: "mir-api.default.svc.cluster.local"
 
 robot:
-  name: ""
+  name: "z"

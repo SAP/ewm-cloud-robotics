@@ -4,7 +4,7 @@ kind: Deployment
 metadata:
   name: order-auctioneer
 spec:
-  replicas: {{ $.Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: order-auctioneer
@@ -14,8 +14,7 @@ spec:
         app: order-auctioneer
     spec:
       containers:
-      - image: {{ $.Values.image.repository }}{{ if $.Values.image.tag }}:{{ $.Values.image.tag }}{{ end }}
-        imagePullPolicy: Always
+      - image: {{ .Values.image }}
         name: order-auctioneer
         env:
         - name: DEPLOYED_ROBOTS

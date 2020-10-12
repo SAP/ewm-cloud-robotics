@@ -1,11 +1,7 @@
-replicaCount: 1
-
-image:
-  repository: "ewmcloudrobotics/robot-controller"
-  tag: "latest"
+image: "ewmcloudrobotics/robot-controller:latest"
 
 robot:
-  name: ""
+  name: "z"
 
 envs:
   maxretrycount: 1

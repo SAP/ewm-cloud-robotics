@@ -16,9 +16,7 @@ spec:
       matchLabels:
         model: mir100
     values:
-      image:
-        repository: "ewmcloudrobotics/mir-mission-controller"
-        tag: "latest"
+      image: "ewmcloudrobotics/mir-mission-controller:latest"
       envs:
         plctrolley: 0 # PLC register of robot which is set to 1 when a trolley is attached
         miruser: "" # User to connect to MiR API

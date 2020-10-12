@@ -1,11 +1,7 @@
-replicaCount: 1
-
-image:
-  repository: "ewmcloudrobotics/order-bid-agent"
-  tag: "latest"
+image: "ewmcloudrobotics/order-bid-agent:latest"
 
 robot:
-  name: ""
+  name: "z"
 
 envs:
   zerologconfig: "json"

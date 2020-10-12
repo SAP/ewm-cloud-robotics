@@ -1,7 +1,4 @@
-replicaCount: 1
-image:
-  repository: "ewmcloudrobotics/fetch-mission-controller"
-  tag: "latest"
+image: "ewmcloudrobotics/fetch-mission-controller:latest"
 
 envs:
   clientsecret: ""

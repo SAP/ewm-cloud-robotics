@@ -15,7 +15,7 @@ kind: Deployment
 metadata:
   name: mir-mission-controller-{{ .Values.robot.name }}
 spec:
-  replicas: {{ .Values.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
       app: mir-mission-controller-{{ .Values.robot.name }}
@@ -26,8 +26,7 @@ spec:
     spec:
       containers:
       - name: mir-mission-controller
-        image: {{ .Values.image.repository }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}
-        imagePullPolicy: Always
+        image: {{ .Values.image }}
         env:
         - name: MIR_USER
           valueFrom:
