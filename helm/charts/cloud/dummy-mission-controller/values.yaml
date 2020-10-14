@@ -1,7 +1,4 @@
 image: "ewmcloudrobotics/dummy-mission-controller:latest"
 
-robot:
-  name: ""
-
 robots:
-  - name: ""
+  - name: "z"

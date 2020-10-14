@@ -16,7 +16,7 @@ spec:
     spec:
       containers:
       - name: dummy-mission-controller-{{ .name }}
-        image: {{ .Values.image }}
+        image: {{ $.Values.image }}
         env:
         - name: ROBCO_ROBOT_NAME
           value: "{{ .name }}"
