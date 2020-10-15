@@ -11,7 +11,7 @@ stringData:
   mirpswd: "{{ .Values.envs.mirpassword }}"
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: mir-mission-controller-{{ .Values.robot.name }}
 spec:

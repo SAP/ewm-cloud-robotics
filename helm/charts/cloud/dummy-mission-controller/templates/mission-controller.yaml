@@ -1,7 +1,7 @@
 ---
 {{- range $.Values.robots }}
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: dummy-mission-controller-{{ .name }}
 spec:

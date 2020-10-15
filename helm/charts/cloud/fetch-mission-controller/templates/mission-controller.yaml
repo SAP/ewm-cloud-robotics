@@ -13,7 +13,7 @@ stringData:
   clientid: "{{ .Values.envs.clientid }}"
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: StatefulSet
 metadata:
   name: fetch-mission-controller
 spec:
