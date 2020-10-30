@@ -998,9 +998,15 @@ class RobotEWMMachine(Machine):
         if isinstance(self.active_who, WarehouseOrder):
             if self.active_who.warehousetasks:
                 self.active_wht = self.active_who.warehousetasks[0]
-                # Create get trolley mission
-                _LOGGER.info('Start moving to source bin of trolley %s', self.active_wht.vlenr)
-                self.create_get_trolley_mission(target=self.active_wht.vlpla)
+                if self.active_wht.flghuto is True:
+                    # Create get trolley mission
+                    _LOGGER.info('Start moving to source bin of trolley %s', self.active_wht.vlenr)
+                    self.create_get_trolley_mission(target=self.active_wht.vlpla)
+                else:
+                    _LOGGER.error(
+                        'Warehouse task %s is no handling unit task. Sending warehouse order to '
+                        'error queue')
+                    self.invalid_warehousetask()
             else:
                 _LOGGER.error('No warehouse task in warehouse order %s', self.active_who.who)
                 self.warehouseorder_aborted()
@@ -1087,9 +1093,14 @@ class RobotEWMMachine(Machine):
         if isinstance(self.active_who, WarehouseOrder):
             if self.active_who.warehousetasks:
                 self.active_wht = self.active_who.warehousetasks[0]
-                # Create move mission
-                _LOGGER.info('Start moving to target location')
-                self.create_move_mission(target=self.active_wht.nlpla)
+                if self.active_wht.flghuto is True:
+                    # Create move mission
+                    _LOGGER.info('Start moving to target location')
+                    self.create_move_mission(target=self.active_wht.nlpla)
+                else:
+                    _LOGGER.error(
+                        'Warehouse task %s is no handling unit task. Set robot to error state')
+                    self.invalid_warehousetask()
             else:
                 _LOGGER.info(
                     'No warehouse task in warehouse order %s, waiting for it', self.active_who.who)

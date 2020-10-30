@@ -43,6 +43,7 @@ class RobotEWMConfig:
     t_staging_timeout = 'staging_timeout'
     t_recover_robot = 'recover_robot'
     t_unassign_whos = 'unassign_whos'
+    t_invalid_warehousetask = 'invalid_warehousetask'
 
     # processes
     p_moveTrolley = 'moveTrolley'
@@ -208,6 +209,13 @@ class RobotEWMConfig:
          'source': 'moveTrolley_movingToSourceBin',
          'dest': 'idle',
          'before': ['_log_warehouse_order_fail', '_close_active_who']},
+        {'trigger': t_invalid_warehousetask,
+         'source': 'moveTrolley_movingToSourceBin',
+         'dest': 'idle',
+         'before': [
+             '_send_first_wht_confirmation_error', '_close_active_wht',
+             '_log_get_trolley_completed', '_log_warehouse_order_fail',
+             '_close_active_who']},
         {'trigger': t_mission_failed,
          'source': [
              'moveTrolley_movingToSourceBin', 'moveTrolley_loadingTrolley'],
@@ -297,6 +305,11 @@ class RobotEWMConfig:
          'source': 'pickPackPass_movingtoTargetLocation',
          'dest': 'pickPackPass_waitingForErrorRecovery',
          'conditions': '_max_mission_errors_reached',
+         'before': '_send_second_wht_confirmation_error',
+         'after': '_request_who_confirmation_notification'},
+        {'trigger': t_invalid_warehousetask,
+         'source': 'pickPackPass_movingtoTargetLocation',
+         'dest': 'pickPackPass_waitingForErrorRecovery',
          'before': '_send_second_wht_confirmation_error',
          'after': '_request_who_confirmation_notification'},
         {'trigger': t_recover_robot,
