@@ -124,6 +124,7 @@ class MiRRobot:
         self.pos_theta = 0.0
         # Error handling
         self.error_resetted = False
+        self._loc_failed_reset_count = 0
         # Init attributes from environment variables
         self.init_robot_fromenv()
 
@@ -138,9 +139,15 @@ class MiRRobot:
             if val is None:
                 raise ValueError(
                     'Environment variable "{}" is not set'.format(var))
+        # Optional environment variables
+        envvar['LOCALIZATION_FAILED_MAX_RESET'] = os.environ.get('LOCALIZATION_FAILED_MAX_RESET')
 
         self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
         self.trolley_attached_plc = int(envvar['PLC_TROLLEY_ATTACHED'])  # type: ignore
+
+        self._loc_failed_max_reset = int(
+            envvar['LOCALIZATION_FAILED_MAX_RESET']) if envvar[   # type: ignore
+                'LOCALIZATION_FAILED_MAX_RESET'] else 0
 
     def cancel_mission(self, mission: str) -> bool:
         """Cancel a mission from mission queue."""
@@ -404,6 +411,15 @@ class MiRRobot:
                 if error.get('module') == 'MissionController':
                     _LOGGER.info('Error raised by MiR MissionController module occurred.')
                     reset = True
+                # Reset E_LOCALIZATION_FAILED error self.loc_failed_max_reset times per mission
+                # Counter is resetted on each successfull mission
+                elif (error.get('module') == 'AMCL'
+                        and error.get('code') == 10201
+                        and self._loc_failed_reset_count < self._loc_failed_max_reset):
+                    _LOGGER.warning(
+                        'E_LOCALIZATION_FAILED error raised by MiR AMCL module occurred.')
+                    reset = True
+                    self._loc_failed_reset_count += 1
                 else:
                     reset = False
                     self.error_resetted = False
@@ -435,3 +451,7 @@ class MiRRobot:
             else:
                 self.error_resetted = False
                 _LOGGER.info('Mission continued')
+
+    def reset_localization_failed_reset_counter(self) -> None:
+        """Reset counter for resetting failed robot localizations."""
+        self._loc_failed_reset_count = 0

@@ -346,6 +346,9 @@ class MissionController(K8sCRHandler):
         _LOGGER.info(
             'Mission %s on robot %s  successfully finished', name,
             self._mir_robot.robco_robot_name)
+        # Reset localization reset counter
+        self._mir_robot.reset_localization_failed_reset_counter()
+
         return RobcoMissionStates.STATE_SUCCEEDED
 
     def run_action_charge(

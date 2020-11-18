@@ -1,10 +1,11 @@
-image: "ewmcloudrobotics/mir-mission-controller:latest"
+image: "ewmcloudrobotics/mir-mission-controller:latest"   # Default image available at docker hub https://hub.docker.com/u/ewmcloudrobotics
 
 envs:
-  plctrolley: 5
-  miruser: "admin"
-  mirpassword: ""
-  mirhost: "mir-api.default.svc.cluster.local"
+  plctrolley: 5   # PLC register of robot which is set to 1 when a trolley is attached
+  miruser: ""  # User to connect to MiR API
+  mirpassword: ""   # Password for MiR user
+  mirhost: "mir-api.default.svc.cluster.local"  # Host name of MiR API
+  locfailedmaxreset: 0  # Maximum times E_LOCALIZATION_FAILED errors are resetted per successfull mission
 
 robot:
-  name: "z"
+  name: "z"   # Placeholder value to run helm linter successfully. Is automatically overwritten.
