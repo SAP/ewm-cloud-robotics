@@ -4,14 +4,7 @@ This repository includes the applications to run the outlined SAP EWM scenarios.
 ## SAP EWM extension
 SAP EWM extension for Cloud Robotics includes all developments required to run Cloud Robotics enabled robots in an SAP EWM controlled warehouse. It consists of an OData interface, several robot specific master data and some process enhancements. It supports two different process types: 
 1. The **Move Handling Unit** process meant for robots which are able to move a Handling Unit, such as mobile shelves, autonomously 
-2. The **Pick, Pack and Pass** scenario designed for collaboration of human pickers and robots. In this scenario warehouse orders are assigned to a robot which is waiting for the picker at the source bins. The picker scans the robot to start the picking process.
-
-All foundations and the **Move Handling Unit** process are part of this repository. The robot enabled **Pick, Pack and Pass** scenario can be found in a separate [repository](https://github.com/SAP/ewm-cloud-robotics-s4), because it includes some modifications of the system.
-Both repositories can be deployed to a SAP system using [abapGit](https://github.com/abapGit/abapGit).
-
-
-[This document](setup-EWM.md) describes the configuration steps in SAP EWM after the deployment of the code.
-
+2. The **Pick, Pack and Pass** scenario designed for collaboration of human pickers and robots. In this scenario warehouse orders are assigned to a robot which is waiting for the picker at the source bins. The picker scans the robot to start the picking process. This scenario can be found in a separate [repository](https://github.com/SAP/ewm-cloud-robotics-s4), because it includes some modifications of the system.
 
 ## EWM Cloud Robotics apps
 ### ewm-order-manager

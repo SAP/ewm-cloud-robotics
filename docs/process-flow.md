@@ -1,5 +1,5 @@
-# Baseline robot warehouse process
+# Process warehouse orders with robots
 Following soon.
 
-# Robot warehouse process with order optimization
+# Optimize warehouse order sequence with order auctions
 Following soon.
