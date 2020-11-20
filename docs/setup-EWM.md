@@ -1,5 +1,15 @@
+# Install SAP EWM extension
+SAP EWM extension for Cloud Robotics includes all developments required to run Cloud Robotics enabled robots in an SAP EWM controlled warehouse. It consists of an OData interface, several robot specific master data and some process enhancements. It supports two different process types: 
+1. The **Move Handling Unit** process meant for robots which are able to move a Handling Unit, such as mobile shelves, autonomously 
+2. The **Pick, Pack and Pass** scenario designed for collaboration of human pickers and robots. In this scenario warehouse orders are assigned to a robot which is waiting for the picker at the source bins. The picker scans the robot to start the picking process.
+
+All foundations and the **Move Handling Unit** process are part of [ewm-cloud-robotics repository](https://github.com/SAP/ewm-cloud-robotics). The robot enabled **Pick, Pack and Pass** scenario can be found in a separate [repository](https://github.com/SAP/ewm-cloud-robotics-s4), because it includes some modifications of the system.
+Both repositories can be deployed to a SAP system using [abapGit](https://github.com/abapGit/abapGit). There is a good [documentation](https://docs.abapgit.org/) of how-to install and use abapGit.
+
+We deployed our EWM extension successfully in SAP EWM 9.4 & 9.5 and in all SAP S4HANA versions starting from 1709.
+
 # Initial setup of SAP EWM system
-After deployment of this repository's ABAP code there are some customzing and master data neccessary to get the processes running.
+After deployment of this repository's ABAP code there are some customzing and master data neccessary to get the processes running. Beforehand, please ensure that you are able to access our ODATA service *ZEWM_ROBCO_SRV* and memorize its URI. You will need it, when you setup our *Order Manager* app later. Good starting points for a research about how to ensure that OData services are activated are SAP transactions *SICF* and */IWFND/MAINT_SERVICE*.
 ## Customizing
 ### Create Queues, Queue determination criteria for robots
 Robots are treated as resources in SAP EWM. Thus, there should be dedicated robot _Queues_ with depend settings like _Queue determination criteria_ where warehouses order which should be processed by robots. There are two types of _Queues_:
