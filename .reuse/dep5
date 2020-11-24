@@ -1,0 +1,8 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: ewm-cloud-robotics
+Upstream-Contact: SAP SE
+Source: https://github.com/SAP/ewm-cloud-robotics
+
+Files: ./*
+Copyright: 2020 SAP SE or an SAP affiliate company and ewm-cloud-robotics contributors
+License: Apache-2.0
