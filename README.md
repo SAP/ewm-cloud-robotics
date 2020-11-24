@@ -1,4 +1,6 @@
-# 🤖 ewm-cloud-robotics 🤖  - [![Build Status](https://travis-ci.com/SAP/ewm-cloud-robotics.svg?token=UgRpWYHRU3yqYszd3B6x&branch=master)](https://travis-ci.com/SAP/ewm-cloud-robotics)
+# 🤖 ewm-cloud-robotics 🤖  
+[![Build Status](https://travis-ci.com/SAP/ewm-cloud-robotics.svg?token=UgRpWYHRU3yqYszd3B6x&branch=master)](https://travis-ci.com/SAP/ewm-cloud-robotics)
+[![REUSE status](https://api.reuse.software/badge/github.com/SAP/ewm-cloud-robotics)](https://api.reuse.software/info/github.com/SAP/ewm-cloud-robotics)
 
 ## Description
 Human-safe collaborative robots ("Cobots") are widely available from hundreds of low-cost vendors, leading to heterogenous fleets of cobots that need to easily integrate with corresponding management systems. **ewm-cloud-robotics** represents such an integration, leveraging the core of Google Cloud Robotics ([repo](https://github.com/googlecloudrobotics/core), [doc](https://googlecloudrobotics.github.io/core/)) to package and distribute applications for autonomous fulfilment of warehouse orders & tasks commissioned by [SAP EWM (Extended Warehouse Management](https://www.sap.com/germany/products/extended-warehouse-management.html)) just like in the video below.
@@ -18,5 +20,3 @@ Please refer to the Github issue board. For upcoming features check the "enhance
 ## Get involved
 You are welcome to join forces with us in the quest to increase the number of warehouse orders & tasks fulfilled by 🤖! Simply check the [Contribution Guidelines](CONTRIBUTING.md).
 
-## License
-Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved. This file is licensed under the Apache Software License, v.2 except as noted in the [LICENSE file](LICENSE).
