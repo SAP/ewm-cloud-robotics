@@ -1225,6 +1225,14 @@ module.exports = {
 					})
 				})
 
+				app.get('/healthz', function (req, res) {
+					res.status(200).end()
+				})
+
+				app.get('/readyz', function (req, res) {
+					res.status(200).end()
+				})
+
 				// start webservice on process.env.ODATA_PORT (default: 8080)
 				var port = 8080
 				if (process.env.ODATA_PORT) {
