@@ -1,28 +1,21 @@
-FROM node:alpine
+FROM node:lts-alpine AS build
 
-RUN adduser -D -g '' appuser
+#RUN apk upgrade --update-cache --available && \
+#    apk add python && \
+#    apk add make && \
+#    apk add g++ && \
+#    rm -rf /var/cache/apk/*
 
-RUN apk upgrade --update-cache --available && \
-    apk add chromium && \
-    apk add openssl && \
-    apk add ca-certificates && \
-    rm -rf /var/cache/apk/*
+WORKDIR /usr/src/app
+COPY package*.json ./
+RUN npm install --production
 
-RUN npm i -g @ui5/cli && \
-    npm i -g concurrently
+FROM node:lts-alpine
 
-COPY app /app/
-WORKDIR /app
+WORKDIR /usr/src/app
+COPY . .
+COPY --from=build /usr/src/app/node_modules ./node_modules
+#RUN du -sh ./node_modules
 
-RUN npm i --no-optional && \ 
-    npm run-script build && \
-    rm -rf webapp/
-
-RUN chown -R appuser:appuser /app/ && \
-    chmod 755 /app/
-
-USER appuser
-
-EXPOSE 8080 8081 8000
-
-CMD [ "concurrently", "--no-color", "--kill-others", "\"node ui5server.js\"", "\"node exposedserver.js\"", "\"node dummyclient.js\"", "\"node tools/waitForServer.js && node orderroutine.js\"" ]
+EXPOSE 8080
+CMD [ "npm", "start" ]

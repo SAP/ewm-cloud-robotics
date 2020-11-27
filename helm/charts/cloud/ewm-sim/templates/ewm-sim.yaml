@@ -21,15 +21,11 @@ spec:
         ports:
         - containerPort: 8080
           name: odata-api
-        - containerPort: 8000
-          name: odata-api-tls
         env:
         - name: ODATA_USER
           value: {{ .Values.ewmsim.envs.ewm.user }} 
-        - name: ODATA_PASSWORD
+        - name: ODATA_PASSWD
           value: {{ .Values.ewmsim.envs.ewm.password }} 
-        - name: ODATA_BASEPATH
-          value: {{ .Values.ewmsim.envs.ewm.basepath }} 
         readinessProbe:
           httpGet:
             path: /readyz
@@ -46,13 +42,6 @@ spec:
           timeoutSeconds: 1
           successThreshold: 1
           failureThreshold: 10
-        volumeMounts:
-        - name: cert
-          mountPath: /app/cert
-      volumes:
-      - name: cert
-        configMap:
-          name: ewm-sim-cert
 ---
 kind: Service
 apiVersion: v1
@@ -68,9 +57,5 @@ spec:
     name: http
     port: 8080
     targetPort: odata-api
-  - protocol: TCP
-    name: https
-    port: 8000
-    targetPort: odata-api-tls
   type: ClusterIP
 ---

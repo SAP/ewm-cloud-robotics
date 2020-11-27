@@ -4,4 +4,3 @@ ewmsim:
     ewm:
       user: "someuser"
       password: "supersecure"
-      basepath: "/odata/SAP/ZEWM_ROBCO_SRV"
