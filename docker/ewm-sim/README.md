@@ -1,5 +1,9 @@
+## TODO: Replace Badges
 [![Coverage Status](https://coveralls.io/repos/yschiebelhut/odata-mock-server/badge.svg?branch=master)](https://coveralls.io/r/yschiebelhut/odata-mock-server?branch=master)
 [![Build Status](https://travis-ci.org/yschiebelhut/odata-mock-server.svg?branch=master)](https://travis-ci.org/yschiebelhut/odata-mock-server)
+
+These Badges are a nice way to show the current state and quality of the application. Although they're currently out of service as they point to an old repository and **do not** represent the actual state of the project.
+To repare them, the ewm-sim has to be included into the ewm-cloud-robotics main build pipeline on Travis CI.
 
 
 # odata-mock-server
@@ -20,7 +24,7 @@ This includes:
 * providing **basic** odata functionality out of the box like
     * GET,
     * PUSH,
-    * PUT &
+    * PUT,
     * DELETE
   requests
 
@@ -41,8 +45,9 @@ Current status of those function imports is:
     * UnassignRobotFromWarehouseOrder
     * UnsetWarehouseOrderInProcessStatus
 * **WIP**
+    * --
 * **not implemented yet**
-    * yay, no methods feel lonely
+    * --
 
 ¹ Due to missing properties in the oData model, implementation is only for demo purpose. The returned **values will differ** from an actual EWM system. The resource type is hardcoded to RB01, the resource group to RB02.
 
