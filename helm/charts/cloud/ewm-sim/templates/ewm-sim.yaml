@@ -6,7 +6,7 @@ kind: Deployment
 metadata:
   name: ewm-sim
 spec:
-  replicas: {{ .Values.ewmsim.replicaCount }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: ewm-sim
@@ -17,19 +17,20 @@ spec:
     spec:
       containers:
       - name: ewm-sim
-        image: {{ .Values.ewmsim.image }}
+        image: {{ .Values.image }}
         ports:
         - containerPort: 8080
           name: odata-api
         env:
         - name: ODATA_USER
-          value: {{ .Values.ewmsim.envs.ewm.user }} 
+          value: {{ .Values.envs.ewm.user }} 
         - name: ODATA_PASSWD
-          value: {{ .Values.ewmsim.envs.ewm.password }} 
+          value: {{ .Values.envs.ewm.password }} 
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 1
           timeoutSeconds: 1
           successThreshold: 1
@@ -38,6 +39,7 @@ spec:
           httpGet:
             path: /healthz
             port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 1
           timeoutSeconds: 1
           successThreshold: 1
