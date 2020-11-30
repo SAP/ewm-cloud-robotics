@@ -1,6 +1,6 @@
-ewmsim:
-  image: "ewmcloudrobotics/ewm-sim:latest"
-  envs:
-    ewm:
-      user: "someuser"
-      password: "supersecure"
+replicaCount: 1
+image: "ewmcloudrobotics/ewm-sim:latest"
+envs:
+  ewm:
+    user: "someuser"
+    password: "supersecure"
