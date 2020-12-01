@@ -6,10 +6,9 @@
 >To repare them, the ewm-sim has to be included into the ewm-cloud-robotics main build pipeline on Travis CI.
 
 
-# odata-mock-server
+# ewm-sim (v2)
 This project is inspired by the [mockserver-server](https://github.com/ArnaudBuchholz/mockserver-server) by [Arnaud Buchholz](https://github.com/ArnaudBuchholz).
-It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock a real odata service.
-The aim of the project is to replace the old implementation of the ewm-sim mockserver from [EWM Cloud Robotics](https://github.com/SAP/ewm-cloud-robotics).
+It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock the real odata service of an EWM system. By this, we now achieved a much slimmer approach compared to the former version of ewm-sim.
 
 ## Getting Started 
 Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set :warning: 
@@ -71,5 +70,6 @@ Current status of those function imports is:
     * WAREHOUSE_ORDER_NOT_UNASSIGNED
     * WAREHOUSE_TASK_ASSIGNED (property missing in oData Entity OpenWarehouseTaskSet)
 
-
-
+* When running the project, additional configuration options can be applied via environment variables:
+   * ODATA_PORT - port for the exposed http server (default: 8080)
+   * LOGGING_LOGTOFILE - redirect console log to files (default: false)
