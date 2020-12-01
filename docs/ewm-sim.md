@@ -14,12 +14,12 @@ It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock t
 Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set :warning: 
 
 ### Local
-To get the project up and running, issue the following commands in the root directory of the project:
+To get the project up and running, issue the following commands in the root directory of the project (docker/ewm-sim):
 * `npm install`
 * `npm start`
 
 ### Docker :whale:
-Make sure you're in the correct directory.
+Make sure you're in the correct directory (docker/ewm-sim).
 ```sh
 $ docker build --tag ewm-sim:1.0 .
 ```
