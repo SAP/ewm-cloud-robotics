@@ -12,7 +12,7 @@ It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock a
 The aim of the project is to replace the old implementation of the ewm-sim mockserver from [EWM Cloud Robotics](https://github.com/SAP/ewm-cloud-robotics).
 
 ## Getting Started 
-:warning: Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set
+Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set :warning: 
 
 ### Local
 To get the project up and running, issue the following commands in the root directory of the project:
@@ -22,11 +22,11 @@ To get the project up and running, issue the following commands in the root dire
 ### Docker :whale:
 Make sure you're in the correct directory.
 ```sh
-$ docker build --tag bulletinboard:1.0 .
+$ docker build --tag ewm-sim:1.0 .
 ```
 Now we need to set our environment variables, forward traffic to the host's port and run our docker image.
 ```sh
-$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 yschiebelhut/odata-mock-server
+$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
 ```
 
 ## Current State of Implementation
