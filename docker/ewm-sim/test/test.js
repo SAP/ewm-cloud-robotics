@@ -600,7 +600,7 @@ describe('Test for basic server functionality', () => {
 	describe('Custom Function \'GetInProcessWarehouseOrders\'', () => {
 		describe('Errorcases', () => {
 			describe('NO_ORDER_FOUND', () => {
-				it('checks for correct business_error', async () => {
+				it('check for correct business_error', async () => {
 					let res = await tools.oDataGetFunction("GetInProcessWarehouseOrders", { "Lgnum": "1337", "RsrcType": "RB01" })
 					assert.deepStrictEqual(res.body.error.code, "NO_ORDER_FOUND")
 				})
@@ -611,7 +611,7 @@ describe('Test for basic server functionality', () => {
 				})
 			})
 			describe('RESOURCE_TYPE_IS_NO_ROBOT', () => {
-				it('checks for correct business_error', async () => {
+				it('check for correct business_error', async () => {
 					await tools.createEntity("WarehouseOrderSet", { "Lgnum": "1400", "RsrcType": "RB01", "Status": "D", "Who": "someWho", "Rsrc": "" })
 
 					let res = await tools.oDataGetFunction("GetInProcessWarehouseOrders", { "Lgnum": "1400", "RsrcType": "wrongType" })
@@ -626,7 +626,7 @@ describe('Test for basic server functionality', () => {
 			})
 		})
 		describe('Success', () => {
-			it('checks for correct response', async () => {
+			it('check for correct response', async () => {
 
 				let exp = {
 					"d": { "results": [{ "Lgnum": "1400", "RsrcType": "RB01", "Status": "D", "Who": "someWho", "Rsrc": "", "__metadata": { "id": "/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1400',Who='someWho')", "type": "ZEWM_ROBCO_SRV.WarehouseOrder", "uri": "/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1400',Who='someWho')" }, "OpenWarehouseTasks": { "__deferred": { "uri": "/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1400',Who='someWho')/OpenWarehouseTasks" } } }] }
@@ -900,7 +900,7 @@ describe('Test for basic server functionality', () => {
 		})
 
 		describe('Success', () => {
-			it('checks for initial status', async () => {
+			it('check for initial status', async () => {
 				await tools.createEntity("WarehouseOrderSet", { "Lgnum": "1401", "RsrcType": "RB01", "Status": "D", "Who": "someWho" })
 
 
@@ -1004,18 +1004,18 @@ describe('Tests for Orderroutine', () => {
 		server.initWithOrderroutine()
 	})
 
-	it('looks if WarehouseOrderSet is initial', async () => {
+	it('look if WarehouseOrderSet is initial', async () => {
 		let res = await tools.getEntity("WarehouseOrderSet", {})
 		assert.deepStrictEqual(res.body.d.results.length, 1)
 	})
 
-	it('waits for intervall', function (done) {
+	it('wait for intervall', function (done) {
 		setTimeout(() => {
 			done()
 		}, 2000)
 	}).timeout(3000)
 
-	it('checks if intervall creates an order', async () => {
+	it('check if intervall creates an order', async () => {
 		let res = await tools.getEntity("WarehouseOrderSet", {})
 		assert.deepStrictEqual(res.body.d.results.length > 1, true)
 	})

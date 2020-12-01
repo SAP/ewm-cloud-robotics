@@ -1,9 +1,9 @@
-## TODO: Replace Badges
+### TODO: Replace Badges
 [![Coverage Status](https://coveralls.io/repos/yschiebelhut/odata-mock-server/badge.svg?branch=master)](https://coveralls.io/r/yschiebelhut/odata-mock-server?branch=master)
 [![Build Status](https://travis-ci.org/yschiebelhut/odata-mock-server.svg?branch=master)](https://travis-ci.org/yschiebelhut/odata-mock-server)
 
-These Badges are a nice way to show the current state and quality of the application. Although they're currently out of service as they point to an old repository and **do not** represent the actual state of the project.
-To repare them, the ewm-sim has to be included into the ewm-cloud-robotics main build pipeline on Travis CI.
+>These Badges are a nice way to show the current state and quality of the application. Although they're currently out of service as they point to an old repository and **do not** represent the actual state of the project.
+>To repare them, the ewm-sim has to be included into the ewm-cloud-robotics main build pipeline on Travis CI.
 
 
 # odata-mock-server
@@ -11,10 +11,23 @@ This project is inspired by the [mockserver-server](https://github.com/ArnaudBuc
 It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock a real odata service.
 The aim of the project is to replace the old implementation of the ewm-sim mockserver from [EWM Cloud Robotics](https://github.com/SAP/ewm-cloud-robotics).
 
-## Getting Started
+## Getting Started 
+:warning: Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set
+
+### Local
 To get the project up and running, issue the following commands in the root directory of the project:
 * `npm install`
 * `npm start`
+
+### Docker :whale:
+Make sure you're in the correct directory.
+```sh
+$ docker build --tag bulletinboard:1.0 .
+```
+Now we need to set our environment variables, forward traffic to the host's port and run our docker image.
+```sh
+$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 yschiebelhut/odata-mock-server
+```
 
 ## Current State of Implementation
 Currently, the basic mockserver is up and running. It is served by an express web service.
@@ -57,3 +70,6 @@ Current status of those function imports is:
     * WAREHOUSE_ORDER_LOCKED
     * WAREHOUSE_ORDER_NOT_UNASSIGNED
     * WAREHOUSE_TASK_ASSIGNED (property missing in oData Entity OpenWarehouseTaskSet)
+
+
+
