@@ -35,7 +35,7 @@ following soon
 In case you have no SAP EWM system or no real robot available there simulation apps which can be used in order to still be able to demonstrate an end-to-end scenario with SAP Cloud Robotics. Both apps are deployed in the Cloud Robotics Cluster.
 
 ## ewm-sim
-🚧🚧 The ewm-sim application is currently being redesigned in order to make it slimmer and remove obsolete parts. For further information/questions refer to [this issue](https://github.com/SAP/ewm-cloud-robotics/issues/1).
+The ewm-sim is deployed to the cloud cluster. It mimics the EWM OData interface and includes a routine to create warehouse orders and warehouse tasks. (cf. [ewm-sim](ewm-sim.md))
 
 ## dummy-mission-controller 
 The dummy-mission-controller allows testing the warehouse scenarios without deploying actual robots by adding one or more dummies to the cluster. This can be achieved by either installing the Helm chart in `helm/charts/dummy-robots` or via the `deploy.sh` script:

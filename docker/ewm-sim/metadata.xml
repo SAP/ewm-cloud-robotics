@@ -1,0 +1,434 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<edmx:Edmx xmlns:edmx="http://schemas.microsoft.com/ado/2007/06/edmx" Version="1.0" xmlns:sap="http://www.sap.com/Protocols/SAPData" xmlns:ux="http://www.sap.com/Protocols/OData4SAP/UX" xmlns:gp="http://www.sap.com/Protocols/SAPData/GenericPlayer">
+	<edmx:DataServices m:DataServiceVersion="2.0" xmlns:m="http://schemas.microsoft.com/ado/2007/08/dataservices/metadata">
+		<Schema Namespace="ZEWM_ROBCO_SRV" xmlns="http://schemas.microsoft.com/ado/2008/09/edm" sap:schema-version="1" xml:lang="*">
+			<EntityType Name="WarehouseOrder" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="Who"/>
+				</Key>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="Who" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse Order"/>
+				<Property Name="Status" Type="Edm.String" Nullable="false" MaxLength="1" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="WO Status"/>
+				<Property Name="Areawho" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Activity Area"/>
+				<Property Name="Lgtyp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Storage Type"/>
+				<Property Name="Lgpla" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Storage Bin"/>
+				<Property Name="Queue" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Queue"/>
+				<Property Name="Rsrc" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource"/>
+				<Property Name="Lsd" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="0" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Lat. Start Date"/>
+				<Property Name="Topwhoid" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:unicode="false" sap:label="Higher-Level WO"/>
+				<Property Name="Refwhoid" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="WO No. Subs. WO"/>
+				<Property Name="Flgwho" Type="Edm.Boolean" Nullable="false" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse Order"/>
+				<Property Name="Flgto" Type="Edm.Boolean" Nullable="false" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Contains WT"/>
+				<NavigationProperty Name="OpenWarehouseTasks" Relationship="ZEWM_ROBCO_SRV.WarehouseOrderToOpenWarehouseTask" FromRole="FromRole_WarehouseOrderToOpenWarehouseTask" ToRole="ToRole_WarehouseOrderToOpenWarehouseTask"/>
+			</EntityType>
+			<EntityType Name="WarehouseNumber" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+				</Key>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<NavigationProperty Name="WarehouseDescriptions" Relationship="ZEWM_ROBCO_SRV.WarehouseNumberToDescription" FromRole="FromRole_WarehouseNumberToDescription" ToRole="ToRole_WarehouseNumberToDescription"/>
+				<NavigationProperty Name="WarehouseOrders" Relationship="ZEWM_ROBCO_SRV.WarehouseNumberToWarehouseOrder" FromRole="FromRole_WarehouseNumberToWarehouseOrder" ToRole="ToRole_WarehouseNumberToWarehouseOrder"/>
+				<NavigationProperty Name="StorageBins" Relationship="ZEWM_ROBCO_SRV.WarehouseNumberToStorageBin" FromRole="FromRole_WarehouseNumberToStorageBin" ToRole="ToRole_WarehouseNumberToStorageBin"/>
+				<NavigationProperty Name="Robots" Relationship="ZEWM_ROBCO_SRV.WarehouseNumberToRobot" FromRole="FromRole_WarehouseNumberToRobot" ToRole="ToRole_WarehouseNumberToRobot"/>
+				<NavigationProperty Name="RobotResourceTypes" Relationship="ZEWM_ROBCO_SRV.WarehouseNumberToRobotResourceType" FromRole="FromRole_WarehouseNumberToRobotResourceType" ToRole="ToRole_WarehouseNumberToRobotResourceType"/>
+				<NavigationProperty Name="ResourceGroups" Relationship="ZEWM_ROBCO_SRV.WarehouseNumberToResourceGroup" FromRole="FromRole_WarehouseNumberToResourceGroup" ToRole="ToRole_WarehouseNumberToResourceGroup"/>
+			</EntityType>
+			<EntityType Name="WarehouseDescription" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Spras"/>
+					<PropertyRef Name="Lgnum"/>
+				</Key>
+				<Property Name="Spras" Type="Edm.String" Nullable="false" MaxLength="2" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Language"/>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="Lnumt" Type="Edm.String" Nullable="false" MaxLength="40" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Description"/>
+			</EntityType>
+			<EntityType Name="StorageBin" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="Lgpla"/>
+				</Key>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="Lgpla" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Storage Bin"/>
+				<Property Name="Lgtyp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Storage Type"/>
+				<Property Name="Lgber" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Storage Section"/>
+				<Property Name="Lptyp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Stor. Bin Type"/>
+				<Property Name="Aisle" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Aisle"/>
+				<Property Name="Stack" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Stack"/>
+				<Property Name="LvlV" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Level"/>
+				<Property Name="XCord" Type="Edm.Decimal" Nullable="false" Precision="10" Scale="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="X Coordinate"/>
+				<Property Name="YCord" Type="Edm.Decimal" Nullable="false" Precision="10" Scale="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Y Coordinate"/>
+				<Property Name="ZCord" Type="Edm.Decimal" Nullable="false" Precision="10" Scale="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Z Coordinate"/>
+			</EntityType>
+			<EntityType Name="Robot" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="Rsrc"/>
+				</Key>
+				<Property Name="ActQueue" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Actual Queue"/>
+				<Property Name="ActualBin" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Storage Bin"/>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="Rsrc" Type="Edm.String" Nullable="false" MaxLength="18" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource"/>
+				<Property Name="RsrcType" Type="Edm.String" Nullable="false" MaxLength="4" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource Type"/>
+				<Property Name="RsrcGrp" Type="Edm.String" Nullable="false" MaxLength="4" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource Group"/>
+				<Property Name="ExccodeOverall" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Overall Ex.Code"/>
+			</EntityType>
+			<EntityType Name="OpenWarehouseTask" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="Tanum"/>
+				</Key>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="Tanum" Type="Edm.String" Nullable="false" MaxLength="12" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse Task"/>
+				<Property Name="Procty" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Whse Proc. Type"/>
+				<Property Name="Flghuto" Type="Edm.Boolean" Nullable="false" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="HU Whse Task"/>
+				<Property Name="Tostat" Type="Edm.String" Nullable="false" MaxLength="1" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="WT Status"/>
+				<Property Name="Priority" Type="Edm.Byte" Nullable="false" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Priority"/>
+				<Property Name="Weight" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unit="UnitW" sap:unicode="false" sap:label="Loading Weight"/>
+				<Property Name="UnitW" Type="Edm.String" Nullable="false" MaxLength="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:semantics="unit-of-measure" sap:unicode="false" sap:label="Weight Unit"/>
+				<Property Name="Volum" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unit="UnitV" sap:unicode="false" sap:label="Loading Volume"/>
+				<Property Name="UnitV" Type="Edm.String" Nullable="false" MaxLength="3" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:semantics="unit-of-measure" sap:unicode="false" sap:label="Volume Unit"/>
+				<Property Name="Vltyp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Source Stor.Ty."/>
+				<Property Name="Vlber" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Src.stor.sectn"/>
+				<Property Name="Vlpla" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Source Bin"/>
+				<Property Name="Vlenr" Type="Edm.String" Nullable="false" MaxLength="20" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Source HU"/>
+				<Property Name="Nltyp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Dest. Stor. Ty."/>
+				<Property Name="Nlber" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Dest. Section"/>
+				<Property Name="Nlpla" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Dest. Stor. Bin"/>
+				<Property Name="Nlenr" Type="Edm.String" Nullable="false" MaxLength="20" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Destination HU"/>
+				<Property Name="Who" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse Order"/>
+			</EntityType>
+			<EntityType Name="RobotResourceType" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="RsrcType"/>
+				</Key>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="RsrcType" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource Type"/>
+				<Property Name="RobotType" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="RobCo Robot Type"/>
+				<Property Name="ErrorQueue" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Error Queue"/>
+				<NavigationProperty Name="Robots" Relationship="ZEWM_ROBCO_SRV.RobotResourceTypeToRobot" FromRole="FromRole_RobotResourceTypeToRobot" ToRole="ToRole_RobotResourceTypeToRobot"/>
+				<NavigationProperty Name="ResourceTypeDescriptions" Relationship="ZEWM_ROBCO_SRV.RobotResourceTypeToDescription" FromRole="FromRole_RobotResourceTypeToDescription" ToRole="ToRole_RobotResourceTypeToDescription"/>
+			</EntityType>
+			<EntityType Name="ResourceTypeDescription" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Langu"/>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="RsrcType"/>
+				</Key>
+				<Property Name="Langu" Type="Edm.String" Nullable="false" MaxLength="2" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Language"/>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="RsrcType" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource Type"/>
+				<Property Name="Text" Type="Edm.String" Nullable="false" MaxLength="40" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Description"/>
+			</EntityType>
+			<EntityType Name="ResourceGroup" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="RsrcGrp"/>
+				</Key>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="RsrcGrp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource Group"/>
+				<Property Name="ZewmErrorQueue" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Error Queue"/>
+				<NavigationProperty Name="Robots" Relationship="ZEWM_ROBCO_SRV.ResourceGroupToRobot" FromRole="FromRole_ResourceGroupToRobot" ToRole="ToRole_ResourceGroupToRobot"/>
+				<NavigationProperty Name="ResourceGroupDescriptions" Relationship="ZEWM_ROBCO_SRV.ResourceGroupToDescription" FromRole="FromRole_ResourceGroupToDescription" ToRole="ToRole_ResourceGroupToDescription"/>
+			</EntityType>
+			<EntityType Name="ResourceGroupDescription" sap:content-version="1">
+				<Key>
+					<PropertyRef Name="Langu"/>
+					<PropertyRef Name="Lgnum"/>
+					<PropertyRef Name="RsrcGrp"/>
+				</Key>
+				<Property Name="Langu" Type="Edm.String" Nullable="false" MaxLength="2" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Language"/>
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Warehouse No."/>
+				<Property Name="RsrcGrp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Resource Group"/>
+				<Property Name="Text" Type="Edm.String" Nullable="false" MaxLength="40" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:unicode="false" sap:label="Description"/>
+			</EntityType>
+			<ComplexType Name="NewWarehouseOrder">
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Warehouse No."/>
+				<Property Name="Who" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Warehouse Order"/>
+				<Property Name="Status" Type="Edm.String" Nullable="false" MaxLength="1" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="WO Status"/>
+				<Property Name="Areawho" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Activity Area"/>
+				<Property Name="Lgtyp" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Storage Type"/>
+				<Property Name="Lgpla" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Storage Bin"/>
+				<Property Name="Queue" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Queue"/>
+				<Property Name="Rsrc" Type="Edm.String" Nullable="false" MaxLength="18" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Resource"/>
+				<Property Name="Lsd" Type="Edm.Decimal" Nullable="false" Precision="15" Scale="0" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Lat. Start Date"/>
+				<Property Name="Topwhoid" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Higher-Level WO"/>
+				<Property Name="Refwhoid" Type="Edm.String" Nullable="false" MaxLength="10" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="WO No. Subs. WO"/>
+				<Property Name="Flgwho" Type="Edm.Boolean" Nullable="false" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Warehouse Order"/>
+				<Property Name="Flgto" Type="Edm.Boolean" Nullable="false" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Contains WT"/>
+			</ComplexType>
+			<ComplexType Name="WarehouseTaskConfirmation">
+				<Property Name="Lgnum" Type="Edm.String" Nullable="false" MaxLength="4" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Warehouse No."/>
+				<Property Name="Tanum" Type="Edm.String" Nullable="false" MaxLength="12" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="Warehouse Task"/>
+				<Property Name="Tostat" Type="Edm.String" Nullable="false" MaxLength="1" sap:creatable="false" sap:updatable="false" sap:sortable="false" sap:filterable="false" sap:label="WT Status"/>
+			</ComplexType>
+			<Association Name="WarehouseNumberToDescription" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseNumber" Multiplicity="1" Role="FromRole_WarehouseNumberToDescription"/>
+				<End Type="ZEWM_ROBCO_SRV.WarehouseDescription" Multiplicity="*" Role="ToRole_WarehouseNumberToDescription"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseNumberToDescription">
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseNumberToDescription">
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="WarehouseNumberToWarehouseOrder" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseNumber" Multiplicity="1" Role="FromRole_WarehouseNumberToWarehouseOrder"/>
+				<End Type="ZEWM_ROBCO_SRV.WarehouseOrder" Multiplicity="*" Role="ToRole_WarehouseNumberToWarehouseOrder"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseNumberToWarehouseOrder">
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseNumberToWarehouseOrder">
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="WarehouseNumberToStorageBin" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseNumber" Multiplicity="1" Role="FromRole_WarehouseNumberToStorageBin"/>
+				<End Type="ZEWM_ROBCO_SRV.StorageBin" Multiplicity="*" Role="ToRole_WarehouseNumberToStorageBin"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseNumberToStorageBin">
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseNumberToStorageBin">
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="WarehouseNumberToRobot" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseNumber" Multiplicity="1" Role="FromRole_WarehouseNumberToRobot"/>
+				<End Type="ZEWM_ROBCO_SRV.Robot" Multiplicity="*" Role="ToRole_WarehouseNumberToRobot"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseNumberToRobot">
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseNumberToRobot">
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="WarehouseOrderToOpenWarehouseTask" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseOrder" Multiplicity="1" Role="FromRole_WarehouseOrderToOpenWarehouseTask"/>
+				<End Type="ZEWM_ROBCO_SRV.OpenWarehouseTask" Multiplicity="*" Role="ToRole_WarehouseOrderToOpenWarehouseTask"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseOrderToOpenWarehouseTask">
+						<PropertyRef Name="Who"/>
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseOrderToOpenWarehouseTask">
+						<PropertyRef Name="Who"/>
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="RobotResourceTypeToRobot" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.RobotResourceType" Multiplicity="1" Role="FromRole_RobotResourceTypeToRobot"/>
+				<End Type="ZEWM_ROBCO_SRV.Robot" Multiplicity="*" Role="ToRole_RobotResourceTypeToRobot"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_RobotResourceTypeToRobot">
+						<PropertyRef Name="RsrcType"/>
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_RobotResourceTypeToRobot">
+						<PropertyRef Name="RsrcType"/>
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="RobotResourceTypeToDescription" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.RobotResourceType" Multiplicity="1" Role="FromRole_RobotResourceTypeToDescription"/>
+				<End Type="ZEWM_ROBCO_SRV.ResourceTypeDescription" Multiplicity="*" Role="ToRole_RobotResourceTypeToDescription"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_RobotResourceTypeToDescription">
+						<PropertyRef Name="RsrcType"/>
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_RobotResourceTypeToDescription">
+						<PropertyRef Name="RsrcType"/>
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="ResourceGroupToRobot" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.ResourceGroup" Multiplicity="1" Role="FromRole_ResourceGroupToRobot"/>
+				<End Type="ZEWM_ROBCO_SRV.Robot" Multiplicity="*" Role="ToRole_ResourceGroupToRobot"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_ResourceGroupToRobot">
+						<PropertyRef Name="RsrcGrp"/>
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_ResourceGroupToRobot">
+						<PropertyRef Name="RsrcGrp"/>
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="ResourceGroupToDescription" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.ResourceGroup" Multiplicity="1" Role="FromRole_ResourceGroupToDescription"/>
+				<End Type="ZEWM_ROBCO_SRV.ResourceGroupDescription" Multiplicity="*" Role="ToRole_ResourceGroupToDescription"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_ResourceGroupToDescription">
+						<PropertyRef Name="RsrcGrp"/>
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_ResourceGroupToDescription">
+						<PropertyRef Name="RsrcGrp"/>
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="WarehouseNumberToRobotResourceType" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseNumber" Multiplicity="1" Role="FromRole_WarehouseNumberToRobotResourceType"/>
+				<End Type="ZEWM_ROBCO_SRV.RobotResourceType" Multiplicity="*" Role="ToRole_WarehouseNumberToRobotResourceType"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseNumberToRobotResourceType">
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseNumberToRobotResourceType">
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<Association Name="WarehouseNumberToResourceGroup" sap:content-version="1">
+				<End Type="ZEWM_ROBCO_SRV.WarehouseNumber" Multiplicity="1" Role="FromRole_WarehouseNumberToResourceGroup"/>
+				<End Type="ZEWM_ROBCO_SRV.ResourceGroup" Multiplicity="*" Role="ToRole_WarehouseNumberToResourceGroup"/>
+				<ReferentialConstraint>
+					<Principal Role="FromRole_WarehouseNumberToResourceGroup">
+						<PropertyRef Name="Lgnum"/>
+					</Principal>
+					<Dependent Role="ToRole_WarehouseNumberToResourceGroup">
+						<PropertyRef Name="Lgnum"/>
+					</Dependent>
+				</ReferentialConstraint>
+			</Association>
+			<EntityContainer Name="ZEWM_ROBCO_SRV_Entities" m:IsDefaultEntityContainer="true" sap:supported-formats="atom json xlsx">
+				<EntitySet Name="WarehouseOrderSet" EntityType="ZEWM_ROBCO_SRV.WarehouseOrder" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="WarehouseNumberSet" EntityType="ZEWM_ROBCO_SRV.WarehouseNumber" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="WarehouseDescriptionSet" EntityType="ZEWM_ROBCO_SRV.WarehouseDescription" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="StorageBinSet" EntityType="ZEWM_ROBCO_SRV.StorageBin" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="RobotSet" EntityType="ZEWM_ROBCO_SRV.Robot" sap:content-version="1" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="OpenWarehouseTaskSet" EntityType="ZEWM_ROBCO_SRV.OpenWarehouseTask" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="RobotResourceTypeSet" EntityType="ZEWM_ROBCO_SRV.RobotResourceType" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="ResourceTypeDescriptionSet" EntityType="ZEWM_ROBCO_SRV.ResourceTypeDescription" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="ResourceGroupSet" EntityType="ZEWM_ROBCO_SRV.ResourceGroup" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<EntitySet Name="ResourceGroupDescriptionSet" EntityType="ZEWM_ROBCO_SRV.ResourceGroupDescription" sap:content-version="1" sap:creatable="false" sap:updatable="false" sap:deletable="false" sap:pageable="false"/>
+				<AssociationSet Name="WarehouseNumberToDescriptionSet" Association="ZEWM_ROBCO_SRV.WarehouseNumberToDescription" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseNumberSet" Role="FromRole_WarehouseNumberToDescription"/>
+					<End EntitySet="WarehouseDescriptionSet" Role="ToRole_WarehouseNumberToDescription"/>
+				</AssociationSet>
+				<AssociationSet Name="WarehouseNumberToWarehouseOrderSet" Association="ZEWM_ROBCO_SRV.WarehouseNumberToWarehouseOrder" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseNumberSet" Role="FromRole_WarehouseNumberToWarehouseOrder"/>
+					<End EntitySet="WarehouseOrderSet" Role="ToRole_WarehouseNumberToWarehouseOrder"/>
+				</AssociationSet>
+				<AssociationSet Name="WarehouseNumberToStorageBinSet" Association="ZEWM_ROBCO_SRV.WarehouseNumberToStorageBin" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseNumberSet" Role="FromRole_WarehouseNumberToStorageBin"/>
+					<End EntitySet="StorageBinSet" Role="ToRole_WarehouseNumberToStorageBin"/>
+				</AssociationSet>
+				<AssociationSet Name="WarehouseNumberToRobotSet" Association="ZEWM_ROBCO_SRV.WarehouseNumberToRobot" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseNumberSet" Role="FromRole_WarehouseNumberToRobot"/>
+					<End EntitySet="RobotSet" Role="ToRole_WarehouseNumberToRobot"/>
+				</AssociationSet>
+				<AssociationSet Name="WarehouseOrderToOpenWarehouseTaskSet" Association="ZEWM_ROBCO_SRV.WarehouseOrderToOpenWarehouseTask" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseOrderSet" Role="FromRole_WarehouseOrderToOpenWarehouseTask"/>
+					<End EntitySet="OpenWarehouseTaskSet" Role="ToRole_WarehouseOrderToOpenWarehouseTask"/>
+				</AssociationSet>
+				<AssociationSet Name="RobotResourceTypeToRobotSet" Association="ZEWM_ROBCO_SRV.RobotResourceTypeToRobot" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="RobotResourceTypeSet" Role="FromRole_RobotResourceTypeToRobot"/>
+					<End EntitySet="RobotSet" Role="ToRole_RobotResourceTypeToRobot"/>
+				</AssociationSet>
+				<AssociationSet Name="RobotResourceTypeToDescriptionSet" Association="ZEWM_ROBCO_SRV.RobotResourceTypeToDescription" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="RobotResourceTypeSet" Role="FromRole_RobotResourceTypeToDescription"/>
+					<End EntitySet="ResourceTypeDescriptionSet" Role="ToRole_RobotResourceTypeToDescription"/>
+				</AssociationSet>
+				<AssociationSet Name="ResourceGroupToRobotSet" Association="ZEWM_ROBCO_SRV.ResourceGroupToRobot" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="ResourceGroupSet" Role="FromRole_ResourceGroupToRobot"/>
+					<End EntitySet="RobotSet" Role="ToRole_ResourceGroupToRobot"/>
+				</AssociationSet>
+				<AssociationSet Name="ResourceGroupToDescriptionSet" Association="ZEWM_ROBCO_SRV.ResourceGroupToDescription" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="ResourceGroupSet" Role="FromRole_ResourceGroupToDescription"/>
+					<End EntitySet="ResourceGroupDescriptionSet" Role="ToRole_ResourceGroupToDescription"/>
+				</AssociationSet>
+				<AssociationSet Name="WarehouseNumberToRobotResourceTypeSet" Association="ZEWM_ROBCO_SRV.WarehouseNumberToRobotResourceType" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseNumberSet" Role="FromRole_WarehouseNumberToRobotResourceType"/>
+					<End EntitySet="RobotResourceTypeSet" Role="ToRole_WarehouseNumberToRobotResourceType"/>
+				</AssociationSet>
+				<AssociationSet Name="WarehouseNumberToResourceGroupSet" Association="ZEWM_ROBCO_SRV.WarehouseNumberToResourceGroup" deletable="false" creatable="false" updatable="false">
+					<End EntitySet="WarehouseNumberSet" Role="FromRole_WarehouseNumberToResourceGroup"/>
+					<End EntitySet="ResourceGroupSet" Role="ToRole_WarehouseNumberToResourceGroup"/>
+				</AssociationSet>
+				<FunctionImport Name="GetNewRobotWarehouseOrder" ReturnType="ZEWM_ROBCO_SRV.NewWarehouseOrder" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+				</FunctionImport>
+				<FunctionImport Name="SetRobotStatus" ReturnType="ZEWM_ROBCO_SRV.Robot" EntitySet="RobotSet" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.Robot">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+					<Parameter Name="Exccode" Type="Edm.String" Mode="In" MaxLength="4"/>
+				</FunctionImport>
+				<FunctionImport Name="GetRobotWarehouseOrders" ReturnType="Collection(ZEWM_ROBCO_SRV.WarehouseOrder)" EntitySet="WarehouseOrderSet" m:HttpMethod="GET" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+				</FunctionImport>
+				<FunctionImport Name="ConfirmWarehouseTaskFirstStep" ReturnType="Collection(ZEWM_ROBCO_SRV.WarehouseTaskConfirmation)" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.OpenWarehouseTask">
+					<Parameter Name="Tanum" Type="Edm.String" Mode="In" MaxLength="12"/>
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+				</FunctionImport>
+				<FunctionImport Name="GetNewRobotTypeWarehouseOrders" ReturnType="Collection(ZEWM_ROBCO_SRV.NewWarehouseOrder)" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="RsrcType" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="RsrcGrp" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="NoWho" Type="Edm.Int16" Mode="In"/>
+				</FunctionImport>
+				<FunctionImport Name="UnassignRobotFromWarehouseOrder" ReturnType="ZEWM_ROBCO_SRV.WarehouseOrder" EntitySet="WarehouseOrderSet" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+					<Parameter Name="Who" Type="Edm.String" Mode="In" MaxLength="10"/>
+				</FunctionImport>
+				<FunctionImport Name="SendFirstConfirmationError" ReturnType="ZEWM_ROBCO_SRV.WarehouseOrder" EntitySet="WarehouseOrderSet" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+					<Parameter Name="Who" Type="Edm.String" Mode="In" MaxLength="10"/>
+					<Parameter Name="Tanum" Type="Edm.String" Mode="In" MaxLength="12"/>
+				</FunctionImport>
+				<FunctionImport Name="ConfirmWarehouseTask" ReturnType="Collection(ZEWM_ROBCO_SRV.WarehouseTaskConfirmation)" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.OpenWarehouseTask">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Tanum" Type="Edm.String" Mode="In" MaxLength="12"/>
+					<Parameter Name="Nista" Type="Edm.Decimal" Mode="In" Nullable="true" Precision="14" Scale="14"/>
+					<Parameter Name="Altme" Type="Edm.String" Mode="In" Nullable="true" MaxLength="3"/>
+					<Parameter Name="Nlenr" Type="Edm.String" Mode="In" Nullable="true" MaxLength="20"/>
+					<Parameter Name="Parti" Type="Edm.Boolean" Mode="In" Nullable="true"/>
+					<Parameter Name="Nlpla" Type="Edm.String" Mode="In" Nullable="true" MaxLength="18"/>
+					<Parameter Name="ConfExc" Type="Edm.String" Mode="In" Nullable="true" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+				</FunctionImport>
+				<FunctionImport Name="AssignRobotToWarehouseOrder" ReturnType="ZEWM_ROBCO_SRV.WarehouseOrder" EntitySet="WarehouseOrderSet" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+					<Parameter Name="Who" Type="Edm.String" Mode="In" MaxLength="10"/>
+				</FunctionImport>
+				<FunctionImport Name="SendSecondConfirmationError" ReturnType="ZEWM_ROBCO_SRV.WarehouseOrder" EntitySet="WarehouseOrderSet" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Rsrc" Type="Edm.String" Mode="In" MaxLength="18"/>
+					<Parameter Name="Who" Type="Edm.String" Mode="In" MaxLength="10"/>
+					<Parameter Name="Tanum" Type="Edm.String" Mode="In" MaxLength="12"/>
+				</FunctionImport>
+				<FunctionImport Name="UnsetWarehouseorderInProcessStatus" ReturnType="ZEWM_ROBCO_SRV.WarehouseOrder" EntitySet="WarehouseOrderSet" m:HttpMethod="POST" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="Who" Type="Edm.String" Mode="In" MaxLength="10"/>
+				</FunctionImport>
+				<FunctionImport Name="GetInProcessWarehouseOrders" ReturnType="Collection(ZEWM_ROBCO_SRV.WarehouseOrder)" EntitySet="WarehouseOrderSet" m:HttpMethod="GET" sap:action-for="ZEWM_ROBCO_SRV.WarehouseOrder">
+					<Parameter Name="Lgnum" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="RsrcGrp" Type="Edm.String" Mode="In" MaxLength="4"/>
+					<Parameter Name="RsrcType" Type="Edm.String" Mode="In" MaxLength="4"/>
+				</FunctionImport>
+			</EntityContainer>
+			<atom:link xmlns:atom="http://www.w3.org/2005/Atom" rel="self" href="https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/$metadata"/>
+			<atom:link xmlns:atom="http://www.w3.org/2005/Atom" rel="latest-version" href="https://gwaasdemo-a19efce72.hana.ondemand.com:443/odata/SAP/ZEWM_ROBCO_SRV/$metadata"/>
+		</Schema>
+	</edmx:DataServices>
+</edmx:Edmx>

@@ -165,3 +165,7 @@ helm/charts/ewm-robot-controller/requirements.lock
 ci/scan-modules/wss-unified-agent-19.5.1.jar
 ci/scan-modules/whitesource-fs-agent-configs/
 ci/scan-modules/whitesource-fs-agent-configs/*
+
+# whitelist for ewm-sim logger
+!docker/ewm-sim/lib/
+!docker/ewm-sim/lib/*

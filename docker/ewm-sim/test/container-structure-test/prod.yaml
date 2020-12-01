@@ -4,5 +4,3 @@ fileExistenceTests:
   - name: "verify that 'cert/' directory does not exist (holding self-signed SSL certificates for local dev environment)"
     path: "/cert"
     shouldExist: false
-metadataTest:
-  workdir: "/app"

@@ -6,7 +6,7 @@ kind: Deployment
 metadata:
   name: ewm-sim
 spec:
-  replicas: {{ .Values.ewmsim.replicaCount }}
+  replicas: {{ .Values.replicaCount }}
   selector:
     matchLabels:
       app: ewm-sim
@@ -17,23 +17,20 @@ spec:
     spec:
       containers:
       - name: ewm-sim
-        image: {{ .Values.ewmsim.image }}
+        image: {{ .Values.image }}
         ports:
         - containerPort: 8080
           name: odata-api
-        - containerPort: 8000
-          name: odata-api-tls
         env:
         - name: ODATA_USER
-          value: {{ .Values.ewmsim.envs.ewm.user }} 
-        - name: ODATA_PASSWORD
-          value: {{ .Values.ewmsim.envs.ewm.password }} 
-        - name: ODATA_BASEPATH
-          value: {{ .Values.ewmsim.envs.ewm.basepath }} 
+          value: {{ .Values.envs.ewm.user }} 
+        - name: ODATA_PASSWD
+          value: {{ .Values.envs.ewm.password }} 
         readinessProbe:
           httpGet:
             path: /readyz
             port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 1
           timeoutSeconds: 1
           successThreshold: 1
@@ -42,17 +39,11 @@ spec:
           httpGet:
             path: /healthz
             port: 8080
+          initialDelaySeconds: 10
           periodSeconds: 1
           timeoutSeconds: 1
           successThreshold: 1
           failureThreshold: 10
-        volumeMounts:
-        - name: cert
-          mountPath: /app/cert
-      volumes:
-      - name: cert
-        configMap:
-          name: ewm-sim-cert
 ---
 kind: Service
 apiVersion: v1
@@ -68,9 +59,5 @@ spec:
     name: http
     port: 8080
     targetPort: odata-api
-  - protocol: TCP
-    name: https
-    port: 8000
-    targetPort: odata-api-tls
   type: ClusterIP
 ---

@@ -1,7 +1,6 @@
-ewmsim:
-  image: "ewmcloudrobotics/ewm-sim:latest"
-  envs:
-    ewm:
-      user: "someuser"
-      password: "supersecure"
-      basepath: "/odata/SAP/ZEWM_ROBCO_SRV"
+replicaCount: 1
+image: "ewmcloudrobotics/ewm-sim:latest"
+envs:
+  ewm:
+    user: "someuser"
+    password: "supersecure"

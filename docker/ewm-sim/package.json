@@ -1,0 +1,37 @@
+{
+	"name": "ewm-sim",
+	"version": "1.0.0",
+	"description": "standalone odata mock server based on sapui5 MockServer",
+	"scripts": {
+		"start": "node index.js",
+		"test": "nyc mocha --timeout 30000",
+		"coverage": "nyc report --reporter=text-lcov | coveralls",
+		"nyan": "mocha --reporter nyan --timeout 30000",
+		"nn": "nyc npm run nyan"
+	},
+	"nyc": {
+		"include": [
+			"mockserver.js",
+			"orderroutine.js"
+		]
+	},
+	"dependencies": {
+		"express": "^4.17.1",
+		"express-basic-auth": "^1.2.0",
+		"moment": "^2.29.1",
+		"node-ui5": "^2.0.4",
+		"winston": "^3.3.3"
+	},
+	"devDependencies": {
+		"coveralls": "^3.1.0",
+		"mocha": "^8.2.1",
+		"nyc": "^15.1.0"
+	},
+	"keywords": [
+		"odata",
+		"server",
+		"mock"
+	],
+	"author": "Schiebelhut, Yannik; Zok, Sebastian",
+	"license": "APLv2"
+}
