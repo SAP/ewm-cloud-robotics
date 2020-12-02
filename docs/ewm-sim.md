@@ -1,10 +1,4 @@
-### TODO: Replace Badges
-[![Coverage Status](https://coveralls.io/repos/yschiebelhut/odata-mock-server/badge.svg?branch=master)](https://coveralls.io/r/yschiebelhut/odata-mock-server?branch=master)
-[![Build Status](https://travis-ci.org/yschiebelhut/odata-mock-server.svg?branch=master)](https://travis-ci.org/yschiebelhut/odata-mock-server)
-
->These Badges are a nice way to show the current state and quality of the application. Although they're currently out of service as they point to an old repository and **do not** represent the actual state of the project.
->To repare them, the ewm-sim has to be included into the ewm-cloud-robotics main build pipeline on Travis CI.
-
+[![Coverage Status](https://coveralls.io/repos/github/SAP/ewm-cloud-robotics/badge.svg?branch=master)](https://coveralls.io/github/SAP/ewm-cloud-robotics?branch=master)
 
 # ewm-sim (v2)
 This project is inspired by the [mockserver-server](https://github.com/ArnaudBuchholz/mockserver-server) by [Arnaud Buchholz](https://github.com/ArnaudBuchholz).
