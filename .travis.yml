@@ -7,33 +7,61 @@
 ## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 ##
 
-language: python
-sudo: required
-dist: xenial
-python: "3.7"
-services:
-  - docker
 git:
   depth: 1
 
 install:
   - echo "SKIP."
 
+env:
+  global:
+    - secure: jdGV8a4xVTOwBOVjZwOX0lmtbSboOBAFKPqxJC8kWe5QLPehgwQPL5j6nroVeUDsceSbu1h3TDOwOqMsz4epwBzuEYBUMn7f9p4x2hsBx2mgu47lwDffSJaEIbt7MgOLgIWLReG8ZCi24l59rK98IcfiXb4JjN1xpCRBFVRvpo1ClvMljlEwuTGbGRN2wuBVaxisfEfiDlDxM30hlPipNVOQN2O1n0gFFUvpzYw44zVI0hnSHIr2zNG5KS8gm76M0NImIFgWTeNsVARLJ/wCejQubQ08aEHyqNYX9mu0gnYhXNlyXGX76KZFt0mCaR8XkAuRN9O7oDWBKunPSZA228rop0zDTMN/H+EMfNAqKVfC1wpeG+yO+B6icmQljTw1H9GNk0uhWCTR0PB1q9tnhR/GX/HQueBITlsK3KJaCzzGVj0xlTJfQxCxHgdguGBFltoREHlTHDoMh8ixbJt3ewE3LcePgbHafTm0I4Kmft554Dhls1QzOnP40hjWsbyWflP7RpvMGIUE8QTM11xXa4lrbe4FU/eKrHdKO9gFSvdbdbdS5bbl75ZSiSuuapkeNISN7x5dUiy4l0iPPQHWa29v32bfH097M3ApkAgfe16zBJV9ElE5+QgoByNW2eG31S/hFHYhlhiPban406rL2g16pfQcXKeAvVUVwcHkC2I=
+    - secure: ofVTtC6IvwCRnhbrxd5dsdNM/GdDZZXZr7Tey82PS2IdIMmdPyTXm/d3ROVB3VqEJjL4Yaz/pY2NCFrhXaWnVpygguspYiCC2SASsfxFBf19qSoHonMUSbF4P53SatRqAdg+0VOH8kOa/NAJcd0x+EjiXGPY+kwK6D5/N/iSNtd+lBJejXFcAkrucDdP6knTDbNHp5yRq2f4RiAdOvME0WJtS92rRqarF2D2T909p9rwIpWBuzlW9K9G3S4DQwT/zhWS8gJAdIc7Fp+kh1zi5gBYqJrvLcPYeWCx0LdShyBEUpMDq1Lc+qIYs46eJieabVkQbDEvcQs69qSiOHg24w3vjdsW8AqwEOM8dbUBBGpx+rcll0LbxW6TsxssAmgEYFY7IBOYoLtSYuSxA3aXoGRF9qWHx+kVjow7OraEtmdT7FeOBkE0Jdo1FKG++bKhHLleSnlovVTmR2w7C084FvkPfSYL/jL2+s868C2Z//cZ2IvFVVY0YAaxXFy1SxCNA+a0+qzHXJp7MX8bkmeFvCTpriEoUXCHMAdvgsfzhGM6g2DJCo7ScGLKfN3rgDVpNSFEt456VvFSmSHzTNZhToyXfWjsTSBnMMbeC5m7V0qPvhphZKls6v+/3Y8yCtYnNXQe+5ZPFHTA5pb/b5+ND5uEWgIDWB+QSRJn1yRKhpk=
+
 stages:
+  - name: ewm-sim-node-tests
   - name: scan-modules
   - name: release
     if: tag =~ /(^v?[0-9]+(\.[0-9]+)+)((-.*)|$)/
 
 jobs:  
   include:
+    ## ewm-sim-node-tests
+    - stage: ewm-sim-node-tests
+      name: "ewm-sim mocha tests"
+      language: node_js
+      node_js:
+      - 14.15.0
+      install:
+      - cd docker/ewm-sim
+      - npm install
+      script:
+      - npm run test
+      after_success:
+      - npm run coverage
     ## scan-modules
     - stage: scan-modules
       name: "WhiteSource Scans"
+      language: python
+      dist: xenial
+      python: "3.7"
+      services:
+        - docker
       script: sh ./scripts/whitesource.sh
     - stage: scan-modules
       name: "Bandit Scans"
+      language: python
+      dist: xenial
+      python: "3.7"
+      services:
+        - docker
       script: sh ./scripts/bandit.sh    
     ## release-images
     - stage: release
       name: "Docker Image Releases"
+      language: python
+      dist: xenial
+      python: "3.7"
+      services:
+        - docker
       script: sh ./ci/release.sh
