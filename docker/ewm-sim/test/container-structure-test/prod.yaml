@@ -1,6 +1,11 @@
 schemaVersion: 2.0.0
 
 fileExistenceTests:
-  - name: "verify that 'cert/' directory does not exist (holding self-signed SSL certificates for local dev environment)"
-    path: "/cert"
+  - name: "verify that no '.env' file exists (no leaking of passwords, etc.)"
+    path: "/usr/src/app/.env"
     shouldExist: false
+    
+metadataTest:
+    exposedPorts: ["8080"]
+    cmd: [ "npm", "start" ]
+    workdir: "/usr/src/app"
