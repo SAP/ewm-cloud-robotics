@@ -4,7 +4,7 @@
 This project is inspired by the [mockserver-server](https://github.com/ArnaudBuchholz/mockserver-server) by [Arnaud Buchholz](https://github.com/ArnaudBuchholz).
 It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock the real odata service of an EWM system. By this, we now achieved a much slimmer approach compared to the former version of ewm-sim.
 
-# Getting Started
+## Getting Started
 
 ## Setup
 Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set and optional you can set the intervall for the generation of Warehouse Orders with GEN_INT in milliseconds :warning:
@@ -36,7 +36,8 @@ $ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
 ## Making Requests
 
 [Here](https://github.com/SAP/ewm-cloud-robotics/docker/ewm-sim/ZEWM_ROBCO_SRV.postman_collection.json) you can find a postman collection with example requests.
-Maybe it's also be helpful to have a look on our [unit tests](https://github.com/SAP/ewm-cloud-robotics/blob/master/docker/ewm-sim/test/test.js), for getting a deeper understanding of the workflow.
+
+Maybe it's also helpful to have a look on our [unit tests](https://github.com/SAP/ewm-cloud-robotics/blob/master/docker/ewm-sim/test/test.js), for getting a deeper understanding of the workflow.
 
 
 # Current State of Implementation
