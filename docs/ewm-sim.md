@@ -21,6 +21,7 @@ Now we need to set our environment variables, forward traffic to the host's port
 ```sh
 $ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
 ```
+(Surely the first occurance of 8080 can be replaced with any desired and free port of the host. **DO NOT** specify $ODATA_PORT when running in docker mode.)
 
 ## Current State of Implementation
 Currently, the basic mockserver is up and running. It is served by an express web service.
@@ -65,5 +66,5 @@ Current status of those function imports is:
     * WAREHOUSE_TASK_ASSIGNED (property missing in oData Entity OpenWarehouseTaskSet)
 
 * When running the project, additional configuration options can be applied via environment variables:
-   * ODATA_PORT - port for the exposed http server (default: 8080)
+   * ODATA_PORT - port for the exposed http server; **only** use this if running via npm (default: 8080)
    * LOGGING_LOGTOFILE - redirect console log to files (default: false)
