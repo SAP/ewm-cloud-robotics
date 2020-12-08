@@ -4,17 +4,17 @@
 This project is inspired by the [mockserver-server](https://github.com/ArnaudBuchholz/mockserver-server) by [Arnaud Buchholz](https://github.com/ArnaudBuchholz).
 It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock the real odata service of an EWM system. By this, we now achieved a much slimmer approach compared to the former version of ewm-sim.
 
-## Getting Started
+# Getting Started
 
-### Setup
+## Setup
 Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set and optional you can set the intervall for the generation of Warehouse Orders with GEN_INT in milliseconds :warning:
 
-#### Local
+### Local
 To get the project up and running, issue the following commands in the root directory of the project (docker/ewm-sim):
 * `npm install`
 * `npm start`
 
-#### Docker :whale:
+### Docker :whale:
 Start your docker deamon and run: 
 ```sh
 $ docker pull ewmcloudrobotics/ewm-sim:latest
@@ -33,13 +33,13 @@ $ docker build --tag ewm-sim:1.0 .
 $ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
 ```
 
-### Making Requests
+## Making Requests
 
 [Here](https://github.com/SAP/ewm-cloud-robotics/docker/ewm-sim/ZEWM_ROBCO_SRV.postman_collection.json) you can find a postman collection with example requests.
 Maybe it's also be helpful to have a look on our [unit tests](https://github.com/SAP/ewm-cloud-robotics/blob/master/docker/ewm-sim/test/test.js), for getting a deeper understanding of the workflow.
 
 
-## Current State of Implementation
+# Current State of Implementation
 Currently, the basic mockserver is up and running. It is served by an express web service.
 This includes:
 * initializing the server from the provided mockdata .json files
@@ -51,7 +51,7 @@ This includes:
     * DELETE
   requests
 
-### Function Imports
+## Function Imports
 Additionally we are currently working to get the special functionality provided by the oData service of a real EWM system.
 Current status of those function imports is:
 * **fully mocked**
@@ -74,7 +74,7 @@ Current status of those function imports is:
 
 ¹ Due to missing properties in the oData model, implementation is only for demo purpose. The returned **values will differ** from an actual EWM system. The resource type is hardcoded to RB01, the resource group to RB02.
 
-## Additional Notes
+# Additional Notes
 * Speciall error cases of EWM Systems tend not to occur in a mocked environment. Among them but not limited to:
     * INTERNAL_ERROR
     * WAREHOUSE_ORDER_LOCKED
