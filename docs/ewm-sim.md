@@ -5,8 +5,6 @@ This project is inspired by the [mockserver-server](https://github.com/ArnaudBuc
 It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock the real odata service of an EWM system. By this, we now achieved a much slimmer approach compared to the former version of ewm-sim.
 
 ## Getting Started
-
-## Setup
 Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set and optional you can set the intervall for the generation of Warehouse Orders with GEN_INT in milliseconds :warning:
 
 ### Local
