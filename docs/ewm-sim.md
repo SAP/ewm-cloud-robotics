@@ -4,8 +4,8 @@
 This project is inspired by the [mockserver-server](https://github.com/ArnaudBuchholz/mockserver-server) by [Arnaud Buchholz](https://github.com/ArnaudBuchholz).
 It makes use of the SAPUI5 MockServer and runs it in a standalone mode to mock the real odata service of an EWM system. By this, we now achieved a much slimmer approach compared to the former version of ewm-sim.
 
-## Getting Started 
-Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set :warning: 
+## Getting Started
+Note that the mockserver will not start, if the environment variables ODATA_USER and ODATA_PASSWD have not been set and optionally you can set the interval for the generation of warehouse orders with GEN_INT in milliseconds :warning:
 
 ### Local
 To get the project up and running, issue the following commands in the root directory of the project (docker/ewm-sim):
@@ -13,15 +13,29 @@ To get the project up and running, issue the following commands in the root dire
 * `npm start`
 
 ### Docker :whale:
-Make sure you're in the correct directory (docker/ewm-sim).
+Start your docker daemon and run: 
 ```sh
-$ docker build --tag ewm-sim:1.0 .
+$ docker pull ewmcloudrobotics/ewm-sim:latest
 ```
 Now we need to set our environment variables, forward traffic to the host's port and run our docker image.
 ```sh
-$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
+$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -e GEN_INT=30000 -p 8080:8080 ewmcloudrobotics/ewm-sim:latest
 ```
 (Surely the first occurance of 8080 can be replaced with any desired and free port of the host. **DO NOT** specify $ODATA_PORT when running in docker mode.)
+
+**OR**
+
+Make sure you're in the correct directory (docker/ewm-sim) and run:
+```sh
+$ docker build --tag ewm-sim:1.0 .
+$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
+```
+
+## Making Requests
+
+[Here](https://github.com/SAP/ewm-cloud-robotics/docker/ewm-sim/ZEWM_ROBCO_SRV.postman_collection.json) you can find a postman collection with example requests.
+
+Maybe it's also helpful to have a look on our [unit tests](https://github.com/SAP/ewm-cloud-robotics/blob/master/docker/ewm-sim/test/test.js), to get a deeper understanding of the workflow.
 
 ## Postman Collection
 Included in the project folder is a [Postman Collection](../docker/ewm-sim/ZEWM_ROBCO_SRV.postman_collection.json). It enables you to send a few test requests to the server.
