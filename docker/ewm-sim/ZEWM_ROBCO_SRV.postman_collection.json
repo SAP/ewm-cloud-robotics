@@ -1,10 +1,996 @@
 {
 	"info": {
-		"_postman_id": "456f5d2d-f56e-4e37-a262-db432f3e88e0",
+		"_postman_id": "569bd6e7-b222-40c3-8d43-df2443969ee7",
 		"name": "ZEWM_ROBCO_SRV",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
+		{
+			"name": "Robot Operations",
+			"item": [
+				{
+					"name": "Get RobotSet",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/RobotSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"RobotSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Robot 1337 Isaac",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"Lgnum\":\"1337\",\"Rsrc\":\"Isaac\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/RobotSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"RobotSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Robot 1337 someRobot",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"Lgnum\":\"1337\",\"Rsrc\":\"someRobot\"}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/RobotSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"RobotSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "GetWarehouseOrders for Isaac",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/GetRobotWarehouseOrders?Lgnum=1337&Rsrc=Isaac",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"GetRobotWarehouseOrders"
+							],
+							"query": [
+								{
+									"key": "Lgnum",
+									"value": "1337"
+								},
+								{
+									"key": "Rsrc",
+									"value": "Isaac"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SetRobotStatus no arguments",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/SetRobotStatus",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"SetRobotStatus"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "SetRobotStatus STAT Isaac",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/SetRobotStatus?Lgnum='1337'&Rsrc='Isaac'&ExccodeOverall='STAT'",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"SetRobotStatus"
+							],
+							"query": [
+								{
+									"key": "Lgnum",
+									"value": "'1337'"
+								},
+								{
+									"key": "Rsrc",
+									"value": "'Isaac'"
+								},
+								{
+									"key": "ExccodeOverall",
+									"value": "'STAT'"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "WHO Operations",
+			"item": [
+				{
+					"name": "Get WHO Set",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get WarehouseOrder 12345",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1337',Who='12345')",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet(Lgnum='1337',Who='12345')"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Who 12345",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"Lgnum\": \"1337\", \"Who\": \"12345\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Who 123457890 with someRobot assigned",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"Lgnum\": \"1337\",\r\n    \"Who\": \"12345\",\r\n    \"Rsrc\": \"someRobot\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "AssignRobotToWarehouseOrder 12345 someRobot",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/AssignRobotToWarehouseOrder?Lgnum='1337'&Who='12345'&Rsrc='someRobot'",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"AssignRobotToWarehouseOrder"
+							],
+							"query": [
+								{
+									"key": "Lgnum",
+									"value": "'1337'"
+								},
+								{
+									"key": "Who",
+									"value": "'12345'"
+								},
+								{
+									"key": "Rsrc",
+									"value": "'someRobot'"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update Who 12345",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{ \"Lgnum\": \"1337\", \"Who\": \"12345\", \"Rsrc\": \"someRobot\" }",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1337',Who='12345')",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet(Lgnum='1337',Who='12345')"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Del WHO 12345",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1337',Who='12345')",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet(Lgnum='1337',Who='12345')"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get WHO Set filter Rsrc=''",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet?$filter=Rsrc eq ''",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"WarehouseOrderSet"
+							],
+							"query": [
+								{
+									"key": "$filter",
+									"value": "Rsrc eq ''"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
+		{
+			"name": "WHT Operations",
+			"item": [
+				{
+					"name": "Get OpenWarehouseTaskSet",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"OpenWarehouseTaskSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get OpenWHT 54321",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet(Lgnum='1710',Tanum='54321')",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"OpenWarehouseTaskSet(Lgnum='1710',Tanum='54321')"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create OpenWHT 54321",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"Lgnum\": \"1710\",\r\n    \"Tanum\": \"54321\",\r\n    \"Flghuto\": true,\r\n    \"Tostat\": \"\",\r\n    \"Priority\": 0,\r\n    \"Meins\": \"PC\",\r\n    \"Vsolm\": \"1\",\r\n    \"Weight\": \"4.000\",\r\n    \"UnitW\": \"KG\",\r\n    \"Volum\": \"3.000\",\r\n    \"UnitV\": \"L\",\r\n    \"Vltyp\": \"Y021\",\r\n    \"Vlber\": \"YS01\",\r\n    \"Vlpla\": \"GR-YDI1\",\r\n    \"Vlenr\": \"\",\r\n    \"Nltyp\": \"Y920\",\r\n    \"Nlber\": \"YO01\",\r\n    \"Nlpla\": \"GI-YDO1\",\r\n    \"Nlenr\": \"\",\r\n    \"Who\": \"10000001\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"OpenWarehouseTaskSet"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Update OpenWHT 54321",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"Lgnum\": \"1710\",\r\n    \"Tanum\": \"54321\",\r\n    \"Flghuto\": true,\r\n    \"Tostat\": \"\",\r\n    \"Priority\": 3,\r\n    \"Meins\": \"PC\",\r\n    \"Vsolm\": \"1\",\r\n    \"Weight\": \"4.000\",\r\n    \"UnitW\": \"KG\",\r\n    \"Volum\": \"3.000\",\r\n    \"UnitV\": \"L\",\r\n    \"Vltyp\": \"Y021\",\r\n    \"Vlber\": \"YS01\",\r\n    \"Vlpla\": \"GR-YDI1\",\r\n    \"Vlenr\": \"\",\r\n    \"Nltyp\": \"Y920\",\r\n    \"Nlber\": \"YO01\",\r\n    \"Nlpla\": \"GI-YDO1\",\r\n    \"Nlenr\": \"\",\r\n    \"Who\": \"10000001\"\r\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet(Lgnum='1710',Tanum='54321')",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"OpenWarehouseTaskSet(Lgnum='1710',Tanum='54321')"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Del OpenWHT 54321",
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet(Lgnum='1710',Tanum='54321')",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"OpenWarehouseTaskSet(Lgnum='1710',Tanum='54321')"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get number of OpenWarehouseTasks",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"auth": {
+							"type": "basic",
+							"basic": [
+								{
+									"key": "password",
+									"value": "{{ODATA_PASSWD}}",
+									"type": "string"
+								},
+								{
+									"key": "username",
+									"value": "{{ODATA_USER}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet/$count",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"odata",
+								"SAP",
+								"ZEWM_ROBCO_SRV",
+								"OpenWarehouseTaskSet",
+								"$count"
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"protocolProfileBehavior": {}
+		},
 		{
 			"name": "Get Service Root",
 			"request": {
@@ -13,12 +999,12 @@
 					"basic": [
 						{
 							"key": "password",
-							"value": "123",
+							"value": "{{ODATA_PASSWD}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "root",
+							"value": "{{ODATA_USER}}",
 							"type": "string"
 						}
 					]
@@ -43,19 +1029,19 @@
 			"response": []
 		},
 		{
-			"name": "Get RobotSet",
+			"name": "Get Metadata",
 			"request": {
 				"auth": {
 					"type": "basic",
 					"basic": [
 						{
 							"key": "password",
-							"value": "123",
+							"value": "{{ODATA_PASSWD}}",
 							"type": "string"
 						},
 						{
 							"key": "username",
-							"value": "root",
+							"value": "{{ODATA_USER}}",
 							"type": "string"
 						}
 					]
@@ -63,7 +1049,7 @@
 				"method": "GET",
 				"header": [],
 				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/RobotSet",
+					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/$metadata",
 					"protocol": "http",
 					"host": [
 						"localhost"
@@ -73,709 +1059,18 @@
 						"odata",
 						"SAP",
 						"ZEWM_ROBCO_SRV",
-						"RobotSet"
+						"$metadata"
 					]
 				}
 			},
 			"response": []
-		},
+		}
+	],
+	"variable": [
 		{
-			"name": "Create Robot 1337 Isaac",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"Lgnum\":\"1337\",\"Rsrc\":\"Isaac\"}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/RobotSet",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"RobotSet"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Robot 1337 someRobot",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\"Lgnum\":\"1337\",\"Rsrc\":\"someRobot\"}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/RobotSet",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"RobotSet"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "GetWarehouseOrders for Isaac",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/GetRobotWarehouseOrders?Lgnum=1337&Rsrc=Isaac",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"GetRobotWarehouseOrders"
-					],
-					"query": [
-						{
-							"key": "Lgnum",
-							"value": "1337"
-						},
-						{
-							"key": "Rsrc",
-							"value": "Isaac"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "SetRobotStatus no arguments",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/SetRobotStatus",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"SetRobotStatus"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "SetRobotStatus STAT Isaac",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/SetRobotStatus?Lgnum='1337'&Rsrc='Isaac'&ExccodeOverall='STAT'",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"SetRobotStatus"
-					],
-					"query": [
-						{
-							"key": "Lgnum",
-							"value": "'1337'"
-						},
-						{
-							"key": "Rsrc",
-							"value": "'Isaac'"
-						},
-						{
-							"key": "ExccodeOverall",
-							"value": "'STAT'"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get WHO Set",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"WarehouseOrderSet"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get WarehouseOrder 12345",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1337',Who='12345')",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"WarehouseOrderSet(Lgnum='1337',Who='12345')"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Who 12345",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{ \"Lgnum\": \"1337\", \"Who\": \"12345\" }",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"WarehouseOrderSet"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Create Who 123457890 with someRobot assigned",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"Lgnum\": \"1337\",\r\n    \"Who\": \"12345\",\r\n    \"Rsrc\": \"someRobot\"\r\n}",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"WarehouseOrderSet"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "AssignRobotToWarehouseOrder 12345 someRobot",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "POST",
-				"header": [],
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/AssignRobotToWarehouseOrder?Lgnum='1337'&Who='12345'&Rsrc='someRobot'",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"AssignRobotToWarehouseOrder"
-					],
-					"query": [
-						{
-							"key": "Lgnum",
-							"value": "'1337'"
-						},
-						{
-							"key": "Who",
-							"value": "'12345'"
-						},
-						{
-							"key": "Rsrc",
-							"value": "'someRobot'"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Del WHO 12345",
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "DELETE",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='1337',Who='12345')",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"WarehouseOrderSet(Lgnum='1337',Who='12345')"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get WHO Set filter Rsrc=''",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet?$filter=Rsrc eq ''",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"WarehouseOrderSet"
-					],
-					"query": [
-						{
-							"key": "$filter",
-							"value": "Rsrc eq ''"
-						}
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get OpenWarehouseTaskSet",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"OpenWarehouseTaskSet"
-					]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "Get number of OpenWarehouseTasks",
-			"protocolProfileBehavior": {
-				"disableBodyPruning": true
-			},
-			"request": {
-				"auth": {
-					"type": "basic",
-					"basic": [
-						{
-							"key": "password",
-							"value": "123",
-							"type": "string"
-						},
-						{
-							"key": "username",
-							"value": "root",
-							"type": "string"
-						}
-					]
-				},
-				"method": "GET",
-				"header": [],
-				"body": {
-					"mode": "raw",
-					"raw": "",
-					"options": {
-						"raw": {
-							"language": "json"
-						}
-					}
-				},
-				"url": {
-					"raw": "http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet/$count",
-					"protocol": "http",
-					"host": [
-						"localhost"
-					],
-					"port": "8080",
-					"path": [
-						"odata",
-						"SAP",
-						"ZEWM_ROBCO_SRV",
-						"OpenWarehouseTaskSet",
-						"$count"
-					]
-				}
-			},
-			"response": []
+			"id": "04e9eeb6-50b3-4134-8c17-2c4eebbe064a",
+			"key": "ODATA_USER",
+			"value": "root"
 		}
 	],
 	"protocolProfileBehavior": {}

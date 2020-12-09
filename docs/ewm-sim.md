@@ -23,6 +23,25 @@ $ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
 ```
 (Surely the first occurance of 8080 can be replaced with any desired and free port of the host. **DO NOT** specify $ODATA_PORT when running in docker mode.)
 
+## Postman Collection
+Included in the project folder is a [Postman Collection](../docker/ewm-sim/ZEWM_ROBCO_SRV.postman_collection.json). It enables you to send a few test requests to the server.
+
+To use it:
+* prepare the environment
+    1. open Postman
+    1. click on "Manage Environments" (top right corner)
+    1. Import > Choose Files
+    1. select the postman environment file
+    1. click on the name of the collection
+    1. enter the credentials you started the server with in the "current value" fields
+    1. "Update" and close configuration window
+    1. change "No Environment" to "OData Credentials" (top right corner)
+* import the collection
+    1. open Postman
+    1. click on "Import" (top left corner)
+    1. File > Upload Files
+    1. select the postman collection file
+
 ## Current State of Implementation
 Currently, the basic mockserver is up and running. It is served by an express web service.
 This includes:
