@@ -38,7 +38,7 @@ $ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -p 8080:8080 ewm-sim:1.0
 Maybe it's also helpful to have a look on our [unit tests](https://github.com/SAP/ewm-cloud-robotics/blob/master/docker/ewm-sim/test/test.js), to get a deeper understanding of the workflow.
 
 
-# Current State of Implementation
+## Current State of Implementation
 Currently, the basic mockserver is up and running. It is served by an express web service.
 This includes:
 * initializing the server from the provided mockdata .json files
@@ -50,7 +50,7 @@ This includes:
     * DELETE
   requests
 
-## Function Imports
+### Function Imports
 Additionally we are currently working to get the special functionality provided by the oData service of a real EWM system.
 Current status of those function imports is:
 * **fully mocked**
@@ -73,7 +73,7 @@ Current status of those function imports is:
 
 ¹ Due to missing properties in the oData model, implementation is only for demo purpose. The returned **values will differ** from an actual EWM system. The resource type is hardcoded to RB01, the resource group to RB02.
 
-# Additional Notes
+## Additional Notes
 * Speciall error cases of EWM Systems tend not to occur in a mocked environment. Among them but not limited to:
     * INTERNAL_ERROR
     * WAREHOUSE_ORDER_LOCKED
