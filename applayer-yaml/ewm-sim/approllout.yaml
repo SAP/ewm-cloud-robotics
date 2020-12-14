@@ -11,16 +11,12 @@ metadata:
     app: ewm-sim
 spec:
   appName: ewm-sim-$APP_VERSION
-  cloud: 
+  cloud:
     values:
       image: "ewmcloudrobotics/ewm-sim:latest"
       envs:
-        ewmhost: "" # Host for the OData API endpoint
-        ewmuser: "" # Technical user for all warehouseorder related API calls
-        ewmpassword: "" # Matching password
-        ewmlgnum: "" # Warehouse specification within EWM
-        ewmbasepath: "" # Basepath for the OData API matching the service definition
-        ewmrsrctype: "" # Resource type within EWM
-        ewmrsrcgrp: "" # Resource group within EWM
+        ewm:
+          user: "someuser" # Technical user for all warehouseorder related API calls
+          password: "supersecure" # Matching password
+          geninterval: "25000"
 ---
-      
