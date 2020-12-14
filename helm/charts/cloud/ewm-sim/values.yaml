@@ -4,3 +4,4 @@ envs:
   ewm:
     user: "someuser"
     password: "supersecure"
+    geninterval: "25000"
