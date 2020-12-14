@@ -1233,6 +1233,10 @@ module.exports = {
 					res.status(200).end()
 				})
 
+				app.all('*', function (req, res) {
+					logger.info("not a valid path")
+				})
+
 				// start webservice on process.env.ODATA_PORT (default: 8080)
 				var port = 8080
 				if (process.env.ODATA_PORT) {
