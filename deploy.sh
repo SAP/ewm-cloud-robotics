@@ -154,6 +154,8 @@ create_package() {
 push() {
     chart=$1
 
+    rm -rf tmp
+
     verify_kubectl_context
     if [[ "$file" = '' ]]; then
         file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$chart/app.yaml    
@@ -200,6 +202,7 @@ rollout() {
     printf 'Using: '$file' to create an AppRollout of '$chart'\n'
 
     # create a temporary copy prior modification
+    rm -rf tmp
     mkdir tmp
     cp $file tmp/approllout.yaml
 

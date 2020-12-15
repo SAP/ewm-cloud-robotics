@@ -23,15 +23,15 @@ spec:
           name: odata-api
         env:
         - name: ODATA_USER
-          value: {{ .Values.envs.ewm.user }} 
+          value: {{ quote .Values.envs.ewm.user }} 
         - name: ODATA_PASSWD
-          value: {{ .Values.envs.ewm.password }} 
+          value: {{ quote .Values.envs.ewm.password }} 
         - name: GEN_INT
-          value: {{ .Values.envs.ewm.geninterval }}
+          value: {{ quote .Values.envs.ewm.geninterval }}
         - name: LOGGING_LOGLEVEL
-          value: {{ .Values.envs.log.level }}
+          value: {{ quote .Values.envs.log.level }}
         - name: LOGGING_LOGOUTPUT
-          value: {{ .Values.envs.log.output }}
+          value: {{ quote .Values.envs.log.output }}
         readinessProbe:
           httpGet:
             path: /readyz
