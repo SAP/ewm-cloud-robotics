@@ -1,9 +1,8 @@
-// process.env.LOGGING_LOGTOFILE = true
-
-process.env.ODATA_USER = "root"
-process.env.ODATA_PASSWD = "123"
+process.env.LOGGING_LOGTOFILE = true
 process.env.LOGGING_LOGLEVEL = "DEBUG"
 process.env.LOGGING_LOGOUTPUT = "CONSOLE"
+process.env.ODATA_USER = "user"
+process.env.ODATA_PASSWD = "123"
 
 var server = require('../mockserver')
 
@@ -1001,7 +1000,6 @@ describe('Test for basic server functionality', () => {
 		server.stop()
 	})
 })
-
 
 process.env.GEN_INT = 1000
 describe('Tests for Orderroutine', () => {
