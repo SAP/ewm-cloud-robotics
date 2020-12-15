@@ -4,3 +4,5 @@ envs:
   ewm:
     user: "someuser"
     password: "supersecure"
+  log:
+    level: "info"

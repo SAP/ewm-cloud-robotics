@@ -26,6 +26,8 @@ spec:
           value: {{ .Values.envs.ewm.user }} 
         - name: ODATA_PASSWD
           value: {{ .Values.envs.ewm.password }} 
+        - name: LOGGING_LOGLEVEL
+          value: {{ .Values.envs.log.level }} 
         readinessProbe:
           httpGet:
             path: /readyz
@@ -61,3 +63,22 @@ spec:
     targetPort: odata-api
   type: ClusterIP
 ---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: ewm-sim
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    nginx.ingress.kubernetes.io/secure-backends: "false"
+spec:
+  tls:
+  - hosts:
+    - {{ $.Values.domain }}
+  rules:
+  - host: {{ $.Values.domain }}
+    http:
+      paths:
+      - path: /odata/SAP/ZEWM_ROBCO_SRV
+        backend:
+          serviceName: ewm-sim
+          servicePort: 8080
