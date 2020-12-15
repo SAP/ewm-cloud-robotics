@@ -1203,8 +1203,13 @@ module.exports = {
 				logger.info("created express-app with body-parser and authentication")
 
 				// forward HTTP-requests to MockServer
-				app.all('/odata/SAP/ZEWM_ROBCO_SRV/*', auth, function (req, res) {
+				app.all('/odata/SAP/ZEWM_ROBCO_SRV*', auth, function (req, res) {
 					logger.debug(req.method + "\t" + req.url)
+
+					if (req.url === "/odata/SAP/ZEWM_ROBCO_SRV") {
+						req.url = "/odata/SAP/ZEWM_ROBCO_SRV/"
+					}
+
 					window.jQuery.ajax({
 						method: req.method,
 						url: req.url,
