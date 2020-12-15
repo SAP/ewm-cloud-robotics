@@ -4,5 +4,6 @@ envs:
   ewm:
     user: "someuser"
     password: "supersecure"
+    geninterval: "25000"
   log:
     level: "info"
