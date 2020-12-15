@@ -36,6 +36,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the robot resource exists in EWM
@@ -54,9 +55,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if the who exists in EWM
@@ -75,9 +78,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("warehouseorder " + oUrlParams.Who + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 3. Unassign - Set Status="", Queue="ERROR" and Rsrc="" 
@@ -101,9 +106,11 @@ module.exports = {
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_ORDER_NOT_UNASSIGNED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 					uri = "/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='" + oUrlParams.Lgnum + "',Who='" + oUrlParams.Who + "')"
 					logger.debug("checking if warehouseorder exists at: " + uri)
@@ -120,6 +127,7 @@ module.exports = {
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_ORDER_NOT_UNASSIGNED" } })
 						}
 					})
+
 					return true
 				}
 
@@ -134,6 +142,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the robot resource exists in EWM
@@ -152,9 +161,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if the who exists in EWM
@@ -173,9 +184,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("warehouseorder " + oUrlParams.Who + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 3.Queue="ERROR" 
@@ -202,6 +215,8 @@ module.exports = {
 							return true
 						}
 					})
+					if(abort)
+						return true
 
 					uri = "/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet(Lgnum='" + oUrlParams.Lgnum + "',Who='" + oUrlParams.Who + "')"
 					logger.debug("checking if warehouseorder exists at: " + uri)
@@ -218,6 +233,7 @@ module.exports = {
 							oXhr.respondJSON(404, {}, { "error": { "code": "QUEUE_NOT_CHANGED" } })
 						}
 					})
+					
 					return true
 				}
 
@@ -234,6 +250,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the robot resource exists in EWM
@@ -252,9 +269,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if a warehouse order is assigned to the robot
@@ -270,7 +289,7 @@ module.exports = {
 							if (res.d.results.length > 0) {
 								logger.debug("found incomplete warehouseorders linked to robot " + oUrlParams.Rsrc)
 								oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_HAS_ORDER" } })
-								return true
+								abort = true
 							} else {
 								logger.debug("no warehouseorders associated with robot " + oUrlParams.Rsrc)
 							}
@@ -278,10 +297,12 @@ module.exports = {
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_HAS_ORDER" } })
-							return true
+							abort = true
 						}
 					})
-
+					if(abort)
+						return true
+					
 
 					// 3 Check if there is a warehouse order with Status="", Queue!="ERROR" and not assigned to any robot
 					// yes: return warehouse order of type WarehouseOrder
@@ -305,15 +326,17 @@ module.exports = {
 							} else {
 								logger.debug("no open unassigned warehouseorder available")
 								oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// Assign who to robot and update status
@@ -347,6 +370,7 @@ module.exports = {
 						return prev
 					}, {})
 					var uri = ""
+					var abort = false
 					var who = ""
 					var wht = null
 
@@ -368,9 +392,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("openwarehousetask " + oUrlParams.Tanum + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Verify that warehouseorder Status is not "C"
@@ -389,16 +415,18 @@ module.exports = {
 							} else {
 								logger.debug("warehouseorder has already been confirmed")
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							logger.debug("warehouseorder " + who + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 3. Verify that warehousetask Tostat is not "C"
@@ -417,16 +445,18 @@ module.exports = {
 							} else {
 								logger.debug("warehousetask has already been confirmed")
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							logger.debug("openwarehousetask " + oUrlParams.Tanum + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 4. Delete "Vltyp", "VlBer", "Vlpla" From warehousetask 
@@ -464,6 +494,7 @@ module.exports = {
 						return prev
 					}, {})
 					var uri = ""
+					var abort = false
 					var who = null
 					var whoObj = null
 					var wht = null
@@ -486,9 +517,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("openwarehousetask " + oUrlParams.Tanum + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Verify that warehouseorder Status is not "C"
@@ -508,16 +541,18 @@ module.exports = {
 							} else {
 								logger.debug("warehouseorder has already been confirmed")
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							logger.debug("warehouseorder " + who + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 3. Verify that warehousetask Tostat is not "C"
@@ -536,16 +571,18 @@ module.exports = {
 							} else {
 								logger.debug("warehousetask has already been confirmed")
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							logger.debug("openwarehousetask " + oUrlParams.Tanum + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 4. Set warehousetask Tostat:"C" to C
@@ -565,9 +602,11 @@ module.exports = {
 						error: function (err) {
 							logger.debug("unable to set 'Tostat' to 'C' for warehousetask " + oUrlParams.Tanum)
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 5. Check tasks in warehouseorder, if all Tostat="C" -> set Status="C"
@@ -592,15 +631,17 @@ module.exports = {
 							if (!allTasksComplete) {
 								logger.debug("there are still open warehousetasks for who " + who)
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug("unable to retrieve warehousetasks having who " + who)
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 5.1. Set Who Status to "C"
@@ -639,7 +680,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
-
+					var abort = false
 
 					// 1. Check if the robot resource exists in EWM
 					// yes: continue
@@ -657,9 +698,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if a warehouse order is assigned to the robot
@@ -675,7 +718,7 @@ module.exports = {
 							if (res.d.results.length > 0) {
 								logger.debug("found incomplete warehouseorders linked to robot " + oUrlParams.Rsrc)
 								oXhr.respondJSON(200, {}, res)
-								return true
+								abort = true
 							} else {
 								oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
 							}
@@ -683,9 +726,11 @@ module.exports = {
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 				}
 
 
@@ -699,6 +744,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the robot resource exists in EWM
@@ -717,9 +763,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if parameter "ExccodeOverall" has the right length
@@ -742,6 +790,9 @@ module.exports = {
 							})
 						}
 					}
+					if(abort)
+						return true
+
 					// else respond with error
 					oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_STATUS_NOT_SET" } })
 				}
@@ -757,6 +808,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the robot resource exists in EWM
@@ -775,9 +827,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if the WarehouseOrder exists in EWM
@@ -797,7 +851,7 @@ module.exports = {
 							// no: continue
 							if (res.d.Rsrc && res.d.Rsrc !== "") {
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_ORDER_ASSIGNED" } })
-								return true
+								abort = true
 							} else {
 								// Actually assign robot to WHO
 								jQuery.ajax({
@@ -819,13 +873,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("WHO " + oUrlParams.Who + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
-
-					// TODO: implement WHT_ASSIGNED
-
-
+					if(abort)
+						return true
 				}
 
 
@@ -839,6 +891,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if Resourcetype is RB01
@@ -862,7 +915,7 @@ module.exports = {
 						success: function (res) {
 							if (res.d.results.length == 0) {
 								oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-								return true
+								abort = true
 							} else {
 								oXhr.respondJSON(200, {}, res)
 							}
@@ -870,9 +923,11 @@ module.exports = {
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 				}
 
 
@@ -887,6 +942,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the Who exists in WhoSet
@@ -901,15 +957,17 @@ module.exports = {
 						success: function (res) {
 							if (res.d.results.length == 0) {
 								oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-								return true
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 
@@ -930,8 +988,11 @@ module.exports = {
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_ORDER_STATUS_NOT_UPDATED" } })
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					logger.debug("checking if warehouseorder exists at: " + uri)
@@ -949,7 +1010,6 @@ module.exports = {
 						}
 					})
 					return true
-
 				}
 
 
@@ -963,6 +1023,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. Check if the robot resource exists in EWM
@@ -981,9 +1042,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("robot resource " + oUrlParams.Rsrc + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_NOT_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 
 
 					// 2. Check if the WarehouseOrder exists in EWM
@@ -1004,7 +1067,7 @@ module.exports = {
 							if (res.d.Status === "D") {
 								logger.debug("Order is in Process - cannnot unassign")
 								oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_ORDER_IN_PROCESS" } })
-								return true
+								abort = true
 							} else {
 								delete oUrlParams.Rsrc
 								jQuery.ajax({
@@ -1026,9 +1089,11 @@ module.exports = {
 							logger.debug(JSON.stringify(err))
 							logger.debug("WHO " + oUrlParams.Who + " does not exist")
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
-							return true
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 				}
 
 
@@ -1042,6 +1107,7 @@ module.exports = {
 					}, {})
 					logger.debug("oUrlParams: " + JSON.stringify(oUrlParams))
 					var uri = ""
+					var abort = false
 
 
 					// 1. check if resource type exists in specified warehouse
@@ -1071,13 +1137,17 @@ module.exports = {
 								oXhr.respondJSON(200, {}, res)
 							} else {
 								oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
+								abort = true
 							}
 						},
 						error: function (err) {
 							logger.debug(err)
 							oXhr.respondJSON(404, {}, { "error": { "code": "NO_ORDER_FOUND" } })
+							abort = true
 						}
 					})
+					if(abort)
+						return true
 				}
 
 				//#endregion
