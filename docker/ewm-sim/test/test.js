@@ -1,4 +1,9 @@
-process.env.LOGGING_LOGTOFILE = true
+// process.env.LOGGING_LOGTOFILE = true
+
+process.env.ODATA_USER = "root"
+process.env.ODATA_PASSWD = "123"
+process.env.LOGGING_LOGLEVEL = "DEBUG"
+process.env.LOGGING_LOGOUTPUT = "CONSOLE"
 
 var server = require('../mockserver')
 
