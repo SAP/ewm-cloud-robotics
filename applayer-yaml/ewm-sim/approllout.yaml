@@ -19,4 +19,7 @@ spec:
           user: "someuser" # Technical user for all warehouseorder related API calls
           password: "supersecure" # Matching password
           geninterval: "25000"
+        log:
+          level: "DEBUG"
+          output: "CONSOLE"
 ---

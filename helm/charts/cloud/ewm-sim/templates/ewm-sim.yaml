@@ -30,6 +30,8 @@ spec:
           value: {{ .Values.envs.ewm.geninterval }}
         - name: LOGGING_LOGLEVEL
           value: {{ .Values.envs.log.level }} 
+        - name: LOGGING_LOGOUTPUT
+          value: {{ .Values.envs.log.output }} 
         readinessProbe:
           httpGet:
             path: /readyz
