@@ -26,6 +26,8 @@ spec:
           value: {{ .Values.envs.ewm.user }} 
         - name: ODATA_PASSWD
           value: {{ .Values.envs.ewm.password }} 
+        - name: LOGGING_LOGLEVEL
+          value: {{ .Values.envs.log.level }} 
         readinessProbe:
           httpGet:
             path: /readyz
