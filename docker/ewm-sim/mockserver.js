@@ -212,7 +212,7 @@ module.exports = {
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
 							oXhr.respondJSON(404, {}, { "error": { "code": "QUEUE_NOT_CHANGED" } })
-							return true
+							abort = true
 						}
 					})
 					if(abort)
@@ -782,10 +782,12 @@ module.exports = {
 								async: false,
 								success: function (res) {
 									oXhr.respondJSON(200, {}, res)
+									abort = true
 								},
 								error: function (err) {
 									logger.debug(JSON.stringify(err))
 									oXhr.respondJSON(404, {}, { "error": { "code": "ROBOT_STATUS_NOT_SET" } })
+									abort = true
 								}
 							})
 						}
