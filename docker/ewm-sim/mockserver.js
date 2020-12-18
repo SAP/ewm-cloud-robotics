@@ -985,7 +985,7 @@ module.exports = {
 						data: JSON.stringify(oUrlParams),
 						async: false,
 						success: function (res) {
-							//	oXhr.respondJSON(200, {}, res)
+							return
 						},
 						error: function (err) {
 							logger.debug(JSON.stringify(err))
