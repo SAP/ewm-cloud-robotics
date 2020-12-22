@@ -14,8 +14,8 @@
 from setuptools import find_packages, setup
 
 REQUIRES = [
-    'attrs==20.2.0',
-    'cattrs==1.0.0',
+    'attrs==20.3.0',
+    'cattrs==1.1.2',
     'retrying',
     'prometheus-client',
     'python-dateutil',

@@ -14,7 +14,7 @@
 from setuptools import find_packages, setup
 
 REQUIRES = [
-    'cattrs==1.0.0',
+    'cattrs==1.1.2',
     'retrying',
     'k8scrhandler',
     'robcoewmtypes',
