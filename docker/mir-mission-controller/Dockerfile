@@ -22,10 +22,5 @@ RUN pip3 install /mircontroller && \
     rm -rf /mircontroller && \
     python3 -c "import mircontroller"
 
-COPY docker/mir-mission-controller/app /app
-WORKDIR /app
-
-RUN pip3 install -r ./requirements.txt
-
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "/app/main.py" ]
+ENTRYPOINT [ "python3", "-m", "mircontroller"]

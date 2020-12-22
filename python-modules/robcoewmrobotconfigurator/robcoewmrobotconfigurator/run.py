@@ -12,9 +12,7 @@
 
 """Run the SAP EWM robot configurator."""
 
-import sys
 import signal
-import traceback
 import logging
 import time
 
@@ -104,32 +102,3 @@ def run_robotconfigurator():
         k8s_rc.stop_watcher()
         # Shutdown threadpool executor
         robotsync.executor.shutdown()
-
-
-if __name__ == '__main__':
-    # Create root logger if running as main program
-    ROOT_LOGGER = logging.getLogger()
-    ROOT_LOGGER.setLevel(logging.INFO)
-
-    # Create console handler and set level to info
-    CH = logging.StreamHandler()
-    CH.setLevel(logging.INFO)
-
-    # Create formatter
-    FORMATTER = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    # Add formatter to ch
-    CH.setFormatter(FORMATTER)
-
-    # Add ch to logger
-    ROOT_LOGGER.addHandler(CH)
-    # Run robot master
-    try:
-        run_robotconfigurator()
-    except Exception:  # pylint: disable=broad-except
-        EXC_INFO = sys.exc_info()
-        _LOGGER.critical(
-            'Unexpected error "%s" - "%s" - TRACEBACK: %s', EXC_INFO[0], EXC_INFO[1],
-            traceback.format_exception(*EXC_INFO))
-        sys.exit('Application terminated with exception: "{}" - "{}"'.format(
-            EXC_INFO[0], EXC_INFO[1]))

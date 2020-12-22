@@ -17,10 +17,5 @@ RUN pip3 install /fetchcontroller && \
     rm -rf /fetchcontroller && \
     python3 -c "import fetchcontroller"
 
-COPY docker/fetch-mission-controller/app /app
-WORKDIR /app
-
-RUN pip3 install -r ./requirements.txt
-
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "/app/main.py" ]
+ENTRYPOINT [ "python3", "-m", "fetchcontroller" ]

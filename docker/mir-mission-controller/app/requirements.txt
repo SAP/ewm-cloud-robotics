@@ -1,4 +1,0 @@
-# Dependencies for mir mission controller for local development
-k8scrhandler
-robcoewmtypes
-mircontroller

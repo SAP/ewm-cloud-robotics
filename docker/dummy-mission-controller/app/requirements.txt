@@ -1,3 +1,0 @@
-# Dependencies for basic mission controller for local development
-k8scrhandler
-dummycontroller

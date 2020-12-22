@@ -13,10 +13,6 @@ fileExistenceTests:
   - name: "verify that module '/robcoewmordermanager' directory has been removed post installing"
     path: "/robcoewmordermanager"
     shouldExist: false
-  - name: "verify that 'cert/' directory does not exist (holding self-signed SSL certificates for local dev environment)"
-    path: "/cert"
-    shouldExist: false
 
 metadataTest:
-  workdir: "/app"
-  entrypoint: [ "python3", "main.py" ]
+  entrypoint: [ "python3", "-m", "robcoewmordermanager" ]

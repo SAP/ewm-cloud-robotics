@@ -7,8 +7,6 @@
 
 FROM python:3.8.6-slim
 
-RUN pip3 install -U wss_plugin
-
 COPY ./python-modules/k8scrhandler /k8scrhandler
 RUN pip3 install /k8scrhandler && \
     rm -rf /k8scrhandler && \
@@ -29,14 +27,5 @@ RUN pip3 install /robcoewmordermanager && \
     rm -rf /robcoewmordermanager && \
     python3 -c "import robcoewmordermanager"
 
-## TODO: replace with Volume mapping to ConfigMap & Helm value
-# COPY docker/order-manager/cert /cert
-# ENV REQUESTS_CA_BUNDLE="/cert/ca.crt"
-
-COPY docker/order-manager/app /app
-WORKDIR /app
-
-RUN pip3 install -r ./requirements.txt
-
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "main.py" ]
+ENTRYPOINT [ "python3", "-m", "robcoewmordermanager" ]

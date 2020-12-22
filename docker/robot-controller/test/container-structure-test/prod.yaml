@@ -11,5 +11,4 @@ fileExistenceTests:
     path: "/robcoewmrobotcontroller"
     shouldExist: false
 metadataTest:
-  workdir: "/app"
-  entrypoint: [ "python3", "main.py" ]
+  entrypoint: [ "python3", "-m", "robcoewmrobotcontroller" ]

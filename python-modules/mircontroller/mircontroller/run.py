@@ -12,8 +12,6 @@
 
 """Run the MiR mission controller."""
 
-import sys
-import traceback
 import logging
 
 from prometheus_client import start_http_server
@@ -75,33 +73,3 @@ def run_missioncontroller():
         _LOGGER.info('Stopping K8S CR watchers')
         k8s_mc.stop_watcher()
         k8s_rc.stop_watcher()
-
-
-if __name__ == '__main__':
-    # Create root logger if running as main program
-    ROOT_LOGGER = logging.getLogger()
-    ROOT_LOGGER.setLevel(logging.INFO)
-
-    # Create console handler and set level to info
-    CH = logging.StreamHandler()
-    CH.setLevel(logging.INFO)
-
-    # Create formatter
-    FORMATTER = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-    # Add formatter to ch
-    CH.setFormatter(FORMATTER)
-
-    # Add ch to logger
-    ROOT_LOGGER.addHandler(CH)
-    # Run order manager
-    try:
-        run_missioncontroller()
-    except Exception:  # pylint: disable=broad-except
-        EXC_INFO = sys.exc_info()
-        _LOGGER.critical(
-            'Unexpected error "%s" - "%s" - TRACEBACK: %s', EXC_INFO[0],
-            EXC_INFO[1], traceback.format_exception(*EXC_INFO))
-        sys.exit('Application terminated with exception: "{}" - "{}"'.format(
-            EXC_INFO[0], EXC_INFO[1]))

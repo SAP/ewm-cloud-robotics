@@ -7,8 +7,6 @@
 
 FROM python:3.8.6-slim
 
-RUN pip3 install -U wss_plugin
-
 COPY ./python-modules/k8scrhandler /k8scrhandler
 RUN pip3 install /k8scrhandler && \
     rm -rf /k8scrhandler && \
@@ -24,10 +22,5 @@ RUN pip3 install /robcoewmrobotcontroller && \
     rm -rf /robcoewmrobotcontroller && \
     python3 -c "import robcoewmrobotcontroller"
 
-COPY docker/robot-controller/app /app
-WORKDIR /app
-
-RUN pip3 install -r ./requirements.txt
-
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "main.py" ]
+ENTRYPOINT [ "python3", "-m", "robcoewmrobotcontroller" ]

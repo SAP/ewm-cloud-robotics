@@ -4,6 +4,9 @@ fileExistenceTests:
   - name: "verify that module '/k8scrhandler' directory has been removed post installing"
     path: "/k8scrhandler"
     shouldExist: false
+  - name: "verify that module '/fetchcontroller' directory has been removed post installing"
+    path: "/fetchcontroller"
+    shouldExist: false
+
 metadataTest:
-  workdir: "/app"
-  # entrypoint: [ "python3", "main.py" ]
+  entrypoint: [ "python3", "-m", "fetchcontroller" ]
