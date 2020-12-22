@@ -12,8 +12,6 @@
 
 """K8s custom resource handler for EWM warehouse orders."""
 
-import sys
-import traceback
 import logging
 import threading
 import time
@@ -128,14 +126,11 @@ class OrderController(K8sCRHandler):
         while self.thread_run:
             try:
                 self._check_deleted_orders()
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
+            except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error(
-                    '%s/%s: Error checking for deleted warehouse_orders - Exception: "%s" / "%s" -'
-                    ' TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
+                    'Error checking for deleted warehouse_orders: %s', err, exc_info=True)
                 # On uncovered exception in thread save the exception
-                self.thread_exceptions['deleted_warehouse_orders_checker'] = exc
+                self.thread_exceptions['deleted_warehouse_orders_checker'] = err
                 # Stop the watcher
                 self.stop_watcher()
             finally:

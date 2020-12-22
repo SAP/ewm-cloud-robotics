@@ -12,8 +12,6 @@
 
 """RobCo mission API interface for robcoewm robot."""
 
-import sys
-import traceback
 import logging
 import time
 import threading
@@ -198,14 +196,10 @@ class RobCoMissionAPI(K8sCRHandler):
         while self.thread_run:
             try:
                 self.check_deleted_missions()
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
-                _LOGGER.error(
-                    '%s/%s: Error checking for deleted missions - Exception: "%s" / "%s" - '
-                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.error('Error checking for deleted missions: %s', err, exc_info=True)
                 # On uncovered exception in thread save the exception
-                self.thread_exceptions['deleted_missions_checker'] = exc
+                self.thread_exceptions['deleted_missions_checker'] = err
                 # Stop the watcher
                 self.stop_watcher()
             finally:

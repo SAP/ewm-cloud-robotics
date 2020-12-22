@@ -14,8 +14,6 @@
 
 
 import os
-import sys
-import traceback
 import logging
 
 from concurrent.futures import ThreadPoolExecutor
@@ -113,11 +111,9 @@ class EWMRobotSync:
         try:
             self.create_ewm_resource(name.upper(), config_spec)
             self.update_ewm_resource(name.upper(), config_spec)
-        except Exception:  # pylint: disable=broad-except
-            exc_info = sys.exc_info()
+        except Exception as err:  # pylint: disable=broad-except
             _LOGGER.error(
-                'Error checking EWM resource for robot %s: "%s" / "%s" - TRACEBACK: %s',
-                name, exc_info[0], exc_info[1], traceback.format_exception(*exc_info))
+                'Error checking EWM resource for robot %s: %s', name, err, exc_info=True)
         finally:
             self.running_robot_checks.pop(name, None)
 

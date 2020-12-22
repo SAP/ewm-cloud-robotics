@@ -14,8 +14,6 @@
 
 import os
 import re
-import sys
-import traceback
 import logging
 import copy
 import time
@@ -269,12 +267,10 @@ class K8sCRHandler:
         try:
             for callback in self.callbacks[operation].values():
                 callback(name, custom_res)
-        except Exception:  # pylint: disable=broad-except
-            exc_info = sys.exc_info()
+        except Exception as err:  # pylint: disable=broad-except
             _LOGGER.error(
-                '%s/%s: Error in callback when processing CR %s - Exception: "%s" / "%s" - '
-                'TRACEBACK: %s', self.group, self.plural, name, exc_info[0], exc_info[1],
-                traceback.format_exception(*exc_info))
+                '%s/%s: Error in callback when processing CR %s: %s', self.group, self.plural,
+                name, err, exc_info=True)
         else:
             _LOGGER.debug(
                 '%s/%s: Successfully processed custom resource %s', self.group, self.plural, name)
@@ -345,14 +341,12 @@ class K8sCRHandler:
                 if self.resv_watcher == '':
                     self.process_all_crs('ADDED', set_resv_watcher=True)
                 self._watch_on_crs()
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
+            except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error(
-                    '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
-                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
+                    '%s/%s: Error reprocessing custom resources: %s', self.group, self.plural, err,
+                    exc_info=True)
                 # On uncovered exception in thread save the exception
-                self.thread_exceptions['watcher'] = exc
+                self.thread_exceptions['watcher'] = err
                 # Stop the watcher
                 self.stop_watcher()
             finally:
@@ -551,14 +545,11 @@ class K8sCRHandler:
         while self.thread_run:
             try:
                 self.process_all_crs('REPROCESS')
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
+            except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error(
-                    '%s/%s: Error reprocessing custom resources - Exception: "%s" / "%s" - '
-                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
-                # On uncovered exception in thread save the exception
-                self.thread_exceptions['reprocessor'] = exc
+                    '%s/%s: Error reprocessing custom resources: %s', self.group, self.plural, err,
+                    exc_info=True)
+                self.thread_exceptions['reprocessor'] = err
                 # Stop the watcher
                 self.stop_watcher()
             finally:

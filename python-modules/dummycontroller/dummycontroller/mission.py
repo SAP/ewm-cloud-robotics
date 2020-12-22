@@ -14,10 +14,8 @@
 
 import logging
 import datetime
-import sys
 import time
 import threading
-import traceback
 
 from copy import deepcopy
 from collections import OrderedDict
@@ -129,14 +127,10 @@ class MissionController(K8sCRHandler):
             try:
                 self._watch_missions()
                 loop_control.sleep(0.5)
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
-                _LOGGER.error(
-                    '%s/%s: Error watching missions of robot - Exception: "%s" / "%s" - '
-                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.error('Error watching missions of robot: %s', err, exc_info=True)
                 # On uncovered exception in thread save the exception
-                self.thread_exceptions['mission_loop'] = exc
+                self.thread_exceptions['mission_loop'] = err
                 # Stop the watcher
                 self.stop_watcher()
 
@@ -176,14 +170,10 @@ class MissionController(K8sCRHandler):
             try:
                 # Reset potential DummyRobot error
                 loop_control.sleep(2.0)
-            except Exception as exc:  # pylint: disable=broad-except
-                exc_info = sys.exc_info()
-                _LOGGER.error(
-                    '%s/%s: Error watching status of robot - Exception: "%s" / "%s" - '
-                    'TRACEBACK: %s', self.group, self.plural, exc_info[0], exc_info[1],
-                    traceback.format_exception(*exc_info))
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.error('Error watching status of robot: %s', err, exc_info=True)
                 # On uncovered exception in thread save the exception
-                self.thread_exceptions['status_loop'] = exc
+                self.thread_exceptions['status_loop'] = err
                 # Stop the watcher
                 self.stop_watcher()
 

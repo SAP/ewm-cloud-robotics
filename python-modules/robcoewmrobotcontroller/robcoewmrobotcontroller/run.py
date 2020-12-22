@@ -12,9 +12,7 @@
 
 """Run a SAP EWM robot."""
 
-import sys
 import signal
-import traceback
 import logging
 import time
 

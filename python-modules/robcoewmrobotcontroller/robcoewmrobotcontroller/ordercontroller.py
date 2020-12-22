@@ -13,8 +13,6 @@
 """K8s custom resource handler for new warehouse orders."""
 
 import os
-import sys
-import traceback
 import logging
 
 from typing import Dict, Optional
@@ -70,12 +68,10 @@ class OrderController(K8sCRHandler):
             if process_cr:
                 for callback in self.callbacks[operation].values():
                     callback(name, custom_res.get('spec', {}))
-        except Exception:  # pylint: disable=broad-except
-            exc_info = sys.exc_info()
+        except Exception as err:  # pylint: disable=broad-except
             _LOGGER.error(
-                '%s/%s: Error in callback when processing CR %s - Exception: "%s" / "%s" - '
-                'TRACEBACK: %s', self.group, self.plural, name, exc_info[0], exc_info[1],
-                traceback.format_exception(*exc_info))
+                '%s/%s: Error in callback when processing CR %s: %s', self.group, self.plural,
+                name, err, exc_info=True)
         else:
             if operation == 'DELETED':
                 # Cleanup when CR was deleted

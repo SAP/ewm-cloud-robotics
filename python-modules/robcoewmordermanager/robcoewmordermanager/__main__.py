@@ -13,7 +13,6 @@
 """Run the SAP EWM order manager."""
 
 import sys
-import traceback
 import logging
 
 from robcoewmordermanager import run as om
@@ -64,13 +63,9 @@ def main() -> None:
     try:
         # Run order manager
         om.run_ordermanager()
-    except Exception:  # pylint: disable=broad-except
-        exc_info = sys.exc_info()
-        _LOGGER.critical(
-            'Unexpected error "%s" - "%s" - TRACEBACK: \n %s', exc_info[0],
-            exc_info[1], traceback.format_exception(*exc_info))
-        sys.exit('Application terminated with exception: "{}" - "{}"'.format(
-            exc_info[0], exc_info[1]))
+    except Exception as err:  # pylint: disable=broad-except
+        _LOGGER.critical('Unexpected error in main program: %s', err, exc_info=True)
+        sys.exit('Application terminated with error')
 
 
 if __name__ == '__main__':
