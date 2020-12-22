@@ -5,8 +5,8 @@ FROM golang:1.15-alpine as builder
 RUN apk update && apk add git && apk add ca-certificates && apk add wget && apk add unzip
 # Build OpenUI5 SDK
 RUN mkdir -p /openui5-sdk
-RUN wget https://github.com/SAP/openui5/releases/download/1.75.0/openui5-runtime-1.75.0.zip -P /openui5-sdk
-RUN unzip -o /openui5-sdk/openui5-runtime-1.75.0.zip -d /openui5-sdk
+RUN wget https://github.com/SAP/openui5/releases/download/1.84.3/openui5-runtime-1.84.3.zip -P /openui5-sdk
+RUN unzip -o /openui5-sdk/openui5-runtime-1.84.3.zip -d /openui5-sdk
 # Build Go app
 COPY ./go/pkg/zerologconfig $GOPATH/src/pkg/zerologconfig
 COPY ./go/cmd/nginx-odata-auth $GOPATH/src/cmd/nginx-odata-auth
