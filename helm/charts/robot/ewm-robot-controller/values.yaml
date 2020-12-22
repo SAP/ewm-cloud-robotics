@@ -5,3 +5,6 @@ robot:
 
 envs:
   maxretrycount: 1
+  log:
+    level: "info"
+    format: "json"

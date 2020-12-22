@@ -6,3 +6,6 @@ envs:
   user: ""
   host: ""
   clientid: ""
+  log:
+    level: "info"
+    format: "json"

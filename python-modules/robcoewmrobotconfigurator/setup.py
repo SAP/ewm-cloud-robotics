@@ -16,6 +16,7 @@ from setuptools import find_packages, setup
 REQUIRES = [
     'cattrs==1.1.2',
     'retrying',
+    'python-json-logger',
     'k8scrhandler',
     'robcoewmtypes',
     'robcoewminterface'

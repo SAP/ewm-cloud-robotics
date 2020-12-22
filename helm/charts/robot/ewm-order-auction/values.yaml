@@ -4,5 +4,6 @@ robot:
   name: "z"
 
 envs:
-  zerologconfig: "json"
-  zerologloglevel: "info"
+  log: 
+    format: "json"
+    level: "info"

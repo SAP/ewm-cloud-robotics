@@ -21,6 +21,10 @@ spec:
           value: "{{ .Values.robot.name }}"
         - name: MAX_RETRY_COUNT
           value: "{{ .Values.envs.maxretrycount }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
 ---
 apiVersion: v1
 kind: Service

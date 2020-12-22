@@ -55,6 +55,10 @@ spec:
             secretKeyRef:
               name: fetchcore-api
               key: clientid
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
 ---
 apiVersion: v1
 kind: Service

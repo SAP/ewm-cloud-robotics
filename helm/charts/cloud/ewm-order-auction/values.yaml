@@ -3,8 +3,9 @@ image: "ewmcloudrobotics/order-auctioneer:latest"
 robots: []
 
 envs:
-  zerologconfig: "json"
-  zerologloglevel: "info"
+  log: 
+    format: "json"
+    level: "info"
 
 # Certificate authority used to sign in-cluster certificates.
 certificate_authority:

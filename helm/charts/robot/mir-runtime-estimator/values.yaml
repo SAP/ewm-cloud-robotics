@@ -7,8 +7,9 @@ envs:
   mirhttptimeout: "60"
   mirpreservepathguides: "false"
   precalcpathswhenidle: "true"
-  zerologconfig: "json"
-  zerologloglevel: "info"
+  log: 
+    format: "json"
+    level: "info"
 
 robot:
   name: "z"

@@ -19,10 +19,10 @@ spec:
         env:
         - name: DEPLOYED_ROBOTS
           value: "{{- range $.Values.robots }}{{ .name }},{{- end }}"
-        - name: ZEROLOG_CONFIG
-          value: "{{ .Values.envs.zerologconfig }}"
-        - name: ZEROLOG_LOGLEVEL
-          value: "{{ .Values.envs.zerologloglevel }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
         ports:
         - name: webhook
           containerPort: 9876

@@ -18,6 +18,7 @@ REQUIRES = [
     'requests',
     'retrying',
     'prometheus-client',
+    'python-json-logger',
     'k8scrhandler'
     ]
 

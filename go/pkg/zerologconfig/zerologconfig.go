@@ -65,7 +65,7 @@ func NewLogger() *zerolog.Logger {
 	var log zerolog.Logger
 
 	// JSON or console configuration
-	json := bool(strings.ToLower(os.Getenv("ZEROLOG_CONFIG")) == "json")
+	json := bool(strings.ToLower(os.Getenv("LOG_FORMAT")) == "json")
 
 	if json {
 		log = zerolog.New(os.Stderr).Hook(severityHook{}).With().Timestamp().Caller().Logger()
@@ -82,7 +82,7 @@ func NewLogger() *zerolog.Logger {
 
 	// Default global log level is info
 	zerolog.SetGlobalLevel(zerolog.InfoLevel)
-	logLevel := strings.ToLower(os.Getenv("ZEROLOG_LOGLEVEL"))
+	logLevel := strings.ToLower(os.Getenv("LOG_LEVEL"))
 	if logLevel != "" {
 		zerologLevel, err := zerolog.ParseLevel(logLevel)
 		if err == nil {

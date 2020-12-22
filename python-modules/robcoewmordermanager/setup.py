@@ -19,6 +19,7 @@ REQUIRES = [
     'retrying',
     'prometheus-client',
     'python-dateutil',
+    'python-json-logger',
     'k8scrhandler',
     'robcoewmtypes',
     'robcoewminterface'

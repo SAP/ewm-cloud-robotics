@@ -135,8 +135,10 @@ spec:
             secretKeyRef:
               name: ewm-odata-api
               key: ewmtkep
-        - name: ZEROLOG_CONFIG
-          value: json
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
 ---
 apiVersion: v1
 kind: Service

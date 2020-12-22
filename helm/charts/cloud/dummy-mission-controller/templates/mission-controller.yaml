@@ -20,5 +20,9 @@ spec:
         env:
         - name: ROBCO_ROBOT_NAME
           value: "{{ .name }}"
+        - name: LOG_LEVEL
+          value: {{ $.Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ $.Values.envs.log.format }}
 ---
 {{- end }}

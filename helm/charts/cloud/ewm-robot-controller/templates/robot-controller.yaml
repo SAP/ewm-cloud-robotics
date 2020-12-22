@@ -83,3 +83,7 @@ spec:
           value: "{{ .Values.envs.maxidletime }}"
         - name: CHARGER_LIST
           value: "{{ .Values.envs.chargerlist }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}

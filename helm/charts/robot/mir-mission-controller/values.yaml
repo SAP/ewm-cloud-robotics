@@ -6,6 +6,9 @@ envs:
   mirpassword: ""   # Password for MiR user
   mirhost: "mir-api.default.svc.cluster.local"  # Host name of MiR API
   locfailedmaxreset: 0  # Maximum times E_LOCALIZATION_FAILED errors are resetted per successfull mission
+  log:
+    level: "info"
+    format: "json"
 
 robot:
   name: "z"   # Placeholder value to run helm linter successfully. Is automatically overwritten.

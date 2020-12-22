@@ -12,15 +12,35 @@
 
 """Run the MiR mission controller."""
 
+import os
 import sys
 import logging
+
+from pythonjsonlogger import jsonlogger
 
 from mircontroller import run as mc
 
 
+class CustomJsonFormatter(jsonlogger.JsonFormatter):
+    """CustomJsonFormatter with extra fields for log level."""
+
+    def add_fields(self, log_record, record, message_dict):
+        """Add fields for level and severity."""
+        super().add_fields(log_record, record, message_dict)
+
+        # Ensure level field is propagated
+        if log_record.get('level'):
+            log_record['level'] = log_record['level'].upper()
+        else:
+            log_record['level'] = record.levelname
+
+        # Add field for severity
+        log_record['severity'] = log_record['level']
+
+
 # According to
 # https://medium.com/retailmenot-engineering/formatting-python-logs-for-stackdriver-5a5ddd80761c
-class _MaxLevelFilter(logging.Filter):
+class MaxLevelFilter(logging.Filter):
     """MaxLevelFilter filters log entry by their log level."""
 
     def __init__(self, highest_log_level: int) -> None:
@@ -35,27 +55,69 @@ class _MaxLevelFilter(logging.Filter):
 
 # Create root logger
 _LOGGER = logging.getLogger()
-_LOGGER.setLevel(logging.INFO)
 
-# Create console handler and set level to info
-# Level INFO + WARNING
-INFO_HANDLER = logging.StreamHandler(sys.stdout)
-INFO_HANDLER.setLevel(logging.INFO)
-INFO_HANDLER.addFilter(_MaxLevelFilter(logging.WARNING))
-# Levels ERROR+
-ERROR_HANDLER = logging.StreamHandler(sys.stderr)
-ERROR_HANDLER.setLevel(logging.ERROR)
+# Determine log level
+LOG_LEVEL = str(os.environ.get('LOG_LEVEL')).upper()
+# Default level is INFO
+if LOG_LEVEL == 'NONE':
+    LOG_LEVEL = 'INFO'
+LEVEL = logging.INFO
+if LOG_LEVEL == 'DEBUG':
+    LEVEL = logging.DEBUG
+elif LOG_LEVEL == 'WARNING' or LOG_LEVEL.lower() == 'WARN':
+    LEVEL = logging.WARNING
+elif LOG_LEVEL == 'ERROR':
+    LEVEL = logging.ERROR
 
-# Create formatter
-FORMATTER = logging.Formatter('- %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s')
+_LOGGER.setLevel(LEVEL)
 
-# Add formatter to log handlers
-INFO_HANDLER.setFormatter(FORMATTER)
-ERROR_HANDLER.setFormatter(FORMATTER)
+# Determine log format
+if str(os.environ.get('LOG_FORMAT')).lower() == 'json':
+    # JSON log handler
+    JSON_HANDLER = logging.StreamHandler()
+    # Create formatter
+    LOG_KEYS = [
+        'exc_info',
+        'exc_text',
+        'filename',
+        'funcName',
+        'levelname',
+        'lineno',
+        'message',
+        'name',
+        'pathname',
+        'threadName']
+    JSON_FORMAT = ' '.join(['%({0:s})s'.format(i) for i in LOG_KEYS])
+    JSON_FORMATTER = CustomJsonFormatter(
+        JSON_FORMAT, rename_fields={'levelname': 'level', 'name': 'logger'}, timestamp=True)
+    JSON_HANDLER.setFormatter(JSON_FORMATTER)
+    _LOGGER.addHandler(JSON_HANDLER)
 
-# Add log handlers to logger
-_LOGGER.addHandler(INFO_HANDLER)
-_LOGGER.addHandler(ERROR_HANDLER)
+    _LOGGER.info('Using JSON log format')
+else:
+    # Create console handler and set level to info
+    # Level INFO + WARNING
+    INFO_HANDLER = logging.StreamHandler(sys.stdout)
+    INFO_HANDLER.setLevel(LEVEL)
+    INFO_HANDLER.addFilter(MaxLevelFilter(logging.WARNING))
+    # Levels ERROR+
+    ERROR_HANDLER = logging.StreamHandler(sys.stderr)
+    ERROR_HANDLER.setLevel(logging.ERROR)
+
+    # Create formatter
+    LOG_FORMATTER = logging.Formatter('- %(levelname)s - [%(filename)s:%(lineno)d] - %(message)s')
+
+    # Add formatter to log handlers
+    INFO_HANDLER.setFormatter(LOG_FORMATTER)
+    ERROR_HANDLER.setFormatter(LOG_FORMATTER)
+
+    # Add log handlers to logger
+    _LOGGER.addHandler(INFO_HANDLER)
+    _LOGGER.addHandler(ERROR_HANDLER)
+
+    _LOGGER.info('Using CONSOLE log format')
+
+_LOGGER.info('Log level is %s', LOG_LEVEL)
 
 
 def main() -> None:

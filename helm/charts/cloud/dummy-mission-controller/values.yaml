@@ -2,3 +2,8 @@ image: "ewmcloudrobotics/dummy-mission-controller:latest"
 
 robots:
   - name: "z"
+
+envs:
+  log:
+    level: "info"
+    format: "json"

@@ -49,6 +49,10 @@ spec:
           value: "{{ .Values.envs.plctrolley }}"
         - name: LOCALIZATION_FAILED_MAX_RESET
           value: "{{ .Values.envs.locfailedmaxreset }}"
+        - name: LOG_LEVEL
+          value: {{ .Values.envs.log.level }}
+        - name: LOG_FORMAT
+          value: {{ .Values.envs.log.format }}
 ---
 apiVersion: v1
 kind: Service

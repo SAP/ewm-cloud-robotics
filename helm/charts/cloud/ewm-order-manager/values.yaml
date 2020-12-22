@@ -10,6 +10,9 @@ envs:
   ewmclientsecret: ""
   ewmtokenendpoint: ""
   reservationtimeout: 5.0
+  log:
+    level: "info"
+    format: "json"
 
 robot:
   name: ""

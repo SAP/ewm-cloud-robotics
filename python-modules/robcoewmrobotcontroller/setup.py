@@ -18,6 +18,7 @@ REQUIRES = [
     'cattrs==1.1.2',
     'transitions==0.8.5',
     'prometheus-client',
+    'python-json-logger',
     'robcoewmtypes',
     'k8scrhandler',
     ]
