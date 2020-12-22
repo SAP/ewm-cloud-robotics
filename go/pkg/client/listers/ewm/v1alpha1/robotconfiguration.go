@@ -19,8 +19,10 @@ import (
 )
 
 // RobotConfigurationLister helps list RobotConfigurations.
+// All objects returned here must be treated as read-only.
 type RobotConfigurationLister interface {
 	// List lists all RobotConfigurations in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.RobotConfiguration, err error)
 	// RobotConfigurations returns an object that can list and get RobotConfigurations.
 	RobotConfigurations(namespace string) RobotConfigurationNamespaceLister
@@ -51,10 +53,13 @@ func (s *robotConfigurationLister) RobotConfigurations(namespace string) RobotCo
 }
 
 // RobotConfigurationNamespaceLister helps list and get RobotConfigurations.
+// All objects returned here must be treated as read-only.
 type RobotConfigurationNamespaceLister interface {
 	// List lists all RobotConfigurations in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.RobotConfiguration, err error)
 	// Get retrieves the RobotConfiguration from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.RobotConfiguration, error)
 	RobotConfigurationNamespaceListerExpansion
 }

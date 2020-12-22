@@ -1,6 +1,6 @@
 ###############################################################################
 # STEP 1 build executable binary
-FROM golang:1.14-alpine as builder
+FROM golang:1.15-alpine as builder
 # Install SSL ca certificates
 RUN apk add --no-cache git ca-certificates
 # Build Go app

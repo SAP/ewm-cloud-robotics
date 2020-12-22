@@ -8,7 +8,7 @@
 //
 
 // This is an implementation of logr interface for zerolog
-// https://github.com/go-logr/logr/blob/master/logr.go - currently in v0.1.0
+// https://github.com/go-logr/logr/blob/master/logr.go - currently in v0.3.0
 
 package zerologr
 

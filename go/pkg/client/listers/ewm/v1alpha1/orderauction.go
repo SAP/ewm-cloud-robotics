@@ -19,8 +19,10 @@ import (
 )
 
 // OrderAuctionLister helps list OrderAuctions.
+// All objects returned here must be treated as read-only.
 type OrderAuctionLister interface {
 	// List lists all OrderAuctions in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.OrderAuction, err error)
 	// OrderAuctions returns an object that can list and get OrderAuctions.
 	OrderAuctions(namespace string) OrderAuctionNamespaceLister
@@ -51,10 +53,13 @@ func (s *orderAuctionLister) OrderAuctions(namespace string) OrderAuctionNamespa
 }
 
 // OrderAuctionNamespaceLister helps list and get OrderAuctions.
+// All objects returned here must be treated as read-only.
 type OrderAuctionNamespaceLister interface {
 	// List lists all OrderAuctions in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.OrderAuction, err error)
 	// Get retrieves the OrderAuction from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.OrderAuction, error)
 	OrderAuctionNamespaceListerExpansion
 }

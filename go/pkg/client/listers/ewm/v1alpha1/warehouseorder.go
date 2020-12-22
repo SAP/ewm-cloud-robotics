@@ -19,8 +19,10 @@ import (
 )
 
 // WarehouseOrderLister helps list WarehouseOrders.
+// All objects returned here must be treated as read-only.
 type WarehouseOrderLister interface {
 	// List lists all WarehouseOrders in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.WarehouseOrder, err error)
 	// WarehouseOrders returns an object that can list and get WarehouseOrders.
 	WarehouseOrders(namespace string) WarehouseOrderNamespaceLister
@@ -51,10 +53,13 @@ func (s *warehouseOrderLister) WarehouseOrders(namespace string) WarehouseOrderN
 }
 
 // WarehouseOrderNamespaceLister helps list and get WarehouseOrders.
+// All objects returned here must be treated as read-only.
 type WarehouseOrderNamespaceLister interface {
 	// List lists all WarehouseOrders in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.WarehouseOrder, err error)
 	// Get retrieves the WarehouseOrder from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.WarehouseOrder, error)
 	WarehouseOrderNamespaceListerExpansion
 }

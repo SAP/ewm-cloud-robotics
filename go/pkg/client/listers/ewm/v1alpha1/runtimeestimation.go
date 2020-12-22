@@ -19,8 +19,10 @@ import (
 )
 
 // RunTimeEstimationLister helps list RunTimeEstimations.
+// All objects returned here must be treated as read-only.
 type RunTimeEstimationLister interface {
 	// List lists all RunTimeEstimations in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.RunTimeEstimation, err error)
 	// RunTimeEstimations returns an object that can list and get RunTimeEstimations.
 	RunTimeEstimations(namespace string) RunTimeEstimationNamespaceLister
@@ -51,10 +53,13 @@ func (s *runTimeEstimationLister) RunTimeEstimations(namespace string) RunTimeEs
 }
 
 // RunTimeEstimationNamespaceLister helps list and get RunTimeEstimations.
+// All objects returned here must be treated as read-only.
 type RunTimeEstimationNamespaceLister interface {
 	// List lists all RunTimeEstimations in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.RunTimeEstimation, err error)
 	// Get retrieves the RunTimeEstimation from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.RunTimeEstimation, error)
 	RunTimeEstimationNamespaceListerExpansion
 }

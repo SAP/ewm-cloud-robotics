@@ -19,8 +19,10 @@ import (
 )
 
 // AuctioneerLister helps list Auctioneers.
+// All objects returned here must be treated as read-only.
 type AuctioneerLister interface {
 	// List lists all Auctioneers in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.Auctioneer, err error)
 	// Auctioneers returns an object that can list and get Auctioneers.
 	Auctioneers(namespace string) AuctioneerNamespaceLister
@@ -51,10 +53,13 @@ func (s *auctioneerLister) Auctioneers(namespace string) AuctioneerNamespaceList
 }
 
 // AuctioneerNamespaceLister helps list and get Auctioneers.
+// All objects returned here must be treated as read-only.
 type AuctioneerNamespaceLister interface {
 	// List lists all Auctioneers in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.Auctioneer, err error)
 	// Get retrieves the Auctioneer from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.Auctioneer, error)
 	AuctioneerNamespaceListerExpansion
 }

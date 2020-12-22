@@ -107,11 +107,11 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 	err = c.Watch(&source.Kind{Type: &ewm.OrderAuction{}},
 		&handler.Funcs{
 			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
-				log.Debug().Msgf("Auctioneer controller received update event for OrderAuction %q", e.MetaNew.GetName())
-				r.enqueueFromLabel(e.MetaNew, q)
-				if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
-					log.Debug().Msgf("Auctioneer controller received update event for OrderAuction %q", e.MetaOld.GetName())
-					r.enqueueFromLabel(e.MetaOld, q)
+				log.Debug().Msgf("Auctioneer controller received update event for OrderAuction %q", e.ObjectNew.GetName())
+				r.enqueueFromLabel(e.ObjectNew, q)
+				if nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld) {
+					log.Debug().Msgf("Auctioneer controller received update event for OrderAuction %q", e.ObjectOld.GetName())
+					r.enqueueFromLabel(e.ObjectOld, q)
 				}
 			},
 		},
@@ -129,13 +129,13 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 				rbStateOld := string(e.ObjectOld.(*registry.Robot).Status.Robot.State)
 				rbStateNew := string(e.ObjectNew.(*registry.Robot).Status.Robot.State)
 				change := !robotAvailable[rbStateOld] && robotAvailable[rbStateNew]
-				change = change || nameOrNamespaceChanged(e.MetaNew, e.MetaOld)
+				change = change || nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld)
 				if change {
-					log.Debug().Msgf("Auctioneer controller received update event for Robot %q", e.MetaNew.GetName())
-					r.enqueueFromLabel(e.MetaNew, q)
-					if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
-						log.Info().Msgf("Auctioneer controller received update event for Robot %q", e.MetaOld.GetName())
-						r.enqueueFromLabel(e.MetaOld, q)
+					log.Debug().Msgf("Auctioneer controller received update event for Robot %q", e.ObjectNew.GetName())
+					r.enqueueFromLabel(e.ObjectNew, q)
+					if nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld) {
+						log.Info().Msgf("Auctioneer controller received update event for Robot %q", e.ObjectOld.GetName())
+						r.enqueueFromLabel(e.ObjectOld, q)
 					}
 
 				}
@@ -152,15 +152,15 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 		&handler.Funcs{
 			CreateFunc: func(e event.CreateEvent, q workqueue.RateLimitingInterface) {
 				// Only create events because of robots for which this app was deployed
-				if !r.deployedRobots[e.Meta.GetName()] {
+				if !r.deployedRobots[e.Object.GetName()] {
 					return
 				}
-				log.Info().Msgf("Auctioneer controller received create event for RobotConfiguration %q", e.Meta.GetName())
+				log.Info().Msgf("Auctioneer controller received create event for RobotConfiguration %q", e.Object.GetName())
 				r.enqueueFromConfig(e.Object.(*ewm.RobotConfiguration).Spec, q)
 			},
 			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 				// Only create events because of robots for which this app was deployed
-				if !r.deployedRobots[e.MetaNew.GetName()] && !r.deployedRobots[e.MetaOld.GetName()] {
+				if !r.deployedRobots[e.ObjectNew.GetName()] && !r.deployedRobots[e.ObjectOld.GetName()] {
 					return
 				}
 				// Check if Spec or name changed or status changed from unavailable to available
@@ -168,12 +168,12 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 				rcNew := e.ObjectNew.(*ewm.RobotConfiguration)
 				change := !reflect.DeepEqual(rcOld.Spec, rcNew.Spec)
 				change = change || statemachineUnavailable[rcOld.Status.Statemachine] && !statemachineUnavailable[rcNew.Status.Statemachine]
-				change = change || nameOrNamespaceChanged(e.MetaNew, e.MetaOld)
+				change = change || nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld)
 				if change {
-					log.Info().Msgf("Auctioneer controller received update event for RobotConfiguration %q", e.MetaNew.GetName())
+					log.Info().Msgf("Auctioneer controller received update event for RobotConfiguration %q", e.ObjectNew.GetName())
 					r.enqueueFromConfig(rcNew.Spec, q)
-					if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
-						log.Info().Msgf("Auctioneer controller received update event for RobotConfiguration %q", e.MetaOld.GetName())
+					if nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld) {
+						log.Info().Msgf("Auctioneer controller received update event for RobotConfiguration %q", e.ObjectOld.GetName())
 						r.enqueueFromConfig(rcOld.Spec, q)
 					}
 				}
@@ -192,20 +192,20 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 			UpdateFunc: func(e event.UpdateEvent, q workqueue.RateLimitingInterface) {
 				// Check if Spec.OrderStatus or name changed
 				change := e.ObjectOld.(*ewm.WarehouseOrder).Spec.OrderStatus != e.ObjectNew.(*ewm.WarehouseOrder).Spec.OrderStatus
-				change = change || nameOrNamespaceChanged(e.MetaNew, e.MetaOld)
+				change = change || nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld)
 				if change {
-					log.Debug().Msgf("Auctioneer controller received update event for WarehouseOrder %q", e.MetaNew.GetName())
-					r.enqueueFromLabel(e.MetaNew, q)
-					if nameOrNamespaceChanged(e.MetaNew, e.MetaOld) {
-						log.Info().Msgf("Auctioneer controller received update event for WarehouseOrder %q", e.MetaOld.GetName())
-						r.enqueueFromLabel(e.MetaOld, q)
+					log.Debug().Msgf("Auctioneer controller received update event for WarehouseOrder %q", e.ObjectNew.GetName())
+					r.enqueueFromLabel(e.ObjectNew, q)
+					if nameOrNamespaceChanged(e.ObjectNew, e.ObjectOld) {
+						log.Info().Msgf("Auctioneer controller received update event for WarehouseOrder %q", e.ObjectOld.GetName())
+						r.enqueueFromLabel(e.ObjectOld, q)
 					}
 
 				}
 			},
 			DeleteFunc: func(e event.DeleteEvent, q workqueue.RateLimitingInterface) {
-				log.Debug().Msgf("Auctioneer controller received delete event for WarehouseOrder %q", e.Meta.GetName())
-				r.enqueueFromLabel(e.Meta, q)
+				log.Debug().Msgf("Auctioneer controller received delete event for WarehouseOrder %q", e.Object.GetName())
+				r.enqueueFromLabel(e.Object, q)
 			},
 		},
 	)
@@ -218,7 +218,7 @@ func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedR
 }
 
 // indexOwnerReferences indexes resources by the UIDs of their owner references.
-func indexOwnerReferences(o runtime.Object) (refs []string) {
+func indexOwnerReferences(o client.Object) (refs []string) {
 	switch obj := o.(type) {
 	case *ewm.OrderReservation:
 		for _, ref := range obj.OwnerReferences {
@@ -235,9 +235,9 @@ func indexOwnerReferences(o runtime.Object) (refs []string) {
 	return refs
 }
 
-func nameOrNamespaceChanged(metaNew, metaOld metav1.Object) bool {
-	change := metaNew.GetName() != metaOld.GetName()
-	change = change || metaNew.GetNamespace() != metaOld.GetNamespace()
+func nameOrNamespaceChanged(objectNew, objectOld client.Object) bool {
+	change := objectNew.GetName() != objectOld.GetName()
+	change = change || objectNew.GetNamespace() != objectOld.GetNamespace()
 	return change
 }
 
@@ -263,7 +263,7 @@ func (r *reconcileAuctioneer) enqueueFromConfig(c ewm.RobotConfigurationSpec, q 
 	}
 }
 
-func (r *reconcileAuctioneer) enqueueFromLabel(m metav1.Object, q workqueue.RateLimitingInterface) {
+func (r *reconcileAuctioneer) enqueueFromLabel(m client.Object, q workqueue.RateLimitingInterface) {
 	// Get robot name from label
 	robot, ok := m.GetLabels()[robotLabel]
 
@@ -301,12 +301,9 @@ func (r *reconcileAuctioneer) enqueueFromLabel(m metav1.Object, q workqueue.Rate
 
 }
 
-func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconcileAuctioneer) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 
 	log.Debug().Msgf("Starting reconcile for Auctioneer %+v", request.NamespacedName)
-
-	// Context
-	ctx := context.Background()
 
 	// Get current version of Auctioneer CR
 	var auctioneer ewm.Auctioneer
@@ -335,6 +332,18 @@ func (r *reconcileAuctioneer) Reconcile(request reconcile.Request) (reconcile.Re
 		log.Error().Err(err).Msg("Error run auctions")
 		r.setErrorStatus(ctx, &auctioneer, err)
 		return reconcile.Result{}, errors.Wrap(err, "run auctions")
+	}
+
+	// Get latest version of auctioneer for status update
+	err = r.client.Get(ctx, request.NamespacedName, &auctioneer)
+
+	if k8serrors.IsNotFound(err) {
+		// Auctioneer was already deleted, nothing to do.
+		log.Debug().Msgf("Not updating status of Auctioneer %+v. Auctioneer was already deleted", request.NamespacedName)
+		return reconcile.Result{}, nil
+	} else if err != nil {
+		log.Error().Err(err).Msgf("Error get Auctioneer %+v for status update", request.NamespacedName)
+		return reconcile.Result{}, errors.Wrapf(err, "get Auctioneer %+v for status update", request.NamespacedName)
 	}
 
 	// Update status

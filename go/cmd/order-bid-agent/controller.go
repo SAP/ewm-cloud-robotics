@@ -58,12 +58,12 @@ type fitsRobotLabelPredicate struct {
 }
 
 func (f fitsRobotLabelPredicate) Create(e event.CreateEvent) bool {
-	match := e.Meta.GetLabels()[robotLabel] == f.robotName
+	match := e.Object.GetLabels()[robotLabel] == f.robotName
 	return match
 }
 
 func (f fitsRobotLabelPredicate) Update(e event.UpdateEvent) bool {
-	match := e.MetaNew.GetLabels()[robotLabel] == f.robotName
+	match := e.ObjectNew.GetLabels()[robotLabel] == f.robotName
 	return match
 }
 
@@ -108,7 +108,7 @@ func addBidAgentController(ctx context.Context, mgr manager.Manager, robotName s
 }
 
 // indexOwnerReferences indexes resources by the UIDs of their owner references.
-func indexOwnerReferences(o runtime.Object) (refs []string) {
+func indexOwnerReferences(o client.Object) (refs []string) {
 	switch obj := o.(type) {
 	case *ewm.RunTimeEstimation:
 		for _, ref := range obj.OwnerReferences {
@@ -122,7 +122,7 @@ func indexOwnerReferences(o runtime.Object) (refs []string) {
 }
 
 // indexWarehouseOrderOrderStatus indexes warehouse order CRs by their OrderStatus
-func indexWarehouseOrderOrderStatus(o runtime.Object) (refs []string) {
+func indexWarehouseOrderOrderStatus(o client.Object) (refs []string) {
 	w, ok := o.(*ewm.WarehouseOrder)
 	if !ok {
 		log.Panic().Msgf("%v is not a WarehouseOrder CR", o)
@@ -132,12 +132,9 @@ func indexWarehouseOrderOrderStatus(o runtime.Object) (refs []string) {
 	return refs
 }
 
-func (r *reconcileBidAgent) Reconcile(request reconcile.Request) (reconcile.Result, error) {
+func (r *reconcileBidAgent) Reconcile(ctx context.Context, request reconcile.Request) (reconcile.Result, error) {
 
 	log.Debug().Msgf("Starting reconcile for OrderAuction %+v", request.NamespacedName)
-
-	// Context
-	ctx := context.Background()
 
 	// Get current version of OrderAuction CR
 	var auction ewm.OrderAuction

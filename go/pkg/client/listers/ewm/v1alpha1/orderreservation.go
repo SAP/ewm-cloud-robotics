@@ -19,8 +19,10 @@ import (
 )
 
 // OrderReservationLister helps list OrderReservations.
+// All objects returned here must be treated as read-only.
 type OrderReservationLister interface {
 	// List lists all OrderReservations in the indexer.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.OrderReservation, err error)
 	// OrderReservations returns an object that can list and get OrderReservations.
 	OrderReservations(namespace string) OrderReservationNamespaceLister
@@ -51,10 +53,13 @@ func (s *orderReservationLister) OrderReservations(namespace string) OrderReserv
 }
 
 // OrderReservationNamespaceLister helps list and get OrderReservations.
+// All objects returned here must be treated as read-only.
 type OrderReservationNamespaceLister interface {
 	// List lists all OrderReservations in the indexer for a given namespace.
+	// Objects returned here must be treated as read-only.
 	List(selector labels.Selector) (ret []*v1alpha1.OrderReservation, err error)
 	// Get retrieves the OrderReservation from the indexer for a given namespace and name.
+	// Objects returned here must be treated as read-only.
 	Get(name string) (*v1alpha1.OrderReservation, error)
 	OrderReservationNamespaceListerExpansion
 }
