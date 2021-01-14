@@ -28,10 +28,10 @@ cp -R applayer-yaml/ ~/.config/ewm-cloud-robotics-deployments/$(gcloud config ge
 # (3) verify that app folders are in the correct place (expected print: 6 app directories)
 ls ~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)
 ```
-If you work on multiple projects, switch your gcloud project configuration and repeat the steps above. This way you do not interfer with any of your previous configurations. Alternatively copy the AppRollout template files to adjust the values and continue using the copy within the installation process by specifying the path via the corresponding flag (`./deploy.sh -f <path> rollout <APP>`).
+If you work on multiple projects, switch your gcloud project configuration and repeat the steps above. This way you do not interfere with any of your previous configurations. Alternatively copy the AppRollout template files to adjust the values and continue using the copy within the installation process by specifying the path via the corresponding flag (`./deploy.sh -f <path> rollout <APP>`).
 
 ## Installation
-Installing the apps to your Google Cloud Robotics cluster is a two-step process (ref. [Cloud Robotics Appliction Management](https://googlecloudrobotics.github.io/core/concepts/app-management.html)): 
+Installing the apps to your Google Cloud Robotics cluster is a two-step process (ref. [Cloud Robotics Application Management](https://googlecloudrobotics.github.io/core/concepts/app-management.html)): 
 1. Make your application available in the Google Cloud Robotics cluster by creating an App that describes which Helm charts should run in the respective cloud/robot targets.
 2. Instantiate your application by creating an AppRollout referencing the previously created App. The AppRollout contains your specific configurations for your ewm-cloud-robotics deployment.
 

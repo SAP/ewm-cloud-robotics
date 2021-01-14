@@ -8,7 +8,7 @@ SAP EWM extension for Cloud Robotics includes all developments required to run C
 
 ## EWM Cloud Robotics apps
 ### ewm-order-manager
-The ewm-order-manager runs in the cloud cluster and represents the interface between an SAP EWM system and Cloud Robotics. It watches for available robots with free capacities and subsequently requests warehouse orders from SAP EWMs OData interface. It also processes warehouse order confirmations by robots and propagates the new status to SAP EWM.
+The ewm-order-manager runs in the cloud cluster and represents the interface between an SAP EWM system and Cloud Robotics. It watches for available robots with free capacities and subsequently requests warehouse orders from SAP EWM OData interface. It also processes warehouse order confirmations by robots and propagates the new status to SAP EWM.
 
 ### ewm-robot-controller
 The ewm-robot-controller is an app which should run per robot and includes the business logic for robots to process SAP EWM warehouse orders autonomously. It currently supports the Move Handling Unit and the robot enabled Pick, Pack and Pass scenario including error handling capabilities. It uses the Cloud Robotics mission API to control the robots. There are two distinct versions available at the moment, __ewm-robot-controller__ and __ewm-robot-controller-cloud__ that differ regarding their deployment target (robot cluster vs. cloud cluster). The robot selector within the AppRollout YAML has to be used to specify which ewm-robot-controller is responsible for certain types of robots.

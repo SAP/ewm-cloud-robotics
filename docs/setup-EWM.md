@@ -9,14 +9,14 @@ Both repositories can be deployed to a SAP system using [abapGit](https://github
 We deployed our EWM extension successfully in SAP EWM 9.4 & 9.5 and in all SAP S4HANA versions starting from 1709.
 
 # Initial setup of SAP EWM system
-After deployment of this repository's ABAP code there are some customzing and master data neccessary to get the processes running. Beforehand, please ensure that you are able to access our ODATA service *ZEWM_ROBCO_SRV* and memorize its URI. You will need it, when you setup our *Order Manager* app later. Good starting points for a research about how to ensure that OData services are activated are SAP transactions *SICF* and */IWFND/MAINT_SERVICE*.
+After deployment of this repository's ABAP code there are some customizing and master data necessary to get the processes running. Beforehand, please ensure that you are able to access our ODATA service *ZEWM_ROBCO_SRV* and memorize its URI. You will need it, when you setup our *Order Manager* app later. Good starting points for a research about how to ensure that OData services are activated are SAP transactions *SICF* and */IWFND/MAINT_SERVICE*.
 ## Customizing
 ### Create Queues, Queue determination criteria for robots
 Robots are treated as resources in SAP EWM. Thus, there should be dedicated robot _Queues_ with depend settings like _Queue determination criteria_ where warehouses order which should be processed by robots. There are two types of _Queues_:
 - *Robot queue*: This is the queue to which robots should be assigned includes the warehouse orders for the robots
-- *Error queue*: Robot warehouse orders where an error occured during processing are moved to this queue. It should be monitored by a warehouse operator. They could be assigned on a Resource Type level.
+- *Error queue*: Robot warehouse orders where an error occurred during processing are moved to this queue. It should be monitored by a warehouse operator. They could be assigned on a Resource Type level.
 
-Example of queue defintion in customizing:
+Example of queue definition in customizing:
 <div align="center">
   <img src="./img/ewm-queue-definition.jpg" alt="ewm-queue-definition.jpg">
 </div>
