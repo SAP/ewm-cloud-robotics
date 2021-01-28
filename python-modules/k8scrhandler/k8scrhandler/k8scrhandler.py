@@ -139,6 +139,9 @@ class K8sCRHandler:
         # Latest resource version processed by watcher
         self.resv_watcher = ''
 
+        # Error counter for watcher
+        self.err_count_watcher = 0
+
         # Callback stack for watch on cr
         self.callbacks: Dict[
             str, OrderedDict[str, Callable]] = {  # pylint: disable=unsubscriptable-object
@@ -300,6 +303,9 @@ class K8sCRHandler:
                 operation = event['type']
                 # Too old resource version error handling
                 # https://github.com/kubernetes-client/python/issues/609
+                # Outdated from python  API version 12 which includes this PR
+                # https://github.com/kubernetes-client/python-base/pull/133/files
+                # No an ApiException is raised instead
                 if obj.get('code') == 410:
                     new_version = parse_too_old_failure(obj.get('message'))
                     if new_version is not None:
@@ -328,9 +334,32 @@ class K8sCRHandler:
                 # Submit callbacks to ThreadPoolExecutor
                 self.executor.submit(self._callback, name, labels, operation, obj)
         except ApiException as err:
+            if err.status == 410:
+                new_version = parse_too_old_failure(err.reason)
+                if new_version is not None:
+                    self.resv_watcher = str(new_version)
+                    _LOGGER.error(
+                        'Updating resource version to %s due to "too old resource version" '
+                        'error', new_version)
+                    # CRD could be the reason for a too old resource version error
+                    # Refresh status update method
+                    self.get_status_update_method()
+                    return
+
+            # If resource version could not be updated, reset it to allow a clean restart
+            self.resv_watcher = ''
             _LOGGER.error(
                 '%s/%s: Exception when watching CustomObjectsApi: %s',
                 self.group, self.plural, err)
+
+            # On unknown errors backoff for a maximum of 60 seconds
+            self.err_count_watcher += 1
+            backoff = min(60, self.err_count_watcher)
+            _LOGGER.info('%s/%s: Backing off for %s seconds', self.group, self.plural, backoff)
+            time.sleep(backoff)
+        else:
+            # Reset error counter
+            self.err_count_watcher = 0
 
     def _watch_on_crs_loop(self) -> None:
         """Start watching on custom resources in a loop."""
