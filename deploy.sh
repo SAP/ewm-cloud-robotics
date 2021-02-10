@@ -44,7 +44,7 @@ package_chart() {
 
     mkdir -p tmp/packages/$type
     cd "$chart_path"
-    helm lint --strict .
+    helm lint .
     helm package . --destination "$loc/tmp/packages/$type"
 
     cd "$loc"
