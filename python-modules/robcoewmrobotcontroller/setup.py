@@ -15,8 +15,8 @@ from setuptools import find_packages, setup
 
 REQUIRES = [
     'attrs==20.3.0',
-    'cattrs==1.1.2',
-    'transitions==0.8.5',
+    'cattrs==1.2.0',
+    'transitions==0.8.6',
     'prometheus-client',
     'python-json-logger',
     'robcoewmtypes',

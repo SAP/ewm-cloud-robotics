@@ -19,7 +19,8 @@ REQUIRES = [
     'retrying',
     'prometheus-client',
     'python-json-logger',
-    'k8scrhandler'
+    'k8scrhandler',
+    'robcoewmtypes'
     ]
 
 setup(

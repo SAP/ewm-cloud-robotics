@@ -15,7 +15,7 @@ from setuptools import find_packages, setup
 
 REQUIRES = [
     'attrs==20.3.0',
-    'cattrs==1.1.2'
+    'cattrs==1.2.0'
     ]
 
 setup(
