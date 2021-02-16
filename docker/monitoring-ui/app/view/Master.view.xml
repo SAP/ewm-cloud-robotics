@@ -146,7 +146,7 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 										<ObjectStatus text="{who>order_status}" state="{= ${who>order_status} === 'PROCESSED' ? 'Success' : 'Warning'}"
 											icon="{= ${who>order_status} === 'PROCESSED' ? 'sap-icon://status-positive' : 'sap-icon://physical-activity'}"/>
 										<Text text="{who>lgtyp}"/>
-										<Text text="{who>lsd}"/>
+										<Text text="{path: 'who>lsd', formatter: '.formatter.lsdToDateTime'}"/>
 										<Text text="{who>queue}"/>
 										<Text text="{who>refwhoid}"/>
 										<Text text="{who>rsrc}"/>
