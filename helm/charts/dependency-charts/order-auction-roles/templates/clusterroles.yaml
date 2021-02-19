@@ -1,0 +1,27 @@
+# This policy lets the cr-syncer operate on the ewm.sap.com CRDs.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: cloud-robotics:cr-syncer:orderauctions-ewm-sap
+  labels:
+    cr-syncer.cloudrobotics.com/aggregate-to-robot-service: "true"
+rules:
+# To sync the specs from the cloud to the robot, the cr-syncer needs to read
+# the resources in the cloud cluster.
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - orderauctions
+  - orderauctions/status
+  verbs:
+  - get
+  - list
+  - watch
+# Only the /status subresource can be updated. It's important that the robot
+# can update the status but not the spec, or it could run code on other robots.
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - orderauctions/status
+  verbs:
+  - update

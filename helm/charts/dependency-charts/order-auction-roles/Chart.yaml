@@ -1,0 +1,4 @@
+apiVersion: v1
+description: Roles for SAP EWM Custom Resource Definitions for Order Auctions
+name: order-auction-roles
+version: 0.0.1
