@@ -57,9 +57,13 @@ class MainLoopController:
 
 
 def run_robot():
-    """Determine robot type and run one instance of it."""
+    """Run one instance of a robot."""
+    # Register handler to control main loop
+    loop_control = MainLoopController()
+
     # Start prometheus client
     start_http_server(8000)
+
     # Create Robot configuration interface
     robot_config = RobotConfigurationController()
     # Start robot configuration interface
@@ -74,25 +78,13 @@ def run_robot():
     robco_mission.run(reprocess=True)
     # Wait 1 seconds for initial messages being processed
     time.sleep(1.0)
-    # Start main loop
-    robot_main_loop(robot_config, robco_mission)
-    # In the end stop Mission and Config CR watchers
-    robco_mission.stop_watcher()
-    robot_config.stop_watcher()
-
-
-def robot_main_loop(
-        robot_config: RobotConfigurationController, robot_mission_api: RobCoRobotAPI) -> None:
-    """Run one main loop of a EWM robot."""
-    # Register handler to control main loop
-    loop_control = MainLoopController()
 
     # Create K8S handler instances
     k8s_oc = OrderController()
     k8s_rc = RobotRequestController()
 
     # Create robot controller instance
-    robot = EWMRobot(robot_mission_api, robot_config, k8s_oc, k8s_rc)
+    robot = EWMRobot(robco_mission, robot_config, k8s_oc, k8s_rc)
 
     # Start
     robot.ordercontroller.run(reprocess=True)
@@ -142,3 +134,5 @@ def robot_main_loop(
         _LOGGER.info('Stopping K8S CR watchers')
         robot.ordercontroller.stop_watcher()
         robot.robotrequestcontroller.stop_watcher()
+        robot.mission_api.stop_watcher()
+        robot.robot_config.stop_watcher()
