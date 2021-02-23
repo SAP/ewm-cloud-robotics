@@ -588,19 +588,17 @@ module.exports = {
 					// 4. Set warehousetask Tostat:"C" to C
 					// yes: continue
 					// no: return business_error: WAREHOUSE_TASK_NOT_CONFIRMED
-					wht.Tostat = "C"
 					uri = "/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet(Lgnum='" + oUrlParams.Lgnum + "',Tanum='" + oUrlParams.Tanum + "')"
-					logger.debug("deleting 'Vltyp', 'Vlber' and 'Vlpla' from openwarehousetask " + oUrlParams.Tanum + " at: " + uri)
+					logger.debug("deleting openwarehousetask " + oUrlParams.Tanum + " at: " + uri)
 					jQuery.ajax({
 						url: uri,
-						method: 'MERGE',
-						data: JSON.stringify(wht),
+						method: 'DELETE',
 						async: false,
 						success: function (res) {
-							logger.debug("set 'Tostat' to 'C' for warehousetask " + oUrlParams.Tanum)
+							logger.debug("OpenWarehousetask " + oUrlParams.Tanum + "deleted") 
 						},
 						error: function (err) {
-							logger.debug("unable to set 'Tostat' to 'C' for warehousetask " + oUrlParams.Tanum)
+							logger.debug("unable to delete OpenWarehousetask " + oUrlParams.Tanum)
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
 							abort = true
 						}
