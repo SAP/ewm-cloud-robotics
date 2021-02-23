@@ -53,6 +53,8 @@ class MissionController(K8sCRHandler):
         self._missions_lock = threading.RLock()
 
         # Init CR superclass
+        labels = {}
+        labels['cloudrobotics.com/robot-name'] = self._dummy_robot.robco_robot_name
         template_cr = get_sample_cr('robco_mission')
         super().__init__(
             'mission.cloudrobotics.com',
@@ -60,7 +62,7 @@ class MissionController(K8sCRHandler):
             'missions',
             'default',
             template_cr,
-            {}
+            labels
         )
 
         # Register CR callbacks

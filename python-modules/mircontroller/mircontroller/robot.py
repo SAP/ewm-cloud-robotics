@@ -37,6 +37,8 @@ class RobotController(K8sCRHandler):
         self._mir_robot = mir_robot
 
         # Super constructor for robot CR
+        labels = {}
+        labels['cloudrobotics.com/robot-name'] = self._mir_robot.robco_robot_name
         self.robot_template_cr = get_sample_cr('robco_robot')
         super().__init__(
             'registry.cloudrobotics.com',
@@ -44,7 +46,7 @@ class RobotController(K8sCRHandler):
             'robots',
             'default',
             self.robot_template_cr,
-            {}
+            labels
         )
 
         # Init threads
