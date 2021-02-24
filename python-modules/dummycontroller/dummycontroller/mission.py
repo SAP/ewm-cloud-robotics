@@ -22,7 +22,7 @@ from collections import OrderedDict
 from typing import Dict, Optional
 from requests import RequestException
 
-from k8scrhandler.k8scrhandler import K8sCRHandler
+from k8scrhandler.k8scrhandler import K8sCRHandler, ApiException
 
 from .dummyrobot import DummyRobot, RobcoMissionStates
 from .helper import get_sample_cr, MainLoopController
@@ -156,7 +156,14 @@ class MissionController(K8sCRHandler):
                 if status.get('status') in status_to_run:
                     # Run mission
                     self._active_mission = deepcopy(mission)
-                    self.run_mission()
+                    try:
+                        self.run_mission()
+                    except ApiException as err:
+                        if err.status == 404:
+                            _LOGGER.info(
+                                "Mission deleted while it was runnning. Continuing anyway")
+                        else:
+                            raise
                     self._active_mission.clear()
 
         # After missions are processed for the first time, controller is not in upstart
