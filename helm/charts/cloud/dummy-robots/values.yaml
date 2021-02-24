@@ -1,10 +1,10 @@
+project: example-project
+
 robotMetadata:
   type: "dummy-robot"
-  role: "ewm-dummy-robot"
+  ewmRobotController: "disabled"
+  ewmRobotControllerCloud: "disabled"
   make: "dummy-make"
   model: "dummy-model"
 
-dummyrobots:
-  - dummy-one
-  - dummy-two
-  - dummy-three
+numberdummyrobots: 3

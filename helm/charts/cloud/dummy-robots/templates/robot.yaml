@@ -7,17 +7,19 @@ spec:
   make: {{ .Values.robotMetadata.make }}
   model: {{ .Values.robotMetadata.model }}
 ---
-{{- range .Values.dummyrobots }}
+{{- range $i, $e := untilStep 1 (int (add1 $.Values.numberdummyrobots)) 1 }}
 apiVersion: registry.cloudrobotics.com/v1alpha1
 kind: Robot
 metadata:
-  name: {{ . | quote }}
+  name: "dummy-{{ trunc -4 (printf "0000%v" $e) }}"
   labels:
-    cloudrobotics.com/robot-name: {{ . | quote }}
+    cloudrobotics.com/robot-name: "dummy-{{ trunc -4 (printf "0000%v" $e) }}"
+    ewmRobotController: {{ $.Values.robotMetadata.ewmRobotController }}
+    ewmRobotControllerCloud: {{ $.Values.robotMetadata.ewmRobotControllerCloud }}
     model: {{ $.Values.robotMetadata.model }}
     make: {{ $.Values.robotMetadata.make }}
 spec:
-  role: {{ $.Values.robotMetadata.role }}
+  project: {{ $.Values.project }}
   type: {{ $.Values.robotMetadata.type }}
 ---
 {{- end }}
