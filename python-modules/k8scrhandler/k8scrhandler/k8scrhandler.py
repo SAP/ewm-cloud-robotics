@@ -97,7 +97,7 @@ class K8sCRHandler:
     """
 
     VALID_EVENT_TYPES = ['ADDED', 'MODIFIED', 'DELETED', 'REPROCESS']
-    REQUEST_TIMEOUT = 5
+    REQUEST_TIMEOUT = (5, 30)
 
     def __init__(self,
                  group: str,
@@ -177,10 +177,12 @@ class K8sCRHandler:
 
         Depends on status subresource is set or unset in CRD.
         """
+        cls = self.__class__
         name = '{}.{}'.format(self.plural, self.group)
         self.status_update_method = self.co_api.patch_namespaced_custom_object
         try:
-            api_response = self.crd_api.read_custom_resource_definition(name)
+            api_response = self.crd_api.read_custom_resource_definition(
+                name, _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
                 '%s/%s: Exception when calling ApiextensionsV1beta1Api->'
