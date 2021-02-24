@@ -493,7 +493,7 @@ describe('Test for basic server functionality', () => {
 
 			it('verify that http status code is 200', async () => {
 				await tools.updateEntity("OpenWarehouseTaskSet", { "Lgnum": "1337", "Tanum": "54321" }, { "Tostat": "C" })
-				await tools.updateEntity("OpenWarehouseTaskSet", { "Lgnum": "1337", "Tanum": "abcde" }, { "Tostat": "" })
+				await tools.createEntity("OpenWarehouseTaskSet", { "Lgnum": "1337", "Who": "abcde", "Tanum": "abcde" }, { "Tostat": "" })
 				await tools.updateEntity("WarehouseOrderSet", { "Lgnum": "1337", "Who": "abcde" }, { "Status": "" })
 
 				let res = await tools.oDataPostFunction("ConfirmWarehouseTask", { "Lgnum": "1337", "Tanum": "abcde", "Rsrc": "Isaac" })
