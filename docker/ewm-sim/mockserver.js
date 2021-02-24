@@ -598,7 +598,7 @@ module.exports = {
 							logger.debug("OpenWarehousetask " + oUrlParams.Tanum + "deleted") 
 						},
 						error: function (err) {
-							logger.debug("unable to delete OpenWarehousetask " + oUrlParams.Tanum)
+							logger.debug("unable to delete openwarehousetask " + oUrlParams.Tanum)
 							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
 							abort = true
 						}
@@ -633,9 +633,7 @@ module.exports = {
 							}
 						},
 						error: function (err) {
-							logger.debug("unable to retrieve warehousetasks having who " + who)
-							oXhr.respondJSON(404, {}, { "error": { "code": "WAREHOUSE_TASK_NOT_CONFIRMED" } })
-							abort = true
+							logger.debug("no open warehousetasks for who " + who)
 						}
 					})
 					if(abort)
