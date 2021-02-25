@@ -18,7 +18,7 @@ from typing import Optional
 
 import attr
 
-from robcoewmtypes.robot import RobotConfigurationStatus
+from robcoewmtypes.robot import RobotConfigurationStatus, RobotMission
 from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
 
 from .ordercontroller import OrderController
@@ -129,6 +129,12 @@ class EWMRobot:
         if state_restore.statemachine in RobotEWMConfig.idle_states:
             _LOGGER.info('Robot is in an idle state, which is not restored.')
             return None
+
+        # Check mission state. If it is UNKNOWN the mission was probably deleted
+        if state_restore.mission:
+            mission_state = self.mission_api.api_return_mission_state(state_restore.mission)
+            if mission_state == RobotMission.STATE_UNKNOWN:
+                state_restore.mission = ''
 
         valid_state = ValidStateRestore(state_restore)
 

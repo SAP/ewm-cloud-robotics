@@ -207,6 +207,8 @@ class RobCoMissionAPI(K8sCRHandler):
                 if self.thread_run:
                     time.sleep(10)
 
+        _LOGGER.info("Deleted mission checker stopped")
+
     def _create_mission(self, spec: Dict) -> str:
         # Use Unix timestamp as mission name
         mission_name = str(time.time())
@@ -292,13 +294,25 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def api_return_mission_activeaction(self, mission_name: str) -> str:
         """Return active_action of a mission."""
-        mission = self.mission_status.get(mission_name, RobotMission(mission_name))
+        mission = self.mission_status.get(mission_name)
+
+        # Create mission in unknown state if it is not known
+        if mission is None:
+            with self.mission_status_lock:
+                self.mission_status[mission_name] = RobotMission(mission_name)
+            mission = self.mission_status[mission_name]
 
         return mission.active_action
 
     def api_return_mission_state(self, mission_name: str) -> str:
         """Return state of a mission."""
-        mission = self.mission_status.get(mission_name, RobotMission(mission_name))
+        mission = self.mission_status.get(mission_name)
+
+        # Create mission in unknown state if it is not known
+        if mission is None:
+            with self.mission_status_lock:
+                self.mission_status[mission_name] = RobotMission(mission_name)
+            mission = self.mission_status[mission_name]
 
         return mission.status
 
