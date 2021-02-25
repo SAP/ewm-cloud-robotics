@@ -29,6 +29,13 @@ spec:
         volumeMounts:
         - mountPath: /tls
           name: tls
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
       volumes:
       - name: tls
         secret:

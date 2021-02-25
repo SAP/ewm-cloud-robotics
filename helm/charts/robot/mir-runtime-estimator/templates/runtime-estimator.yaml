@@ -55,3 +55,10 @@ spec:
           value: {{ .Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ .Values.envs.log.format }}
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "10m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"

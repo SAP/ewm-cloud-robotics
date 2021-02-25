@@ -1,10 +1,10 @@
-project: example-project
+project: sap-asimov-ogoetz
 
 robotMetadata:
   type: "dummy-robot"
   ewmRobotController: "disabled"
-  ewmRobotControllerCloud: "disabled"
+  ewmRobotControllerCloud: "enabled"
   make: "dummy-make"
   model: "dummy-model"
 
-numberdummyrobots: 3
+numberdummyrobots: 50

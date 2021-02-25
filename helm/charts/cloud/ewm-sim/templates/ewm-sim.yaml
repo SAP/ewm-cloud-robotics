@@ -50,6 +50,13 @@ spec:
           timeoutSeconds: 1
           successThreshold: 1
           failureThreshold: 10
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "4Gi"
+            cpu: "950m"
 ---
 kind: Service
 apiVersion: v1

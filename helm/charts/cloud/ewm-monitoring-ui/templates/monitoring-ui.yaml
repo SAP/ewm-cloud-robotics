@@ -74,12 +74,33 @@ spec:
       - name: kubectl-proxy-robots
         image: bitnami/kubectl:latest
         args: ["proxy", "--port=8001", "--accept-paths=^/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/*", "--reject-methods='DELETE,POST,PUT,PATCH'"]
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
       - name: kubectl-proxy-warehouseorders
         image: bitnami/kubectl:latest
         args: ["proxy", "--port=8002", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/warehouseorders/*", "--reject-methods='DELETE,POST,PUT,PATCH'"]
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
       - name: kubectl-proxy-robotconfigurations
         image: bitnami/kubectl:latest
         args: ["proxy", "--port=8003", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/*", "--reject-methods='DELETE,POST'"]
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
       - name: nginx-openui5
         image: {{ .Values.image }}
         ports:
@@ -139,6 +160,13 @@ spec:
           value: {{ .Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ .Values.envs.log.format }}
+        resources:
+          requests:
+            memory: "16Mi"
+            cpu: "50m"
+          limits:
+            memory: "256Mi"
+            cpu: "250m"
 ---
 apiVersion: v1
 kind: Service
