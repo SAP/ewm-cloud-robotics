@@ -595,7 +595,7 @@ module.exports = {
 						method: 'DELETE',
 						async: false,
 						success: function (res) {
-							logger.debug("OpenWarehousetask " + oUrlParams.Tanum + "deleted") 
+							logger.debug("OpenWarehousetask " + oUrlParams.Tanum + " deleted") 
 						},
 						error: function (err) {
 							logger.debug("unable to delete openwarehousetask " + oUrlParams.Tanum)

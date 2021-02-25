@@ -1,4 +1,6 @@
 
+const logger = require('./lib/log.js')
+
 module.exports = {
 
     generate() {
@@ -22,7 +24,7 @@ module.exports = {
             "Lgpla": "",
             "Queue": "LOCAL-ROBOT",
             "Rsrc": "",
-            "Lsd": "0",
+            "Lsd": "29991231235959",
             "Topwhoid": "0000000000",
             "Refwhoid": "0000000000",
             "Flgwho": false,
@@ -80,6 +82,7 @@ module.exports = {
         var tools = require('./tools/toolbox.js')
 
         var id = 1
+        var delId = 1
         var taskIndex = 0
 
         setTimeout(async () => {
@@ -97,9 +100,9 @@ module.exports = {
 
             taskIndex += 1
 
+            id += 1
             await tools.createEntity("WarehouseOrderSet", order)
             await tools.createEntity("OpenWarehouseTaskSet", task)
-            id += 1
         }, 100)
 
         // Create Order + Task
@@ -111,6 +114,7 @@ module.exports = {
             // limit new Orders and Tasks by the total number of open WHTs
             let openWhtCount = await tools.makeRequest("http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/OpenWarehouseTaskSet/$count", {})
             if (openWhtCount.body < 250) {
+                logger.debug(openWhtCount.body + " open warehouse tasks, creating a new one")
                 let order = WAREHOUSEORDER_TEMPLATE
                 let task = TASKS[taskIndex]
     
@@ -123,9 +127,20 @@ module.exports = {
                     taskIndex = 0
                 }
     
+                id += 1
                 await tools.createEntity("WarehouseOrderSet", order)
                 await tools.createEntity("OpenWarehouseTaskSet", task)
-                id += 1
+            }
+
+            // delete confirmed warehouse orders to prevent memory leak
+            let confirmedWhoCount = await tools.makeRequest("http://localhost:8080/odata/SAP/ZEWM_ROBCO_SRV/WarehouseOrderSet/$count?$filter=Status eq 'C'", {})
+            if (confirmedWhoCount.body > 250 && id > delId) {
+                logger.debug(confirmedWhoCount.body + " confirmed warehouse orders, deleting one")
+                let order = WAREHOUSEORDER_TEMPLATE
+                order.Who = "" + (10000000 + delId)
+
+                delId += 1
+                await tools.deleteEntity("WarehouseOrderSet", { "Lgnum": order.Lgnum, "Who": order.Who }, { "Lgnum": order.Lgnum, "Who": order.Who })
             }
         }, interval)
 
