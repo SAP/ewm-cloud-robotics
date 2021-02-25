@@ -71,7 +71,7 @@ class RobotController(K8sCRHandler):
         while self.thread_run:
             try:
                 self.update_robot_status()
-                loop_control.sleep(2)
+                loop_control.sleep(60)
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error('Error updating status of robot: %s', err, exc_info=True)
                 # On uncovered exception in thread save the exception

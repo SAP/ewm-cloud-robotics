@@ -414,7 +414,8 @@ class MissionController(K8sCRHandler):
             message = state_resp[1]
 
             # Update status CR when status changes to RUNNING
-            if status == RobcoMissionStates.STATE_RUNNING:
+            if (status == RobcoMissionStates.STATE_RUNNING
+                    and self._active_mission['status']['status'] != status):
                 self._active_mission['status']['status'] = status
                 self._active_mission[
                     'status']['timeOfActuation'] = datetime.datetime.utcnow().replace(

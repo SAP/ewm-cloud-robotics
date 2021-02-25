@@ -36,7 +36,7 @@ def run_missioncontroller():
 
     # Start
     k8s_rc.run(reprocess=False)
-    k8s_mc.run(reprocess=False)
+    k8s_mc.run(reprocess=True)
 
     _LOGGER.info('DummyRobot controller started for robot %s', robot.robco_robot_name)
 
