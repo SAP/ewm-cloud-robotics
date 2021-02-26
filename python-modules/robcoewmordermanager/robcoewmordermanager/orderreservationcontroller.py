@@ -61,19 +61,18 @@ class OrderReservationController(K8sCRHandler):
         reserved_whos: List[WarehouseOrderIdent] = []
         # Get all CRs
         cr_resp = self.list_all_cr()
-        if cr_resp:
-            for custom_res in cr_resp['items']:
-                # Continue if CR has no status
-                if not custom_res.get('status'):
-                    continue
-                # Continue if CR is not in process
-                status = structure(custom_res.get('status'), OrderReservationStatus)
-                if status.status not in OrderReservationStatus.IN_PROCESS_STATUS:
-                    continue
-                # Append warehouse order idents to list
-                for who in status.warehouseorders:
-                    who_ident = WarehouseOrderIdent(lgnum=who.lgnum, who=who.who)
-                    reserved_whos.append(who_ident)
+        for custom_res in cr_resp:
+            # Continue if CR has no status
+            if not custom_res.get('status'):
+                continue
+            # Continue if CR is not in process
+            status = structure(custom_res.get('status'), OrderReservationStatus)
+            if status.status not in OrderReservationStatus.IN_PROCESS_STATUS:
+                continue
+            # Append warehouse order idents to list
+            for who in status.warehouseorders:
+                who_ident = WarehouseOrderIdent(lgnum=who.lgnum, who=who.who)
+                reserved_whos.append(who_ident)
 
         return reserved_whos
 

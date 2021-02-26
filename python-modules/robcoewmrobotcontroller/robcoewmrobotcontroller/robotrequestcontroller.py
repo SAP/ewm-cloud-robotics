@@ -82,36 +82,33 @@ class RobotRequestController(K8sCRHandler):
         """Remove self.robotrequest_state entries if there is no corresponding CR."""
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
-        if cr_resp:
-            # Collect names of all existing CRs
-            robotrequest_crs = {}
-            for obj in cr_resp['items']:
-                spec = obj.get('spec')
-                if not spec:
-                    continue
-                metadata = obj.get('metadata')
-                robotrequest_crs[metadata['name']] = True
+        # Collect names of all existing CRs
+        robotrequest_crs = {}
+        for obj in cr_resp:
+            spec = obj.get('spec')
+            if not spec:
+                continue
+            metadata = obj.get('metadata')
+            robotrequest_crs[metadata['name']] = True
 
-            # Compare with self.robotrequests_status
-            delete_robotrequests = []
-            with self._processed_robotrequests_lock:
-                for robotrequest in self._processed_robotrequests.keys():
-                    if robotrequest not in robotrequest_crs:
-                        delete_robotrequests.append(robotrequest)
+        # Compare with self.robotrequests_status
+        delete_robotrequests = []
+        with self._processed_robotrequests_lock:
+            for robotrequest in self._processed_robotrequests.keys():
+                if robotrequest not in robotrequest_crs:
+                    delete_robotrequests.append(robotrequest)
 
-                for robotrequest in delete_robotrequests:
-                    self._deleted_robotrequests[robotrequest] = True
-                    self._processed_robotrequests.pop(robotrequest, None)
+            for robotrequest in delete_robotrequests:
+                self._deleted_robotrequests[robotrequest] = True
+                self._processed_robotrequests.pop(robotrequest, None)
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """Start running all callbacks."""
         # If reprocessing is enabled, check for deleted roborequest CRs too
         if reprocess:
             self.deleted_robotrequests_thread.start()
         # start own callbacks
-        super().run(watcher=watcher, reprocess=reprocess,
-                    multiple_executor_threads=multiple_executor_threads)
+        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
 
     def _deleted_robotrequests_checker(self):
         """Continously check for deleted robotrequest CR and mark them deleted."""
@@ -135,7 +132,7 @@ class RobotRequestController(K8sCRHandler):
         """Send robot request to order manager."""
         # Don't create the same request twice when it is not processed yet
         existing_requests = self.list_all_cr()
-        for existing_request in existing_requests['items']:
+        for existing_request in existing_requests:
             if existing_request.get('status', {}).get(
                     'status') != RequestFromRobotStatus.STATE_PROCESSED:
                 if request == existing_request.get('spec', {}):
@@ -155,7 +152,7 @@ class RobotRequestController(K8sCRHandler):
         """Delete a robot request."""
         # Delete all running robot requests of the same kind
         existing_requests = self.list_all_cr()
-        for existing_request in existing_requests['items']:
+        for existing_request in existing_requests:
             if existing_request.get('status', {}).get(
                     'status') != RequestFromRobotStatus.STATE_PROCESSED:
                 if request == existing_request.get('spec', {}):

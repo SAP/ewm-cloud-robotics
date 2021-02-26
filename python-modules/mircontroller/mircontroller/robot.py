@@ -52,14 +52,13 @@ class RobotController(K8sCRHandler):
         # Init threads
         self.robot_status_update_thread = threading.Thread(target=self._update_robot_status_loop)
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """
         Start running all callbacks.
 
         Supporting multiple executor threads for blocking callbacks.
         """
-        super().run(watcher, reprocess, multiple_executor_threads)
+        super().run(reprocess, multiple_executor_threads)
 
         # Start update thread
         self.robot_status_update_thread.start()

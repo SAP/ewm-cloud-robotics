@@ -23,7 +23,7 @@ from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.warehouseorder import (
     ConfirmWarehouseTask, WarehouseOrderCRDSpec)
 
-from k8scrhandler.k8scrhandler import K8sCRHandler, k8s_cr_callback
+from k8scrhandler.k8scrhandler import K8sCRHandler
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,8 +34,6 @@ class OrderController(K8sCRHandler):
     def __init__(self) -> None:
         """Construct."""
         self.init_robot_fromenv()
-        # Last successfully processed spec of warehouse order
-        self.processed_order_spec: Dict[str, Dict] = {}
 
         template_cr = get_sample_cr('warehouseorder')
 
@@ -53,40 +51,9 @@ class OrderController(K8sCRHandler):
         # Set finalizer name for robot controller
         self.finalizer = '{}.ewm-robot-controller.sap.com'.format(self.robco_robot_name)
 
-    @k8s_cr_callback
-    def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
-        """Process custom resource operation."""
-        _LOGGER.debug('Handling %s on %s', operation, name)
-        # Run all registered callback functions
-        try:
-            # Check if warehouse order has to be processed in callback.
-            if operation == 'DELETED':
-                process_cr = True
-            else:
-                process_cr = self._warehouse_order_precheck(name, custom_res)
-            # If pre check was successfull set iterate over all callbacks
-            if process_cr:
-                for callback in self.callbacks[operation].values():
-                    callback(name, custom_res.get('spec', {}))
-        except Exception as err:  # pylint: disable=broad-except
-            _LOGGER.error(
-                '%s/%s: Error in callback when processing CR %s: %s', self.group, self.plural,
-                name, err, exc_info=True)
-        else:
-            if operation == 'DELETED':
-                # Cleanup when CR was deleted
-                self.processed_order_spec.pop(name, None)
-            elif process_cr:
-                # When CR was processed successfully, save its spec
-                self.processed_order_spec[name] = custom_res['spec']
-        _LOGGER.debug('Successfully processed custom resource %s', name)
-
-    def _warehouse_order_precheck(self, name: str, custom_res: Dict) -> bool:
+    @staticmethod
+    def warehouse_order_precheck(name: str, custom_res: Dict) -> bool:
         """Check if warehouse order has to be processed in callback."""
-        # Skip warehouse orders with specs already processed before
-        if self.processed_order_spec.get(name) == custom_res['spec']:
-            _LOGGER.debug('Spec for "%s" already processed before - skip', name)
-            return False
         # Skip warehouse order which is not RUNNING
         order_status = custom_res['spec'].get('order_status')
         if order_status != WarehouseOrderCRDSpec.STATE_RUNNING:
@@ -97,7 +64,8 @@ class OrderController(K8sCRHandler):
         # Skip warehouse order if process status from order manager is not
         # equal to status of the warehouse order. Consider entries for own robot resource only
         process_status = [s for s in custom_res['spec'].get(
-            'process_status', []) if s['rsrc'].lower() == self.robco_robot_name]
+            'process_status', []) if s['rsrc'].lower() == custom_res['metadata'].get(
+                'labels', {}).get('cloudrobotics.com/robot-name')]
         status_data = custom_res.get('status', {}).get('data', [])
         if status_data != process_status:
             _LOGGER.info(
@@ -164,7 +132,7 @@ class OrderController(K8sCRHandler):
 
         if self.check_cr_exists(name):
             custom_res = self.get_cr(name)
-            if self._warehouse_order_precheck(name, custom_res):
+            if self.warehouse_order_precheck(name, custom_res):
                 return structure(custom_res['spec'], WarehouseOrderCRDSpec)
             else:
                 return None

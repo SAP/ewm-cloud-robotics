@@ -44,27 +44,16 @@ def k8s_cr_callback(func: Callable) -> Callable:
         """Provide automatic locking of CRs in process by this method."""
         # Ensure that signature of K8sCRHandler._callback stays the same
         name = args[0]
-        labels = args[1]
         operation = args[2]
-        blocking = bool(operation != 'REPROCESS')
-        locked = self.cr_locks[name].acquire(blocking=blocking)
-        if locked:
-            _LOGGER.debug(
-                'CR "%s" locked by operation "%s" with label "%s"', name, operation, labels)
+        with self.cr_locks[name]:
+            _LOGGER.debug('CR "%s" locked by operation "%s"', name, operation)
             try:
                 return func(self, *args, **kwargs)
             finally:
-                self.cr_locks[name].release()
-                _LOGGER.debug(
-                    'CR "%s" unlocked by operation "%s" with label "%s"', name, operation, labels)
-                # Cleanup lock objects dictionary when CR was deleted
                 if operation == 'DELETED':
                     self.cr_locks.pop(name, None)
-        else:
-            _LOGGER.debug(
-                'CR "%s" in process - skipping operation "%s" this run', name, operation)
 
-    _LOGGER.debug('Method "%s" is decorated as K8s callback method', func)
+    _LOGGER.info('Method "%s" is decorated as K8s callback method', func)
     return decorated_func
 
 
@@ -142,6 +131,11 @@ class K8sCRHandler:
         # Error counter for watcher
         self.err_count_watcher = 0
 
+        # CR Cache
+        self._cr_cache: Dict[str, Dict] = {}
+        self._cr_cache_lock = threading.Lock()
+        self._cr_cache_initialized = False
+
         # Callback stack for watch on cr
         self.callbacks: Dict[
             str, OrderedDict[str, Callable]] = {  # pylint: disable=unsubscriptable-object
@@ -158,11 +152,13 @@ class K8sCRHandler:
         self.reprocess_waiting_time = 10.0
 
         # Lock objects to synchronize processing of CRs
-        self.cr_locks: DefaultDict[str, threading.RLock] = defaultdict(threading.RLock)
+        self.cr_locks: DefaultDict[str, threading.Lock] = defaultdict(threading.Lock)
         # Dict to save thread exceptions
         self.thread_exceptions: Dict[str, Exception] = {}
         # Init threads
         self.watcher_thread = threading.Thread(target=self._watch_on_crs_loop, daemon=True)
+        self.synchronize_thread = threading.Thread(
+            target=self._synchronize_cache_loop, daemon=True)
         self.reprocess_thread = threading.Thread(target=self._reprocess_crs_loop, daemon=True)
         # Control flag for thread
         self.thread_run = True
@@ -243,7 +239,7 @@ class K8sCRHandler:
                 _LOGGER.info(
                     'Callback %s unregistered from operation %s', name, operation)
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
+    def run(self, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
         """
         Start running all callbacks.
@@ -255,15 +251,55 @@ class K8sCRHandler:
             if multiple_executor_threads:
                 self.executor.shutdown()
                 self.executor = ThreadPoolExecutor(max_workers=5)
-            if watcher:
-                _LOGGER.info(
-                    'Watching for changes on %s.%s/%s', self.plural, self.group, self.version)
-                self.watcher_thread.start()
+            _LOGGER.info(
+                'Watching for changes on %s.%s/%s', self.plural, self.group, self.version)
+            self.watcher_thread.start()
+            # Wait until cache is initialized
+            while self._cr_cache_initialized is False:
+                time.sleep(0.01)
+            self.synchronize_thread.start()
             if reprocess:
                 self.reprocess_thread.start()
         else:
             _LOGGER.error(
                 'Runner thread for %s/%s is currently deactivated', self.group, self.plural)
+
+    def _cache_custom_resource(self, name: str, operation: str, custom_res: Dict) -> None:
+        """Cache this custom resource."""
+        with self._cr_cache_lock:
+            if operation in ('ADDED', 'MODIFIED'):
+                self._cr_cache[name] = custom_res
+            elif operation == 'DELETED':
+                self._cr_cache.pop(name, None)
+
+    def _refresh_custom_resource_cache(self, crs: List[Dict]) -> None:
+        """Refresh custom resource cache from a list with custom resources."""
+        _LOGGER.debug("Refreshing custom resource cache")
+        with self._cr_cache_lock:
+            cr_cache = {}
+            for obj in crs:
+                metadata = obj.get('metadata')
+                if not metadata:
+                    continue
+                name = metadata['name']
+                cr_cache[name] = obj
+            self._cr_cache = cr_cache
+
+    def _synchronize_cache_loop(self) -> None:
+        """Synchronize custom resource cache every 5 minutes."""
+        while self.thread_run:
+            time.sleep(300)
+            try:
+                crs = self._list_all_cr()
+                self._refresh_custom_resource_cache(crs['items'])
+            except Exception as err:  # pylint: disable=broad-except
+                _LOGGER.error(
+                    '%s/%s: Error refreshing CR cache: %s', self.group, self.plural, err,
+                    exc_info=True)
+                # On uncovered exception in thread save the exception
+                self.thread_exceptions['cr-cache-synchronizer'] = err
+                # Stop the watcher
+                self.stop_watcher()
 
     @k8s_cr_callback
     def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
@@ -328,11 +364,11 @@ class K8sCRHandler:
                     self.resv_watcher = metadata['resourceVersion']
                 name = metadata['name']
                 labels = metadata.get('labels', {})
-                if not obj.get('spec'):
-                    continue
                 _LOGGER.debug(
                     '%s/%s: Handling %s on %s', self.group, self.plural,
                     operation, name)
+                # Cache custom resource
+                self._cache_custom_resource(name, operation, obj)
                 # Submit callbacks to ThreadPoolExecutor
                 self.executor.submit(self._callback, name, labels, operation, obj)
         except ApiException as err:
@@ -363,6 +399,36 @@ class K8sCRHandler:
             # Reset error counter
             self.err_count_watcher = 0
 
+    def _init_watcher(self) -> None:
+        """Initialize CR watcher."""
+        cr_resp = self._list_all_cr()
+        _LOGGER.debug('%s/%s: Initialize CR watcher: Got all CRs.', self.group, self.plural)
+        if cr_resp:
+            # Set resource version for watcher to the version of the list. According to
+            # https://github.com/kubernetes-client/python/issues/693#issuecomment-442893494
+            # and https://github.com/kubernetes-client/python/issues/819#issuecomment-491630022
+            resource_version = cr_resp.get('metadata', {}).get('resourceVersion')
+            if resource_version is None:
+                _LOGGER.error('Could not determine resourceVersion. Start from the beginning')
+                self.resv_watcher = ''
+            else:
+                self.resv_watcher = resource_version
+
+            # Sync cache
+            self._refresh_custom_resource_cache(cr_resp['items'])
+            self._cr_cache_initialized = True
+
+            # Process custom resources
+            for obj in cr_resp['items']:
+                metadata = obj.get('metadata')
+                if not metadata:
+                    continue
+                name = metadata['name']
+                labels = metadata.get('labels', {})
+                # Submit callbacks to ThreadPoolExecutor
+                self.executor.submit(
+                    self._callback, name, labels, 'ADDED', obj)
+
     def _watch_on_crs_loop(self) -> None:
         """Start watching on custom resources in a loop."""
         _LOGGER.info(
@@ -370,7 +436,7 @@ class K8sCRHandler:
         while self.thread_run:
             try:
                 if self.resv_watcher == '':
-                    self.process_all_crs('ADDED', set_resv_watcher=True)
+                    self._init_watcher()
                 self._watch_on_crs()
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error(
@@ -383,6 +449,8 @@ class K8sCRHandler:
             finally:
                 if self.thread_run:
                     _LOGGER.debug('%s/%s: Restarting watcher', self.group, self.plural)
+
+        _LOGGER.info("Custom resource watcher stopped")
 
     def update_cr_status(self, name: str, status: Dict) -> None:
         """Update the status field of named cr."""
@@ -474,9 +542,18 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully created CR %s', self.group, self.plural, name)
 
-    def get_cr(self, name: str) -> Dict:
+    def get_cr(self, name: str, use_cache: bool = True) -> Dict:
         """Retrieve a specific custom resource by name."""
         cls = self.__class__
+        if use_cache is True:
+            try:
+                return copy.deepcopy(self._cr_cache[name])
+            except KeyError as err:
+                _LOGGER.error(
+                    '%s/%s: Exception when retrieving CR %s: not found', self.group, self.plural,
+                    name)
+                raise ApiException(status=404) from err
+
         try:
             api_response = self.co_api.get_namespaced_custom_object(
                 self.group,
@@ -494,9 +571,12 @@ class K8sCRHandler:
                 '%s/%s: Successfully retrieved CR %s', self.group, self.plural, name)
             return api_response
 
-    def check_cr_exists(self, name: str) -> bool:
+    def check_cr_exists(self, name: str, use_cache: bool = True) -> bool:
         """Check if a cr exists by name."""
         cls = self.__class__
+        if use_cache is True:
+            return bool(self._cr_cache.get(name))
+
         try:
             self.co_api.get_namespaced_custom_object(
                 self.group,
@@ -505,13 +585,24 @@ class K8sCRHandler:
                 self.plural,
                 name,
                 _request_timeout=cls.REQUEST_TIMEOUT)
-        except ApiException:
-            return False
+        except ApiException as err:
+            if err.status == 404:
+                return False
+            _LOGGER.error(
+                '%s/%s: Exception when retrieving CR %s: %s', self.group, self.plural, name, err)
+            raise
         else:
             return True
 
-    def list_all_cr(self) -> Dict:
+    def list_all_cr(self, use_cache: bool = True) -> List[Dict]:
         """List all currently available custom resources of a kind."""
+        if use_cache is True:
+            return copy.deepcopy(list(self._cr_cache.values()))
+
+        return self._list_all_cr().get('items', [])
+
+    def _list_all_cr(self) -> Dict:
+        """List all currently available custom resources of a kind internally."""
         cls = self.__class__
         try:
             api_response = self.co_api.list_namespaced_custom_object(
@@ -531,42 +622,25 @@ class K8sCRHandler:
                 '%s/%s: Successfully listed all CRs', self.group, self.plural)
             return api_response
 
-    def process_all_crs(self, operation: str, set_resv_watcher: bool = False) -> None:
+    def process_all_crs(self) -> None:
         """
         Reprocess custom resources.
 
         This method processes all existing custom resources with the given operation.
         """
-        cls = self.__class__
-        if operation not in cls.VALID_EVENT_TYPES:
-            _LOGGER.error('Operation %s is not supported.', operation)
-            return
+        _LOGGER.debug('%s/%s: CR reprocess started', self.group, self.plural)
+        with self._cr_cache_lock:
+            crs = copy.deepcopy(list(self._cr_cache.values()))
 
-        cr_resp = self.list_all_cr()
-        _LOGGER.debug('%s/%s: CR process: Got all CRs.', self.group, self.plural)
-        if cr_resp:
-            # Set resource version for watcher to the version of the list. According to
-            # https://github.com/kubernetes-client/python/issues/693#issuecomment-442893494
-            # and https://github.com/kubernetes-client/python/issues/819#issuecomment-491630022
-            if set_resv_watcher:
-                resource_version = cr_resp.get('metadata', {}).get('resourceVersion')
-                if resource_version is None:
-                    _LOGGER.error('Could not determine resourceVersion. Start from the beginning')
-                    self.resv_watcher = ''
-                else:
-                    self.resv_watcher = resource_version
-
-            for obj in cr_resp['items']:
-                metadata = obj.get('metadata')
-                if not metadata:
-                    continue
-                name = metadata['name']
-                labels = metadata.get('labels', {})
-                if not obj.get('spec'):
-                    continue
-                # Submit callbacks to ThreadPoolExecutor
-                self.executor.submit(
-                    self._callback, name, labels, operation, obj)
+        for obj in crs:
+            metadata = obj.get('metadata')
+            if not metadata:
+                continue
+            name = metadata['name']
+            labels = metadata.get('labels', {})
+            # Submit callbacks to ThreadPoolExecutor
+            self.executor.submit(
+                self._callback, name, labels, 'REPROCESS', obj)
 
     def _reprocess_crs_loop(self) -> None:
         """Reprocess existing custom resources in a loop."""
@@ -575,7 +649,7 @@ class K8sCRHandler:
         last_run = time.time()
         while self.thread_run:
             try:
-                self.process_all_crs('REPROCESS')
+                self.process_all_crs()
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error(
                     '%s/%s: Error reprocessing custom resources: %s', self.group, self.plural, err,
@@ -588,6 +662,8 @@ class K8sCRHandler:
                 if self.thread_run:
                     time.sleep(max(0, last_run - time.time() + self.reprocess_waiting_time))
                     last_run = time.time()
+
+        _LOGGER.info("Reprocessing custom resources stopped")
 
     def stop_watcher(self) -> None:
         """Stop watching CR stream."""

@@ -77,15 +77,12 @@ class MissionController(K8sCRHandler):
         # Robot status watcher thread
         self.robot_status_watcher_thread = threading.Thread(target=self._watch_robot_status_loop)
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """Start running everything."""
         self.mission_watcher_thread.start()
         self.robot_status_watcher_thread.start()
 
-        super().run(
-            watcher=watcher, reprocess=reprocess,
-            multiple_executor_threads=multiple_executor_threads)
+        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
 
     def robco_mission_cb(self, name: str, custom_res: Dict) -> None:
         """Process Cloud Robotics mission CR."""

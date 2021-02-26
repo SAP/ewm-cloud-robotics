@@ -107,6 +107,9 @@ class RobotEWMMachine(Machine):
         # robotrequest controller
         self.robotrequest_controller = robotrequest_controller
 
+        # Last successfully processed spec of warehouse order
+        self.processed_order_spec: Dict[str, Dict] = {}
+
         # EWM
         # List of warehouse order assigned to this robot
         self.warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
@@ -136,9 +139,9 @@ class RobotEWMMachine(Machine):
 
     def connect_external_events(self) -> None:
         """Connect state machine to external event sources of Cloud Robotics."""
-        name = 'ewm-statemachine'
+        name = 'ewm-statemachine-{}'.format(self.robot_config.robco_robot_name)
         self.mission_api.robot_api.register_callback(
-            name, ['ADDED', 'MODIFIED'], self.robot_cb)
+            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.robot_cb)
         self.order_controller.register_callback(
             name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.warehouseorder_cb)
         self.order_controller.register_callback(
@@ -154,7 +157,7 @@ class RobotEWMMachine(Machine):
 
     def disconnect_external_events(self) -> None:
         """Disconnect state machine from external events sources of Cloud Robotics."""
-        name = 'ewm-statemachine'
+        name = 'ewm-statemachine-{}'.format(self.robot_config.robco_robot_name)
         self.mission_api.robot_api.unregister_callback(name)
         self.order_controller.unregister_callback(name)
         self.order_controller.unregister_callback(name+'_deleted')
@@ -290,14 +293,26 @@ class RobotEWMMachine(Machine):
                         self.active_wht.tanum)
                     self.warehousetask_confirmed()
 
-    def warehouseorder_cb(self, name: str, spec: Dict) -> None:
+    def warehouseorder_cb(self, name: str, custom_res: Dict) -> None:
         """Process warehouse order CRs."""
+        # Skip warehouse orders with specs already processed before
+        if self.processed_order_spec.get(name) == custom_res['spec']:
+            _LOGGER.debug('Spec for "%s" already processed before - skip', name)
+            return
+
+        # Check if the warehouse order should be processed
+        if self.order_controller.warehouse_order_precheck(name, custom_res) is False:
+            return
+
         # Convert message data to WarehouseOrderCRDSpec type
-        who_crd_spec = structure(spec, WarehouseOrderCRDSpec)
+        who_crd_spec = structure(custom_res['spec'], WarehouseOrderCRDSpec)
 
         self.update_warehouseorder(warehouseorder=who_crd_spec)
 
-    def warehouseorder_deleted_cb(self, name: str, spec: Dict) -> None:
+        # When CR was processed successfully, save its spec
+        self.processed_order_spec[name] = custom_res['spec']
+
+    def warehouseorder_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Delete warehouse order from queue."""
         # Objects from EWM have upper case names
         name_split = name.upper().split('.')
@@ -306,6 +321,8 @@ class RobotEWMMachine(Machine):
             if who in self.warehouseorders:
                 self.warehouseorders.pop(who)
                 _LOGGER.info('CR of warehouse order %s deleted. Remove it from queue', who)
+        # Cleanup when CR was deleted
+        self.processed_order_spec.pop(name, None)
 
     def _check_who_kwarg(self, event: EventData) -> bool:
         """Check if warehouseorder is an argument of the transition."""

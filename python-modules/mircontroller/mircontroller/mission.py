@@ -90,16 +90,13 @@ class MissionController(K8sCRHandler):
         # Robot error reset thread
         self.robot_error_reset_thread = threading.Thread(target=self._reset_robot_error_loop)
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """Start running everything."""
         self.mission_watcher_thread.start()
         _LOGGER.info('Automatically resetting errors from MissionController module on MiR robot')
         self.robot_error_reset_thread.start()
 
-        super().run(
-            watcher=watcher, reprocess=reprocess,
-            multiple_executor_threads=multiple_executor_threads)
+        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
 
     def robco_mission_cb(self, name: str, custom_res: Dict) -> None:
         """Process Cloud Robotics mission CR."""

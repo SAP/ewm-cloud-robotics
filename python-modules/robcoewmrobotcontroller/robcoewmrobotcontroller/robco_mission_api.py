@@ -158,36 +158,35 @@ class RobCoMissionAPI(K8sCRHandler):
         """Set self.mission_state entries with no CR to state DELETED."""
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
-        if cr_resp:
-            # Collect names of all existing CRs
-            mission_crs = {}
-            for obj in cr_resp['items']:
-                spec = obj.get('spec')
-                if not spec:
-                    continue
-                metadata = obj.get('metadata')
-                mission_crs[metadata['name']] = True
+        # Collect names of all existing CRs
+        mission_crs = {}
+        for obj in cr_resp:
+            spec = obj.get('spec')
+            if not spec:
+                continue
+            metadata = obj.get('metadata')
+            mission_crs[metadata['name']] = True
 
-            # Compare with self.missions_status
-            delete_missions = []
-            with self.mission_status_lock:
-                for mission in self.mission_status.keys():
-                    if mission not in mission_crs:
-                        delete_missions.append(mission)
+        # Compare with self.missions_status
+        delete_missions = []
+        with self.mission_status_lock:
+            for mission in self.mission_status.keys():
+                if mission not in mission_crs:
+                    delete_missions.append(mission)
 
-                for mission in delete_missions:
-                    self.mission_status[mission].status = RobotMission.STATE_DELETED
+            for mission in delete_missions:
+                self.mission_status[mission].status = RobotMission.STATE_DELETED
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """Start running all callbacks."""
         # Start callbacks for robot status
-        self.robot_api.run(watcher=watcher)
+        self.robot_api.run(
+            reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
         # If reprocessing is enabled, check for deleted mission CRs too
         if reprocess:
             self.deleted_missions_thread.start()
         # start own callbacks
-        super().run(watcher=watcher, reprocess=reprocess)
+        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
 
     def _deleted_missions_checker(self):
         """Continously check for deleted mission CR and mark them deleted."""

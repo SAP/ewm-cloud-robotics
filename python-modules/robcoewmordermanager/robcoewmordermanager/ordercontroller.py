@@ -142,36 +142,33 @@ class OrderController(K8sCRHandler):
         """Remove self._processed_orders entries with no CR from ordered dictionary."""
         cr_resp = self.list_all_cr()
         _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
-        if cr_resp:
-            # Collect names of all existing CRs
-            warehouse_order_crs = {}
-            for obj in cr_resp['items']:
-                spec = obj.get('spec')
-                if not spec:
-                    continue
-                metadata = obj.get('metadata')
-                warehouse_order_crs[metadata['name']] = True
+        # Collect names of all existing CRs
+        warehouse_order_crs = {}
+        for obj in cr_resp:
+            spec = obj.get('spec')
+            if not spec:
+                continue
+            metadata = obj.get('metadata')
+            warehouse_order_crs[metadata['name']] = True
 
-            # Compare with self._processed_orders
-            deleted_warehouse_orders = []
-            with self._processed_orders_lock:
-                for warehouse_order in self._processed_orders.keys():
-                    if warehouse_order not in warehouse_order_crs:
-                        deleted_warehouse_orders.append(warehouse_order)
+        # Compare with self._processed_orders
+        deleted_warehouse_orders = []
+        with self._processed_orders_lock:
+            for warehouse_order in self._processed_orders.keys():
+                if warehouse_order not in warehouse_order_crs:
+                    deleted_warehouse_orders.append(warehouse_order)
 
-                for warehouse_order in deleted_warehouse_orders:
-                    self._deleted_orders[warehouse_order] = True
-                    self._processed_orders.pop(warehouse_order, None)
+            for warehouse_order in deleted_warehouse_orders:
+                self._deleted_orders[warehouse_order] = True
+                self._processed_orders.pop(warehouse_order, None)
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """Start running all callbacks."""
         # If reprocessing is enabled, check for deleted warehouse order CRs too
         if reprocess:
             self.deleted_warehouse_orders_thread.start()
         # start own callbacks
-        super().run(watcher=watcher, reprocess=reprocess,
-                    multiple_executor_threads=multiple_executor_threads)
+        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
 
     def send_who_to_robot(self, robotident: RobotIdentifier, who: Dict) -> None:
         """Send the warehouse order to a robot."""
@@ -219,27 +216,26 @@ class OrderController(K8sCRHandler):
 
         # Delete sub warehouse orders if existing
         crs = self.list_all_cr()
-        if crs:
-            for obj in crs['items']:
-                spec = obj.get('spec')
-                if not spec:
-                    continue
-                # Delete warehouse order if its top warehouse order
-                # was deleted in this step
-                if (spec['data']['topwhoid'] == who['who']
-                        and spec['data']['lgnum'] == who['lgnum']):
-                    # Warehouse order CR name must be lower case
-                    name = '{lgnum}.{who}'.format(
-                        lgnum=spec['data']['lgnum'], who=spec['data']['who']).lower()
-                    to_be_closed.append(name)
-                    if self.check_cr_exists(name):
-                        self.update_cr_spec(name, spec_order_processed)
-                        _LOGGER.info(
-                            'Cleanup successfull, warehouse order CR "%s" in order_status %s',
-                            name, WarehouseOrderCRDSpec.STATE_PROCESSED)
-                    else:
-                        _LOGGER.warning(
-                            'Warehouse order CR "%s" does not exist, unable to clean up', name)
+        for obj in crs:
+            spec = obj.get('spec')
+            if not spec:
+                continue
+            # Delete warehouse order if its top warehouse order
+            # was deleted in this step
+            if (spec['data']['topwhoid'] == who['who']
+                    and spec['data']['lgnum'] == who['lgnum']):
+                # Warehouse order CR name must be lower case
+                name = '{lgnum}.{who}'.format(
+                    lgnum=spec['data']['lgnum'], who=spec['data']['who']).lower()
+                to_be_closed.append(name)
+                if self.check_cr_exists(name):
+                    self.update_cr_spec(name, spec_order_processed)
+                    _LOGGER.info(
+                        'Cleanup successfull, warehouse order CR "%s" in order_status %s',
+                        name, WarehouseOrderCRDSpec.STATE_PROCESSED)
+                else:
+                    _LOGGER.warning(
+                        'Warehouse order CR "%s" does not exist, unable to clean up', name)
 
     def _order_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove deleted CR from self._processed_orders."""

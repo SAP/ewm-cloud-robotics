@@ -99,37 +99,34 @@ class RobotController(K8sCRHandler):
         """Process robottype CR callback data."""
         self.robottypes[name] = bool(custom_res.get('spec', {}).get('make') == 'fetch')
 
-    def run(self, watcher: bool = True, reprocess: bool = False,
-            multiple_executor_threads: bool = False) -> None:
+    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
         """
         Start running all callbacks.
 
         Supporting multiple executor threads for blocking callbacks.
         """
         # Initial load of robot types
-        robot_type_crs = self.robottype_controller.list_all_cr()
-        if robot_type_crs:
-            for custom_res in robot_type_crs['items']:
-                name = custom_res.get('metadata', {}).get('name')
-                spec = custom_res.get('spec')
-                if name and spec:
-                    self.robottype_cb(name, custom_res)
+        robot_type_crs = self.robottype_controller.list_all_cr(use_cache=False)
+        for custom_res in robot_type_crs:
+            name = custom_res.get('metadata', {}).get('name')
+            spec = custom_res.get('spec')
+            if name and spec:
+                self.robottype_cb(name, custom_res)
 
         # Initial load of robots
-        robot_crs = self.list_all_cr()
-        if robot_crs:
-            for custom_res in robot_crs['items']:
-                name = custom_res.get('metadata', {}).get('name')
-                spec = custom_res.get('spec')
-                if name and spec:
-                    self.robot_cb(name, custom_res)
+        robot_crs = self.list_all_cr(use_cache=False)
+        for custom_res in robot_crs:
+            name = custom_res.get('metadata', {}).get('name')
+            spec = custom_res.get('spec')
+            if name and spec:
+                self.robot_cb(name, custom_res)
 
         # Initial load from FetchCore
         self._fetch_robots.update()
 
         # Start watcher threads
-        self.robottype_controller.run(watcher, reprocess, multiple_executor_threads)
-        super().run(watcher, reprocess, multiple_executor_threads)
+        self.robottype_controller.run(reprocess, multiple_executor_threads)
+        super().run(reprocess, multiple_executor_threads)
 
         # Start update thread
         self.robot_status_update_thread.start()

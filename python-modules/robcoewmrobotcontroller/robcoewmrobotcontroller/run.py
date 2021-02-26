@@ -68,27 +68,24 @@ def run_robot():
     robot_config = RobotConfigurationController()
     # Start robot configuration interface
     robot_config.run(reprocess=True)
-    # Wait 1 seconds for initial messages being processed
-    time.sleep(1.0)
     # Create RobCo robot interface
     robco_robot = RobCoRobotAPI()
     # Create RobCo mission interface
     robco_mission = RobCoMissionAPI(robot_config, robco_robot)
     # Start RobCo interface
     robco_mission.run(reprocess=True)
-    # Wait 1 seconds for initial messages being processed
-    time.sleep(1.0)
 
     # Create K8S handler instances
     k8s_oc = OrderController()
     k8s_rc = RobotRequestController()
 
+    # Start handler
+    k8s_oc.run(reprocess=True)
+    k8s_rc.run(reprocess=True)
+
     # Create robot controller instance
     robot = EWMRobot(robco_mission, robot_config, k8s_oc, k8s_rc)
 
-    # Start
-    robot.ordercontroller.run(reprocess=True)
-    robot.robotrequestcontroller.run(reprocess=True)
     _LOGGER.info('SAP EWM Robot "%s" started', robot.robot_config.rsrc)
 
     try:
