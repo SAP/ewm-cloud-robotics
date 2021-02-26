@@ -15,6 +15,7 @@
 
 import os
 import logging
+import time
 
 from concurrent.futures import ThreadPoolExecutor
 from typing import Dict
@@ -51,6 +52,8 @@ class EWMRobotSync:
         self.robot_config = robot_config
         # Existing robots
         self.existing_robots: Dict[str, RobotConfigurationSpec] = {}
+        # Last robot checks
+        self.last_robot_checks: Dict[str, float] = {}
         # Running robot checks
         self.running_robot_checks: Dict[str, bool] = {}
         # Thread Pool Executor
@@ -102,9 +105,20 @@ class EWMRobotSync:
         # Create new thread to check EWM resources if not running yet
         if name not in self.running_robot_checks:
             self.running_robot_checks[name] = True
-            self.executor.submit(
-                self.ewm_resource_check, name, structure(
-                    custom_res['spec'], RobotConfigurationSpec))
+            config_spec = structure(custom_res['spec'], RobotConfigurationSpec)
+
+            # Recheck every 5 minutes
+            reprocess = False
+            if name not in self.last_robot_checks:
+                reprocess = True
+            elif self.last_robot_checks[name] + 300 < time.time():
+                reprocess = True
+            if reprocess is True:
+                self.last_robot_checks[name] = time.time()
+                robots_key = '{}.{}'.format(config_spec.lgnum, name.upper())
+                self.existing_robots.pop(robots_key, None)
+
+            self.executor.submit(self.ewm_resource_check, name, config_spec)
 
     def ewm_resource_check(self, name: str, config_spec: RobotConfigurationSpec) -> None:
         """Run EWM resource check."""

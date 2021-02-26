@@ -63,12 +63,13 @@ def run_robotconfigurator():
     robotsync = EWMRobotSync(k8s_rc)
 
     # Register callback functions
-    k8s_rb.register_callback('ConfigurationController', ['ADDED'], k8s_rc.robco_robot_cb)
+    k8s_rb.register_callback(
+        'ConfigurationController', ['ADDED', 'REPROCESS'], k8s_rc.robco_robot_cb)
     k8s_rc.register_callback(
         'EWMRobotSync', ['ADDED', 'MODIFIED', 'REPROCESS'], robotsync.robotconfiguration_cb)
     # Start
-    k8s_rb.run()
     k8s_rc.run(reprocess=True)
+    k8s_rb.run(reprocess=True)
 
     _LOGGER.info('SAP EWM Robot Configurator started')
 
