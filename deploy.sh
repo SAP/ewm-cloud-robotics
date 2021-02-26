@@ -227,7 +227,7 @@ dummies() {
     verify_kubectl_context
 
     if [[ $1 = install ]]; then
-        helm install dummy-robots ./helm/charts/cloud/dummy-robots
+        helm upgrade --install dummy-robots ./helm/charts/cloud/dummy-robots
     elif  [[ $1 = uninstall ]]; then
         helm uninstall dummy-robots
     else 

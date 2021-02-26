@@ -1,4 +1,4 @@
-project: sap-asimov-ogoetz
+project: example-project
 
 robotMetadata:
   type: "dummy-robot"
@@ -7,4 +7,4 @@ robotMetadata:
   make: "dummy-make"
   model: "dummy-model"
 
-numberdummyrobots: 50
+numberdummyrobots: 3
