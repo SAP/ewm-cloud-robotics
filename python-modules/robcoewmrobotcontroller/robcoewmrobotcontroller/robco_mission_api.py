@@ -41,7 +41,7 @@ class RobCoMissionAPI(K8sCRHandler):
         # Mission status dictionary
         self.mission_status: OrderedDict[  # pylint: disable=unsubscriptable-object
             str, RobotMission] = OrderedDict()
-        self.mission_status_lock = threading.RLock()
+        self.mission_status_lock = threading.Lock()
 
         template_cr = get_sample_cr('robco_mission')
 
@@ -77,6 +77,10 @@ class RobCoMissionAPI(K8sCRHandler):
             'update_mission_status', ['ADDED', 'MODIFIED', 'REPROCESS'],
             self.update_mission_status_cb)
         self.register_callback('mission_deleted', ['DELETED'], self.mission_deleted_cb)
+
+        # Register update chargers callback
+        self.robot_config.register_callback(
+            'update_chargers', ['ADDED', 'MODIFIED'], self.update_chargers_cb)
 
         # Thread to check for deleted mission CRs
         self.deleted_missions_thread = threading.Thread(target=self._deleted_missions_checker)
@@ -154,6 +158,14 @@ class RobCoMissionAPI(K8sCRHandler):
             self.trolley_attached = custom_res[
                 'status'].get('configuration', {}).get('trolleyAttached', False)
 
+    def update_chargers_cb(self, name: str, custom_res: Dict) -> None:
+        """Update chargers from robotconfigurations CRD."""
+        # Check if chargers changed in the meantime
+        if self._chargers != self.robot_config.conf.chargers:
+            self._chargers = self.robot_config.conf.chargers.copy()
+            self._chargers_generator = self._iterate_chargers()
+            _LOGGER.info('Available chargers changed to: %s', self._chargers)
+
     def check_deleted_missions(self):
         """Set self.mission_state entries with no CR to state DELETED."""
         cr_resp = self.list_all_cr()
@@ -218,6 +230,8 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def _iterate_chargers(self) -> Generator:
         """Iterate over self.chargers."""
+        if not self._chargers:
+            yield ''
         while True:
             for charger in self._chargers:
                 yield charger
@@ -282,11 +296,6 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def api_set_next_charger(self) -> None:
         """Switch to next charger of configuration."""
-        # Check if chargers changed in the meantime
-        if self._chargers != self.robot_config.conf.chargers:
-            self._chargers = self.robot_config.conf.chargers.copy()
-            self._chargers_generator = self._iterate_chargers()
-            _LOGGER.info('Available chargers changed to: %s', self._chargers)
         # Get next charger from generator
         self.charger = next(self._chargers_generator, '')
         _LOGGER.info('Set charger %s', self.charger)
