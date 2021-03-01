@@ -144,6 +144,7 @@ class K8sCRHandler:
                 'DELETED': OrderedDict(),
                 'REPROCESS': OrderedDict()
                 }
+        self.callbacks_lock = threading.Lock()
 
         # JSON template used while creating custom resources
         self.raw_cr = template_cr
@@ -204,40 +205,43 @@ class K8sCRHandler:
         example cb: def callback(self, data: Dict) -> None:
         """
         cls = self.__class__
-        # Check for invalid operations
-        for operation in operations:
-            if operation not in cls.VALID_EVENT_TYPES:
+        with self.callbacks_lock:
+            # Check for invalid operations
+            for operation in operations:
+                if operation not in cls.VALID_EVENT_TYPES:
+                    raise ValueError(
+                        '{}/{}: "{}" is not a valid event type'.format(
+                            self.group, self.plural, operation))
+
+            # Check if callback is callabe
+            if callable(callback) is False:
+                raise TypeError('{}/{}: Object "{}" is not callable'.format(
+                    self.group, self.plural, callback))
+
+            # Check if a callback with the same name alread existing
+            already_registered = False
+            for operation, callback_list in self.callbacks.items():
+                if name in callback_list:
+                    already_registered = True
+
+            # Value error if callback is existing, if not register it
+            if already_registered:
                 raise ValueError(
-                    '{}/{}: "{}" is not a valid event type'.format(
-                        self.group, self.plural, operation))
+                    '{}/{}: A callback with that name already registered'.format(
+                        self.group, self.plural))
 
-        # Check if callback is callabe
-        if callable(callback) is False:
-            raise TypeError('{}/{}: Object "{}" is not callable'.format(
-                self.group, self.plural, callback))
-
-        # Check if a callback with the same name alread existing
-        already_registered = False
-        for operation, callback_list in self.callbacks.items():
-            if name in callback_list:
-                already_registered = True
-
-        # Value error if callback is existing, if not register it
-        if already_registered:
-            raise ValueError(
-                '{}/{}: A callback with that name already registered'.format(
-                    self.group, self.plural))
-
-        for operation in operations:
-            self.callbacks[operation][name] = callback
+            for operation in operations:
+                self.callbacks[operation][name] = callback
+                _LOGGER.info('Callback %s registered to operation %s', name, operation)
 
     def unregister_callback(self, name: str) -> None:
         """Unregister a Pub/Sub order manager queue callback function."""
-        for operation in self.callbacks:
-            removed = self.callbacks[operation].pop(name, None)
-            if removed:
-                _LOGGER.info(
-                    'Callback %s unregistered from operation %s', name, operation)
+        with self.callbacks_lock:
+            for operation in self.callbacks:
+                removed = self.callbacks[operation].pop(name, None)
+                if removed:
+                    _LOGGER.info(
+                        'Callback %s unregistered from operation %s', name, operation)
 
     def run(self, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
@@ -305,8 +309,10 @@ class K8sCRHandler:
     def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
         """Process custom resource operation."""
         # Run all registered callback functions
+        with self.callbacks_lock:
+            callbacks = list(self.callbacks[operation].values())
         try:
-            for callback in self.callbacks[operation].values():
+            for callback in callbacks:
                 callback(name, custom_res)
         except Exception as err:  # pylint: disable=broad-except
             _LOGGER.error(
