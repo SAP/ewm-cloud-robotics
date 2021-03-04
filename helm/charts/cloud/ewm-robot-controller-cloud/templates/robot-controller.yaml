@@ -1,25 +1,24 @@
 ---
-{{- range $.Values.robots }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: robot-controller-{{ .name }}
+  name: robot-controller-cloud
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: robot-controller-{{ .name }}
+      app: robot-controller-cloud
   template:
     metadata:
       labels:
-        app: robot-controller-{{ .name }}
+        app: robot-controller-cloud
     spec:
       containers:
       - image: {{ $.Values.image }}
         name: robot-controller
         env:
-        - name: ROBCO_ROBOT_NAME
-          value: "{{ .name }}"
+        - name: ROBOTS
+          value: "{{- range $.Values.robots }}{{ .name }},{{- end }}"
         - name: MAX_RETRY_COUNT
           value: "{{ $.Values.envs.maxretrycount }}"
         - name: LOG_LEVEL
@@ -28,30 +27,30 @@ spec:
           value: {{ $.Values.envs.log.format }}
         resources:
           requests:
-            memory: "64Mi"
-            cpu: "10m"
-          limits:
             memory: "256Mi"
-            cpu: "250m"
+            cpu: "100m"
+          limits:
+            memory: "768Mi"
+            cpu: "1200m"
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: robot-controller-{{ .name }}
+  name: robot-controller-cloud
   labels:
-    app: robot-controller-{{ .name }}
+    app: robot-controller-cloud
 spec:
   ports:
   - name: metrics
     port: 8000
   selector:
-    app: robot-controller-{{ .name }}
+    app: robot-controller-cloud
   type: ClusterIP
 ---
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: robot-controller-{{ .name }}
+  name: robot-controller-cloud
   labels:
     prometheus: kube-prometheus
 spec:
@@ -59,6 +58,5 @@ spec:
   - port: metrics
   selector:
     matchLabels:
-      app: robot-controller-{{ .name }}
+      app: robot-controller-cloud
 ---
-{{ end }}

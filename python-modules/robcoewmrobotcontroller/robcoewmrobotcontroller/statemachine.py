@@ -30,8 +30,8 @@ from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus, RequestF
 from robcoewmtypes.warehouseorder import (
     WarehouseOrder, WarehouseOrderCRDSpec, WarehouseTask, ConfirmWarehouseTask)
 
-from .ordercontroller import OrderController
-from .robco_mission_api import RobCoMissionAPI
+from .ordercontroller import OrderHandler
+from .missioncontroller import MissionController
 from .robotconfigcontroller import RobotConfigurationController
 from .robotrequestcontroller import RobotRequestController
 from .statemachine_config import RobotEWMConfig
@@ -81,8 +81,8 @@ class RobotEWMMachine(Machine):
         ['robot', 'state'], buckets=buckets)
 
     def __init__(
-            self, robot_config: RobotConfigurationController, mission_api: RobCoMissionAPI,
-            order_controller: OrderController, robotrequest_controller: RobotRequestController,
+            self, robot_config_ctrl: RobotConfigurationController, mission_ctrl: MissionController,
+            order_handler: OrderHandler, robotrequest_ctrl: RobotRequestController,
             initial: str = 'idle') -> None:
         """Construct."""
         cls = self.__class__
@@ -99,13 +99,13 @@ class RobotEWMMachine(Machine):
 
         # Controller
         # configuration of the robot
-        self.robot_config = robot_config
+        self.robot_config = robot_config_ctrl
         # mission API
-        self.mission_api = mission_api
-        # order controller
-        self.order_controller = order_controller
+        self.mission_ctrl = mission_ctrl
+        # order handler
+        self.order_handler = order_handler
         # robotrequest controller
-        self.robotrequest_controller = robotrequest_controller
+        self.robotrequest_ctrl = robotrequest_ctrl
 
         # Last successfully processed spec of warehouse order
         self.processed_order_spec: Dict[str, Dict] = {}
@@ -139,38 +139,43 @@ class RobotEWMMachine(Machine):
 
     def connect_external_events(self) -> None:
         """Connect state machine to external event sources of Cloud Robotics."""
-        name = 'ewm-statemachine-{}'.format(self.robot_config.robco_robot_name)
-        self.mission_api.robot_api.register_callback(
-            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.robot_cb)
-        self.order_controller.register_callback(
-            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.warehouseorder_cb)
-        self.order_controller.register_callback(
-            name+'_deleted', ['DELETED'], self.warehouseorder_deleted_cb)
-        self.robotrequest_controller.register_callback(
-            name, ['MODIFIED', 'REPROCESS'], self.robotrequest_cb)
-        self.mission_api.register_callback(
-            name, ['ADDED', 'MODIFIED', 'DELETED', 'REPROCESS'], self.mission_cb)
-        self.robot_config.register_callback(
-            name+'_recover', ['ADDED', 'MODIFIED', 'REPROCESS'], self.cfg_recover_cb)
-        self.robot_config.register_callback(
-            name+'_staging_timeout', ['ADDED', 'MODIFIED'], self.cfg_idle_charge_states_cb)
+        name = 'ewm_statemachine_{}'.format(self.robot_config.robot_name)
+        self.mission_ctrl.robot_handler.register_callback(
+            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.robot_cb, self.robot_config.robot_name)
+        self.order_handler.register_callback(
+            name, ['ADDED', 'MODIFIED', 'REPROCESS'], self.warehouseorder_cb,
+            self.robot_config.robot_name)
+        self.order_handler.register_callback(
+            name+'_deleted', ['DELETED'], self.warehouseorder_deleted_cb,
+            self.robot_config.robot_name)
+        self.robotrequest_ctrl.handler.register_callback(
+            name, ['MODIFIED', 'REPROCESS'], self.robotrequest_cb, self.robot_config.robot_name)
+        self.mission_ctrl.handler.register_callback(
+            name, ['MODIFIED', 'DELETED', 'REPROCESS'], self.mission_cb,
+            self.robot_config.robot_name)
+        self.robot_config.handler.register_callback(
+            name+'_recover', ['ADDED', 'MODIFIED', 'REPROCESS'], self.cfg_recover_cb,
+            self.robot_config.robot_name)
+        self.robot_config.handler.register_callback(
+            name+'_staging_timeout', ['ADDED', 'MODIFIED'], self.cfg_idle_charge_states_cb,
+            self.robot_config.robot_name)
 
     def disconnect_external_events(self) -> None:
         """Disconnect state machine from external events sources of Cloud Robotics."""
-        name = 'ewm-statemachine-{}'.format(self.robot_config.robco_robot_name)
-        self.mission_api.robot_api.unregister_callback(name)
-        self.order_controller.unregister_callback(name)
-        self.order_controller.unregister_callback(name+'_deleted')
-        self.robotrequest_controller.unregister_callback(name)
-        self.mission_api.unregister_callback(name)
-        self.robot_config.unregister_callback(name)
+        name = 'ewm-statemachine-{}'.format(self.robot_config.robot_name)
+        self.mission_ctrl.robot_handler.unregister_callback(name, self.robot_config.robot_name)
+        self.order_handler.unregister_callback(name, self.robot_config.robot_name)
+        self.order_handler.unregister_callback(name+'_deleted', self.robot_config.robot_name)
+        self.robotrequest_ctrl.handler.unregister_callback(name, self.robot_config.robot_name)
+        self.mission_ctrl.handler.unregister_callback(name, self.robot_config.robot_name)
+        self.robot_config.handler.unregister_callback(name, self.robot_config.robot_name)
 
     def _run_before_state_change(self, event: EventData) -> None:
         """Run these methods before state changes."""
         # Log retention time in a state
         retention_time = time.time() - self.state_enter_ts
         self.state_rentention_times.labels(  # pylint: disable=no-member
-            robot=self.robot_config.robco_robot_name, state=self.state).observe(retention_time)
+            robot=self.robot_config.robot_name, state=self.state).observe(retention_time)
 
         # Update timeout depending on max_idle_time
         if self.states.get('idle') and self.robot_config.conf.maxIdleTime > 0:
@@ -197,11 +202,16 @@ class RobotEWMMachine(Machine):
 
     def mission_cb(self, name: str, custom_res: Dict) -> None:
         """Use changes of mission CRs to trigger mission status checks."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # Only if there is a mission running
         if self.active_mission:
             mission = self.active_mission
-            mission_state = self.mission_api.api_return_mission_state(self.active_mission)
-            active_action = self.mission_api.api_return_mission_activeaction(self.active_mission)
+            mission_state = self.mission_ctrl.api_return_mission_state(self.active_mission)
+            active_action = self.mission_ctrl.api_return_mission_activeaction(self.active_mission)
 
             # Trigger state machine according to mission state
             if mission_state == RobotMission.STATE_SUCCEEDED:
@@ -217,6 +227,11 @@ class RobotEWMMachine(Machine):
 
     def robot_cb(self, name: str, custom_res: Dict) -> None:
         """Process robot messages."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         status = custom_res.get('status', {})
         if status.get('robot', {}):
             # Check if the robot is running out of battery when it is at staging area
@@ -248,6 +263,11 @@ class RobotEWMMachine(Machine):
 
     def cfg_recover_cb(self, name: str, custom_res: Dict) -> None:
         """Process robotconfiguration messages - recover robot."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         cls = self.__class__
         # Check if robot should recover from robotError state
         if self.state in cls.conf.error_states:
@@ -257,21 +277,31 @@ class RobotEWMMachine(Machine):
 
     def cfg_idle_charge_states_cb(self, name: str, custom_res: Dict) -> None:
         """Process robotconfiguration messages - request work."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         if self.robot_config.conf.mode == self.robot_config.conf.MODE_RUN:
             # Request work if robot is at staging position
             if self.state == 'atStaging':
                 self.staging_timeout()
             # Cancel charging mission if mode is RUN and battery is loaded
             elif self.state == 'charging':
-                if self.mission_api.battery_percentage >= self.robot_config.conf.batteryOk:
+                if self.mission_ctrl.battery_percentage >= self.robot_config.conf.batteryOk:
                     _LOGGER.info(
                         'Battery is loaded at %s percent, cancel charge mission',
-                        self.mission_api.battery_percentage)
+                        self.mission_ctrl.battery_percentage)
                     self.cancel_active_mission()
                     self.charging_canceled()
 
     def robotrequest_cb(self, name: str, custom_res: Dict) -> None:
         """Process robotrequest messages."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         status = custom_res.get('status', {})
         if status.get('data'):
             # Convert message data to RequestFromRobot data class
@@ -295,13 +325,18 @@ class RobotEWMMachine(Machine):
 
     def warehouseorder_cb(self, name: str, custom_res: Dict) -> None:
         """Process warehouse order CRs."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # Skip warehouse orders with specs already processed before
         if self.processed_order_spec.get(name) == custom_res['spec']:
             _LOGGER.debug('Spec for "%s" already processed before - skip', name)
             return
 
         # Check if the warehouse order should be processed
-        if self.order_controller.warehouse_order_precheck(name, custom_res) is False:
+        if self.order_handler.warehouse_order_precheck(name, custom_res) is False:
             return
 
         # Convert message data to WarehouseOrderCRDSpec type
@@ -314,6 +349,11 @@ class RobotEWMMachine(Machine):
 
     def warehouseorder_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Delete warehouse order from queue."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # Objects from EWM have upper case names
         name_split = name.upper().split('.')
         if len(name_split) == 2:
@@ -387,7 +427,7 @@ class RobotEWMMachine(Machine):
                 # Process warehouse order
                 self.process_warehouseorder(warehouseorder=warehouseorder)
             elif (self.state == 'charging'
-                  and self.mission_api.battery_percentage >= self.robot_config.conf.batteryMin):
+                  and self.mission_ctrl.battery_percentage >= self.robot_config.conf.batteryMin):
                 _LOGGER.info(
                     'New warehouse order %s received while robot is charging. Battery percentage '
                     'over minimum, cancel charging and start processing', warehouseorder.who)
@@ -399,7 +439,7 @@ class RobotEWMMachine(Machine):
                 _LOGGER.info(
                     'New warehouse order %s received, but robot battery level is too low at "%s" '
                     'percent. Continue charging', warehouseorder.who,
-                    self.mission_api.battery_percentage)
+                    self.mission_ctrl.battery_percentage)
                 self.unassign_whos()
             elif self.state in self.conf.idle_states:
                 _LOGGER.info(
@@ -484,7 +524,8 @@ class RobotEWMMachine(Machine):
             who = WhoIdentifier(self.active_who.lgnum, self.active_who.who)
             self.warehouseorders.pop(who, None)
             # Remove finalizer from warehouse order CR
-            self.order_controller.remove_who_finalizer(self.active_who.lgnum, self.active_who.who)
+            self.order_handler.remove_who_finalizer(
+                self.active_who.lgnum, self.active_who.who, self.robot_config.robot_name)
         else:
             _LOGGER.error('There is no active warehouse order')
 
@@ -498,8 +539,9 @@ class RobotEWMMachine(Machine):
             who = WhoIdentifier(self.active_sub_who.lgnum, self.active_sub_who.who)
             self.warehouseorders.pop(who, None)
             # Remove finalizer from warehouse order CR
-            self.order_controller.remove_who_finalizer(
-                self.active_sub_who.lgnum, self.active_sub_who.who)
+            self.order_handler.remove_who_finalizer(
+                self.active_sub_who.lgnum, self.active_sub_who.who,
+                self.robot_config.robot_name)
 
         self.active_sub_who = None
 
@@ -555,7 +597,8 @@ class RobotEWMMachine(Machine):
                 _LOGGER.error('Warehouse order %s not closed properly', self.active_who.who)
             self.active_who = event.kwargs.get('warehouseorder')
             # Add finalizer to warehouse order CR
-            self.order_controller.add_who_finalizer(self.active_who.lgnum, self.active_who.who)
+            self.order_handler.add_who_finalizer(
+                self.active_who.lgnum, self.active_who.who, self.robot_config.robot_name)
         else:
             _LOGGER.error('No warehouse order object in parameters.')
 
@@ -567,8 +610,9 @@ class RobotEWMMachine(Machine):
                     'Sub warehouse order %s not closed properly', self.active_sub_who.who)
             self.active_sub_who = event.kwargs.get('sub_warehouseorder')
             # Add finalizer to warehouse order CR
-            self.order_controller.add_who_finalizer(
-                self.active_sub_who.lgnum, self.active_sub_who.who)
+            self.order_handler.add_who_finalizer(
+                self.active_sub_who.lgnum, self.active_sub_who.who,
+                self.robot_config.robot_name)
         else:
             _LOGGER.error('No warehouse order object in parameters.')
 
@@ -581,7 +625,7 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
 
-            self.order_controller.confirm_wht(unstructure(confirmation))
+            self.order_handler.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'First confirmation for warehouse task %s of warehouse order %s sent to order '
@@ -606,7 +650,7 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_SUCCESS)
 
-            self.order_controller.confirm_wht(unstructure(confirmation))
+            self.order_handler.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'Second confirmation for warehouse task %s of warehouse order %s sent to order '
@@ -623,7 +667,7 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
 
-            self.order_controller.confirm_wht(unstructure(confirmation))
+            self.order_handler.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'First confirmation error for warehouse task %s of warehouse order %s sent to '
@@ -640,7 +684,7 @@ class RobotEWMMachine(Machine):
                 confirmationnumber=ConfirmWarehouseTask.SECOND_CONF,
                 confirmationtype=ConfirmWarehouseTask.CONF_ERROR)
 
-            self.order_controller.confirm_wht(unstructure(confirmation))
+            self.order_handler.confirm_wht(unstructure(confirmation))
 
             _LOGGER.info(
                 'Second confirmation error for warehouse task %s of warehouse order %s sent to '
@@ -664,7 +708,7 @@ class RobotEWMMachine(Machine):
                     confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
                     confirmationtype=ConfirmWarehouseTask.CONF_UNASSIGN)
 
-                self.order_controller.confirm_wht(unstructure(confirmation))
+                self.order_handler.confirm_wht(unstructure(confirmation))
                 who_remove.append(whoident)
 
                 _LOGGER.info(
@@ -688,7 +732,7 @@ class RobotEWMMachine(Machine):
             request = RequestFromRobot(
                 self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
 
-        self.robotrequest_controller.send_robot_request(unstructure(request))
+        self.robotrequest_ctrl.send_robot_request(unstructure(request))
 
     def _cancel_request_work(self, event: EventData) -> None:
         """Cancel request work from order manager."""
@@ -697,12 +741,12 @@ class RobotEWMMachine(Machine):
 
         request = RequestFromRobot(
             self.robot_config.conf.lgnum, self.robot_config.rsrc, requestnewwho=True)
-        self.robotrequest_controller.delete_robot_request(unstructure(request))
+        self.robotrequest_ctrl.delete_robot_request(unstructure(request))
 
         request = RequestFromRobot(
             self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
 
-        self.robotrequest_controller.delete_robot_request(unstructure(request))
+        self.robotrequest_ctrl.delete_robot_request(unstructure(request))
 
     def _request_who_confirmation_notification(self, event: EventData) -> None:
         """
@@ -715,7 +759,7 @@ class RobotEWMMachine(Machine):
                 self.robot_config.conf.lgnum, self.robot_config.rsrc,
                 notifywhocompletion=self.active_who.who)
 
-            self.robotrequest_controller.send_robot_request(unstructure(request))
+            self.robotrequest_ctrl.send_robot_request(unstructure(request))
 
             _LOGGER.info(
                 'Requesting warehouse order completion notification for %s from order manager',
@@ -734,7 +778,7 @@ class RobotEWMMachine(Machine):
                 'Canceling warehouse order completion notification for %s from order manager',
                 self.active_who.who)
 
-            self.robotrequest_controller.delete_robot_request(unstructure(request))
+            self.robotrequest_ctrl.delete_robot_request(unstructure(request))
 
         else:
             raise TypeError('No warehouse order object in self.active_who')
@@ -750,7 +794,7 @@ class RobotEWMMachine(Machine):
                 self.robot_config.conf.lgnum, self.robot_config.rsrc,
                 notifywhtcompletion=self.active_wht.tanum)
 
-            self.robotrequest_controller.send_robot_request(unstructure(request))
+            self.robotrequest_ctrl.send_robot_request(unstructure(request))
 
             _LOGGER.info(
                 'Requesting warehouse task completion notification for %s from order manager',
@@ -762,10 +806,10 @@ class RobotEWMMachine(Machine):
         """Decide what the robot should do next."""
         cls = self.__class__
         if self.robot_config.conf.mode == self.robot_config.conf.MODE_CHARGE:
-            if self.mission_api.battery_percentage < 90.0:
+            if self.mission_ctrl.battery_percentage < 90.0:
                 _LOGGER.info(
                     'Robot is in CHARGE mode, battery percentage is %s, start charging',
-                    self.mission_api.battery_percentage)
+                    self.mission_ctrl.battery_percentage)
                 # Cancel active mission before charging if there might be one
                 if event.transition.dest not in cls.conf.idle_states:
                     self.cancel_active_mission()
@@ -773,11 +817,11 @@ class RobotEWMMachine(Machine):
             else:
                 _LOGGER.info(
                     'Robot is in CHARGE mode, battery percentage is over 90 at %s, robot waits',
-                    self.mission_api.battery_percentage)
-        elif self.mission_api.battery_percentage < self.robot_config.conf.batteryMin:
+                    self.mission_ctrl.battery_percentage)
+        elif self.mission_ctrl.battery_percentage < self.robot_config.conf.batteryMin:
             _LOGGER.info(
                 'Battery level %s is below minimum of %s, start charging',
-                self.mission_api.battery_percentage, self.robot_config.conf.batteryMin)
+                self.mission_ctrl.battery_percentage, self.robot_config.conf.batteryMin)
             # Cancel active mission before charging if there might be one
             if event.transition.dest not in cls.conf.idle_states:
                 self.cancel_active_mission()
@@ -800,7 +844,7 @@ class RobotEWMMachine(Machine):
                     'self.warehouseorders includes an element of type "{}"'.format(
                         type(next_who_crd)))
         elif self.robot_config.conf.mode == self.robot_config.conf.MODE_RUN:
-            if self.mission_api.api_check_state_ok():
+            if self.mission_ctrl.api_check_state_ok():
                 self._request_work(event)
             else:
                 _LOGGER.error('Robot is in a not available state, not requesting work')
@@ -809,7 +853,7 @@ class RobotEWMMachine(Machine):
 
     def _batter_empty(self, event: EventData) -> bool:
         """Check if battery is empty."""
-        return self.mission_api.battery_percentage < self.robot_config.conf.batteryMin
+        return self.mission_ctrl.battery_percentage < self.robot_config.conf.batteryMin
 
     def _increase_mission_errorcount(self, event: EventData) -> None:
         """Increase errorcount for the state which triggered the event."""
@@ -843,7 +887,7 @@ class RobotEWMMachine(Machine):
         """Create a RobCo move mission."""
         if self.active_mission:
             _LOGGER.error('Active mission %s overwritten', self.active_mission)
-        self.active_mission = self.mission_api.api_moveto_named_position(
+        self.active_mission = self.mission_ctrl.api_moveto_named_position(
             event.kwargs.get('target'))
         _LOGGER.info(
             'Created move mission %s to %s', self.active_mission, event.kwargs.get('target'))
@@ -854,23 +898,23 @@ class RobotEWMMachine(Machine):
         if self.active_mission:
             _LOGGER.error('Active mission %s overwritten', self.active_mission)
         if isinstance(target_battery, float):
-            self.active_mission = self.mission_api.api_charge_robot(target_battery=target_battery)
+            self.active_mission = self.mission_ctrl.api_charge_robot(target_battery=target_battery)
         else:
-            self.active_mission = self.mission_api.api_charge_robot()
+            self.active_mission = self.mission_ctrl.api_charge_robot()
         _LOGGER.info('Created charge mission %s', self.active_mission)
 
     def _create_staging_mission(self, event: EventData) -> None:
         """Create a RobCo staging mission."""
         if self.active_mission:
             _LOGGER.error('Active mission %s overwritten', self.active_mission)
-        self.active_mission = self.mission_api.api_moveto_staging_position()
+        self.active_mission = self.mission_ctrl.api_moveto_staging_position()
         _LOGGER.info('Created staging mission %s', self.active_mission)
 
     def _create_get_trolley_mission(self, event: EventData) -> None:
         """Create a RobCo get trolley mission."""
         if self.active_mission:
             _LOGGER.error('Active mission %s overwritten', self.active_mission)
-        self.active_mission = self.mission_api.api_get_trolley(event.kwargs.get('target'))
+        self.active_mission = self.mission_ctrl.api_get_trolley(event.kwargs.get('target'))
         _LOGGER.info(
             'Created get trolley from %s mission %s', event.kwargs.get('target'),
             self.active_mission)
@@ -879,7 +923,7 @@ class RobotEWMMachine(Machine):
         """Create a RobCo return trolley mission."""
         if self.active_mission:
             _LOGGER.error('Active mission %s overwritten', self.active_mission)
-        self.active_mission = self.mission_api.api_return_trolley(event.kwargs.get('target'))
+        self.active_mission = self.mission_ctrl.api_return_trolley(event.kwargs.get('target'))
         _LOGGER.info(
             'Created return trolley to %s mission %s', event.kwargs.get('target'),
             self.active_mission)
@@ -887,7 +931,7 @@ class RobotEWMMachine(Machine):
     def _cancel_active_mission(self, event: EventData) -> None:
         """Cancel the active mission."""
         if self.active_mission:
-            success = self.mission_api.api_cancel_mission(self.active_mission)
+            success = self.mission_ctrl.api_cancel_mission(self.active_mission)
             if success:
                 _LOGGER.info('Active mission %s canceled', self.active_mission)
             else:
@@ -898,7 +942,7 @@ class RobotEWMMachine(Machine):
 
     def _set_next_charger(self, event: EventData) -> None:
         """Set next charger of available chargers."""
-        self.mission_api.api_set_next_charger()
+        self.mission_ctrl.api_set_next_charger()
 
     def _save_warehouse_order_start(self, event: EventData) -> None:
         """Save the start time stamp of a warehouse order."""
@@ -912,7 +956,7 @@ class RobotEWMMachine(Machine):
             self.who_ts.end = time.time()
             time_elapsed = self.who_ts.end - self.who_ts.start
             self.who_times.labels(
-                robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                robot=self.robot_config.robot_name, order_type=self.conf.get_process_type(
                     event.state.name), activity='completed').observe(time_elapsed)
         else:
             _LOGGER.error('Warehouse order processing times logging not started correctly.')
@@ -929,7 +973,7 @@ class RobotEWMMachine(Machine):
             else:
                 time_elapsed = self.who_ts.get_trolley - self.who_ts.start
             self.who_times.labels(
-                robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                robot=self.robot_config.robot_name, order_type=self.conf.get_process_type(
                     event.state.name), activity='get_trolley').observe(time_elapsed)
         else:
             _LOGGER.error('Warehouse order processing times logging not started correctly.')
@@ -940,7 +984,7 @@ class RobotEWMMachine(Machine):
             self.who_ts.return_trolley = time.time()
             time_elapsed = self.who_ts.return_trolley - self.who_ts.get_trolley
             self.who_times.labels(
-                robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+                robot=self.robot_config.robot_name, order_type=self.conf.get_process_type(
                     event.state.name), activity='return_trolley').observe(time_elapsed)
         else:
             _LOGGER.error('Warehouse order processing times logging not started correctly.')
@@ -953,7 +997,7 @@ class RobotEWMMachine(Machine):
         self._log_warehouse_order_completed(event)
         # Log outcome
         self.who_counter.labels(
-            robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+            robot=self.robot_config.robot_name, order_type=self.conf.get_process_type(
                 event.state.name), result=STATE_FAILED).inc()
 
     def _log_warehouse_order_success(self, event: EventData) -> None:
@@ -964,7 +1008,7 @@ class RobotEWMMachine(Machine):
         self._log_warehouse_order_completed(event)
         # Log outcome
         self.who_counter.labels(
-            robot=self.robot_config.robco_robot_name, order_type=self.conf.get_process_type(
+            robot=self.robot_config.robot_name, order_type=self.conf.get_process_type(
                 event.state.name), result=STATE_SUCCEEDED).inc()
 
     def on_enter_atStaging(self, event: EventData) -> None:
@@ -984,7 +1028,7 @@ class RobotEWMMachine(Machine):
         """Create charge mission."""
         _LOGGER.info(
             'Robot starts charge mission at battery level %s %%',
-            self.mission_api.battery_percentage)
+            self.mission_ctrl.battery_percentage)
         target_battery = event.kwargs.get('target_battery')
         if isinstance(target_battery, float):
             self.create_charge_mission(target_battery=target_battery)

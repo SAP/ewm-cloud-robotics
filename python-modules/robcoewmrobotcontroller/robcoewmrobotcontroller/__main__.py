@@ -124,7 +124,7 @@ def main() -> None:
     """Run main program."""
     try:
         # Run robot controller
-        robot_controller.run_robot()
+        robot_controller.run_robots()
     except Exception as err:  # pylint: disable=broad-except
         _LOGGER.critical('Unexpected error in main program: %s', err, exc_info=True)
         sys.exit('Application terminated with error')

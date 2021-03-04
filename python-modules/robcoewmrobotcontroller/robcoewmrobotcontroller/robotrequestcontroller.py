@@ -12,7 +12,6 @@
 
 """K8s custom resource handler for new warehouse orders."""
 
-import os
 import logging
 import threading
 import time
@@ -25,26 +24,19 @@ from robcoewmtypes.robot import RequestFromRobotStatus
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
+from .robotconfigcontroller import RobotConfigurationController
+
 _LOGGER = logging.getLogger(__name__)
 
 
-class RobotRequestController(K8sCRHandler):
-    """Handle K8s custom resources."""
+class RobotRequestHandler(K8sCRHandler):
+    """Handle RobotRequest custom resources."""
 
     def __init__(self) -> None:
         """Construct."""
-        self.init_robot_fromenv()
-        # Processed robotrequest CRs dictionary
-        self._processed_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, str] = OrderedDict()
-        self._processed_robotrequests_lock = threading.RLock()
-        self._deleted_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, bool] = OrderedDict()
-
         template_cr = get_sample_cr('robotrequest')
 
-        labels = {}
-        labels['cloudrobotics.com/robot-name'] = self.robco_robot_name
+        labels: Dict[str, str] = {}
         super().__init__(
             'ewm.sap.com',
             'v1alpha1',
@@ -54,84 +46,48 @@ class RobotRequestController(K8sCRHandler):
             labels
         )
 
+
+class RobotRequestController:
+    """Send RobotRequests to order-manager via Kubernetes custom resources"."""
+
+    def __init__(self, robot_config: RobotConfigurationController,
+                 robotrequest_handler: RobotRequestHandler) -> None:
+        """Construct."""
+        # RobotRequest handler
+        self.handler = robotrequest_handler
+        # Robot Configuration Controller
+        self.robot_config = robot_config
+
+        # Processed robotrequest CRs dictionary
+        self._processed_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
+            str, str] = OrderedDict()
+        self._processed_robotrequests_lock = threading.Lock()
+
         # Register robotrequest status update callback
-        self.register_callback(
-            'cleanup_robotrequests', ['ADDED', 'MODIFIED', 'REPROCESS'],
-            self._cleanup_robotrequests_cb)
-        self.register_callback('robotrequest_deleted', ['DELETED'], self._robotrequest_deleted_cb)
-
-        # Thread to check for deleted robotrequest CRs
-        self.deleted_robotrequests_thread = threading.Thread(
-            target=self._deleted_robotrequests_checker)
-
-    def init_robot_fromenv(self) -> None:
-        """Initialize EWM Robot from environment variables."""
-        # Read environment variables
-        envvar = {}
-        envvar['ROBCO_ROBOT_NAME'] = os.environ.get('ROBCO_ROBOT_NAME')
-        # Check if complete
-        for var, val in envvar.items():
-            if val is None:
-                raise ValueError(
-                    'Environment variable "{}" is not set'.format(var))
-
-        # Robot identifier
-        self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
+        self.handler.register_callback(
+            'cleanup_robotrequests_{}'.format(self.robot_config.robot_name),
+            ['ADDED', 'MODIFIED', 'REPROCESS'], self._cleanup_robotrequests_cb,
+            self.robot_config.robot_name)
+        self.handler.register_callback(
+            'robotrequest_deleted_{}'.format(self.robot_config.robot_name),
+            ['DELETED'], self._robotrequest_deleted_cb, self.robot_config.robot_name)
 
     def check_deleted_robotrequests(self):
         """Remove self.robotrequest_state entries if there is no corresponding CR."""
-        cr_resp = self.list_all_cr()
-        _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
-        # Collect names of all existing CRs
-        robotrequest_crs = {}
-        for obj in cr_resp:
-            spec = obj.get('spec')
-            if not spec:
-                continue
-            metadata = obj.get('metadata')
-            robotrequest_crs[metadata['name']] = True
-
         # Compare with self.robotrequests_status
         delete_robotrequests = []
         with self._processed_robotrequests_lock:
             for robotrequest in self._processed_robotrequests.keys():
-                if robotrequest not in robotrequest_crs:
+                if self.handler.check_cr_exists(robotrequest) is False:
                     delete_robotrequests.append(robotrequest)
 
             for robotrequest in delete_robotrequests:
-                self._deleted_robotrequests[robotrequest] = True
                 self._processed_robotrequests.pop(robotrequest, None)
-
-    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
-        """Start running all callbacks."""
-        # If reprocessing is enabled, check for deleted roborequest CRs too
-        if reprocess:
-            self.deleted_robotrequests_thread.start()
-        # start own callbacks
-        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
-
-    def _deleted_robotrequests_checker(self):
-        """Continously check for deleted robotrequest CR and mark them deleted."""
-        _LOGGER.info(
-            'Start continiously checking for deleted robotrequest CRs')
-        while self.thread_run:
-            try:
-                self.check_deleted_robotrequests()
-            except Exception as err:  # pylint: disable=broad-except
-                _LOGGER.error('Error checking for deleted robotrequests: %s', err, exc_info=True)
-                # On uncovered exception in thread save the exception
-                self.thread_exceptions['deleted_robotrequests_checker'] = err
-                # Stop the watcher
-                self.stop_watcher()
-            finally:
-                # Wait 10 seconds
-                if self.thread_run:
-                    time.sleep(10)
 
     def send_robot_request(self, request: Dict) -> None:
         """Send robot request to order manager."""
         # Don't create the same request twice when it is not processed yet
-        existing_requests = self.list_all_cr()
+        existing_requests = self.handler.list_all_cr()
         for existing_request in existing_requests:
             if existing_request.get('status', {}).get(
                     'status') != RequestFromRobotStatus.STATE_PROCESSED:
@@ -142,26 +98,34 @@ class RobotRequestController(K8sCRHandler):
 
         # No robotrequest existing. Create a new one
         labels = {}
-        labels['cloudrobotics.com/robot-name'] = self.robco_robot_name
+        labels['cloudrobotics.com/robot-name'] = self.robot_config.robot_name
         spec = request
-        name = '{}.{}'.format(self.robco_robot_name, time.time())
+        name = '{}.{}'.format(self.robot_config.robot_name, time.time())
 
-        self.create_cr(name, labels, spec)
+        self.handler.create_cr(name, labels, spec)
 
     def delete_robot_request(self, request: Dict) -> None:
         """Delete a robot request."""
         # Delete all running robot requests of the same kind
-        existing_requests = self.list_all_cr()
+        existing_requests = self.handler.list_all_cr()
         for existing_request in existing_requests:
+            # Only process custom resources labeled with own robot name
+            if existing_request['metadata'].get('labels', {}).get(
+                    'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+                continue
             if existing_request.get('status', {}).get(
                     'status') != RequestFromRobotStatus.STATE_PROCESSED:
                 if request == existing_request.get('spec', {}):
                     _LOGGER.info('Deleting robotrequest %s', existing_request['metadata']['name'])
-                    self.delete_cr(existing_request['metadata']['name'])
+                    self.handler.delete_cr(existing_request['metadata']['name'])
 
     def _robotrequest_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Remove deleted CR from self._processed_robotrequests."""
-        self._deleted_robotrequests[name] = True
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         with self._processed_robotrequests_lock:
             # If robotrequest was deleted remove it from dictionary
             if name in self._processed_robotrequests:
@@ -169,15 +133,17 @@ class RobotRequestController(K8sCRHandler):
 
     def _cleanup_robotrequests_cb(self, name: str, custom_res: Dict) -> None:
         """Cleanup processed robotrequest CRs."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # No status means nothing to update yet
         if not custom_res.get('status'):
             return
 
         # Clean up robotrequests with status PROCESSED
         if custom_res['status'].get('status') == RequestFromRobotStatus.STATE_PROCESSED:
-            # If CR already deleted, there is no need for a cleanup
-            if name in self._deleted_robotrequests:
-                return
             # Already in status PROCESSED no need for cleanup
             if self._processed_robotrequests.get(name) == RequestFromRobotStatus.STATE_PROCESSED:
                 return
@@ -186,8 +152,6 @@ class RobotRequestController(K8sCRHandler):
             if self._processed_robotrequests.get(name):
                 with self._processed_robotrequests_lock:
                     self._processed_robotrequests.pop(name, None)
-            if name in self._deleted_robotrequests:
-                self._deleted_robotrequests.pop(name, None)
             # status RUNNING, no reason for cleanup
             return
         else:
@@ -211,16 +175,9 @@ class RobotRequestController(K8sCRHandler):
 
             # Delete robotrequest CR and remove it from dictionary
             for robotrequest in delete_robotrequests:
-                if self.check_cr_exists(robotrequest):
-                    self.delete_cr(robotrequest)
-                    self._deleted_robotrequests[robotrequest] = True
+                if self.handler.check_cr_exists(robotrequest):
+                    self.handler.delete_cr(robotrequest)
                     self._processed_robotrequests.pop(robotrequest, None)
                     _LOGGER.info('RobCo robotrequest CR %s was cleaned up', robotrequest)
                 else:
-                    self._deleted_robotrequests[robotrequest] = True
                     self._processed_robotrequests.pop(robotrequest, None)
-
-            # Keep a maximum of 50 entries in deleted robotrequests OrderedDict
-            to_remove = max(0, len(self._deleted_robotrequests) - 50)
-            for _ in range(to_remove):
-                self._deleted_robotrequests.popitem(last=False)

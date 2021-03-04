@@ -17,7 +17,7 @@ spec:
       - image: {{ .Values.image }}
         name: robot-controller
         env:
-        - name: ROBCO_ROBOT_NAME
+        - name: ROBOTS
           value: "{{ .Values.robot.name }}"
         - name: MAX_RETRY_COUNT
           value: "{{ .Values.envs.maxretrycount }}"

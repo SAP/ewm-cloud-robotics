@@ -18,11 +18,11 @@ from typing import Optional
 
 import attr
 
-from robcoewmtypes.robot import RobotConfigurationStatus, RobotMission
+from robcoewmtypes.robot import RobotConfigurationStatus
 from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
 
-from .ordercontroller import OrderController
-from .robco_mission_api import RobCoMissionAPI
+from .ordercontroller import OrderHandler
+from .missioncontroller import MissionController
 from .robotconfigcontroller import RobotConfigurationController
 from .robotrequestcontroller import RobotRequestController
 from .statemachine import RobotEWMMachine, WhoIdentifier
@@ -48,15 +48,15 @@ class ValidStateRestore:
 class EWMRobot:
     """The EWM robot representation."""
 
-    def __init__(self, mission_api: RobCoMissionAPI, robot_config: RobotConfigurationController,
-                 order_controller: OrderController, robot_request: RobotRequestController) -> None:
+    def __init__(self, robot_config: RobotConfigurationController, mission_api: MissionController,
+                 order_handler: OrderHandler, robot_request: RobotRequestController) -> None:
         """Construct."""
         # Robot Mission API
         self.mission_api = mission_api
         # Robot Configuration
         self.robot_config = robot_config
-        # Order Controller
-        self.ordercontroller = order_controller
+        # Order handler
+        self.orderhandler = order_handler
         # Robot Request controller
         self.robotrequestcontroller = robot_request
 
@@ -70,7 +70,7 @@ class EWMRobot:
             # Restore a previous state machine state
             # Init state machine in specific state
             self.state_machine = RobotEWMMachine(
-                self.robot_config, self.mission_api, self.ordercontroller,
+                self.robot_config, self.mission_api, self.orderhandler,
                 self.robotrequestcontroller, initial=valid_state.state.statemachine)
             # Restore state machine attributes
             self.state_machine.active_mission = valid_state.state.mission
@@ -109,7 +109,7 @@ class EWMRobot:
             # Initialize a fresh state machine
             _LOGGER.info('Initialize fresh state machine')
             self.state_machine = RobotEWMMachine(
-                self.robot_config, self.mission_api, self.ordercontroller,
+                self.robot_config, self.mission_api, self.orderhandler,
                 self.robotrequestcontroller)
             self.state_machine.start_fresh_machine()
 
@@ -130,10 +130,9 @@ class EWMRobot:
             _LOGGER.info('Robot is in an idle state, which is not restored.')
             return None
 
-        # Check mission state. If it is UNKNOWN the mission was probably deleted
+        # Check if mission custom resource still exists
         if state_restore.mission:
-            mission_state = self.mission_api.api_return_mission_state(state_restore.mission)
-            if mission_state == RobotMission.STATE_UNKNOWN:
+            if self.mission_api.handler.check_cr_exists(state_restore.mission) is False:
                 state_restore.mission = ''
 
         valid_state = ValidStateRestore(state_restore)
@@ -142,8 +141,8 @@ class EWMRobot:
         if state_restore:
             # If there are no CRs for warehouse order and sub warehouse order, state is invalid
             if state_restore.who:
-                warehouseorder = self.ordercontroller.get_warehouseorder(
-                    state_restore.lgnum, state_restore.who)
+                warehouseorder = self.orderhandler.get_warehouseorder(
+                    state_restore.lgnum, state_restore.who, self.robot_config.robot_name)
                 if not warehouseorder:
                     _LOGGER.error(
                         'No CR for warehouse order %s in warehouse %s', state_restore.who,
@@ -152,8 +151,8 @@ class EWMRobot:
                 else:
                     valid_state.warehouseorder = warehouseorder
             if state_restore.subwho:
-                sub_warehouseorder = self.ordercontroller.get_warehouseorder(
-                    state_restore.lgnum, state_restore.subwho)
+                sub_warehouseorder = self.orderhandler.get_warehouseorder(
+                    state_restore.lgnum, state_restore.subwho, self.robot_config.robot_name)
                 if not sub_warehouseorder:
                     _LOGGER.error(
                         'No CR for sub warehouse order %s in warehouse %s', state_restore.subwho,

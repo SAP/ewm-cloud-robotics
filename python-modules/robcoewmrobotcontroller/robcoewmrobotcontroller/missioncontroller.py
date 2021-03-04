@@ -24,18 +24,38 @@ from robcoewmtypes.robot import RobotMission, RobcoRobotStates
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
-from .robco_robot_api import RobCoRobotAPI
+from .robotcontroller import RobotHandler
 from .robotconfigcontroller import RobotConfigurationController
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class RobCoMissionAPI(K8sCRHandler):
+class MissionHandler(K8sCRHandler):
+    """Handle Mission custom resources."""
+
+    def __init__(self) -> None:
+        """Construct."""
+        template_cr = get_sample_cr('robco_mission')
+
+        labels: Dict[str, str] = {}
+        super().__init__(
+            'mission.cloudrobotics.com',
+            'v1alpha1',
+            'missions',
+            'default',
+            template_cr,
+            labels
+        )
+
+
+class MissionController:
     """Send commands to RobCo robots via Kubernetes CR."""
 
-    def __init__(self, robot_config: RobotConfigurationController,
-                 robot_api: RobCoRobotAPI) -> None:
+    def __init__(self, robot_config: RobotConfigurationController, mission_handler: MissionHandler,
+                 robot_handler: RobotHandler) -> None:
         """Construct."""
+        # Mission handler
+        self.handler = mission_handler
         # Robot Configuration Controller
         self.robot_config = robot_config
         # Mission status dictionary
@@ -43,21 +63,12 @@ class RobCoMissionAPI(K8sCRHandler):
             str, RobotMission] = OrderedDict()
         self.mission_status_lock = threading.Lock()
 
-        template_cr = get_sample_cr('robco_mission')
-
+        # Labels used to create new missions
         self.labels = {}
-        self.labels['cloudrobotics.com/robot-name'] = self.robot_config.robco_robot_name
-        super().__init__(
-            'mission.cloudrobotics.com',
-            'v1alpha1',
-            'missions',
-            'default',
-            template_cr,
-            self.labels
-        )
+        self.labels['cloudrobotics.com/robot-name'] = self.robot_config.robot_name
 
         # RobCo Robot API
-        self.robot_api = robot_api
+        self.robot_handler = robot_handler
         self.battery_percentage = 100.0
         self.robot_state = RobcoRobotStates.STATE_UNDEFINED
         self.trolley_attached = False
@@ -69,24 +80,31 @@ class RobCoMissionAPI(K8sCRHandler):
         _LOGGER.info('Using chargers: %s', self._chargers)
 
         # Register robot status update callback
-        self.robot_api.register_callback(
-            'RobCoMissionAPI', ['ADDED', 'MODIFIED'], self.update_robot_status_cb)
+        self.robot_handler.register_callback(
+            'mission_controller_{}'.format(self.robot_config.robot_name),
+            ['ADDED', 'MODIFIED'], self.update_robot_status_cb, self.robot_config.robot_name)
 
         # Register mission status update callback
-        self.register_callback(
-            'update_mission_status', ['ADDED', 'MODIFIED', 'REPROCESS'],
-            self.update_mission_status_cb)
-        self.register_callback('mission_deleted', ['DELETED'], self.mission_deleted_cb)
+        self.handler.register_callback(
+            'update_mission_status_{}'.format(self.robot_config.robot_name),
+            ['ADDED', 'MODIFIED', 'REPROCESS'], self.update_mission_status_cb,
+            self.robot_config.robot_name)
+        self.handler.register_callback(
+            'mission_deleted_{}'.format(self.robot_config.robot_name),
+            ['DELETED'], self.mission_deleted_cb, self.robot_config.robot_name)
 
         # Register update chargers callback
-        self.robot_config.register_callback(
-            'update_chargers', ['ADDED', 'MODIFIED'], self.update_chargers_cb)
-
-        # Thread to check for deleted mission CRs
-        self.deleted_missions_thread = threading.Thread(target=self._deleted_missions_checker)
+        self.robot_config.handler.register_callback(
+            'update_chargers_{}'.format(self.robot_config.robot_name),
+            ['ADDED', 'MODIFIED'], self.update_chargers_cb, self.robot_config.robot_name)
 
     def update_mission_status_cb(self, name: str, custom_res: Dict) -> None:
         """Update self.mission_status."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # OrderedDict must not be changed when iterating (self.mission_status)
         with self.mission_status_lock:
             # if status is set, update the dictionary
@@ -98,7 +116,7 @@ class RobCoMissionAPI(K8sCRHandler):
                 self.mission_status[name] = new_mstatus
 
             # Delete finished missions with status SUCCEEDED, CANCELED, FAILED
-            # Keep maximum of 50 missions
+            # Keep maximum of 20 missions
             finished = 0
             delete_missions = []
             cleanup = 0
@@ -109,7 +127,7 @@ class RobCoMissionAPI(K8sCRHandler):
                                      RobotMission.STATE_CANCELED,
                                      RobotMission.STATE_FAILED]:
                     finished += 1
-                    if finished >= 50:
+                    if finished >= 20:
                         # Save mission to be deleted
                         delete_missions.append(mission)
 
@@ -122,8 +140,8 @@ class RobCoMissionAPI(K8sCRHandler):
             # Delete mission CR and mark it as DELETED
             for mission in delete_missions:
                 deleted = False
-                if self.check_cr_exists(mission):
-                    self.delete_cr(mission)
+                if self.handler.check_cr_exists(mission):
+                    self.handler.delete_cr(mission)
                     deleted = True
                     _LOGGER.info('RobCo mission CR %s was cleaned up', mission)
                 else:
@@ -138,6 +156,11 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def mission_deleted_cb(self, name: str, custom_res: Dict) -> None:
         """Update self.mission_status."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         with self.mission_status_lock:
             # If mission was deleted mark it as deleted
             if self.mission_status.get(name):
@@ -145,6 +168,11 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def update_robot_status_cb(self, name: str, custom_res: Dict) -> None:
         """Update robot status attributes."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # if status is set, update the attributes
         if custom_res.get('status'):
             try:
@@ -160,16 +188,22 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def update_chargers_cb(self, name: str, custom_res: Dict) -> None:
         """Update chargers from robotconfigurations CRD."""
+        # Only process custom resources labeled with own robot name
+        if custom_res['metadata'].get('labels', {}).get(
+                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
+            return
+
         # Check if chargers changed in the meantime
         if self._chargers != self.robot_config.conf.chargers:
             self._chargers = self.robot_config.conf.chargers.copy()
             self._chargers_generator = self._iterate_chargers()
-            _LOGGER.info('Available chargers changed to: %s', self._chargers)
+            _LOGGER.info('Chargers changed to: %s', self._chargers)
 
     def check_deleted_missions(self):
         """Set self.mission_state entries with no CR to state DELETED."""
-        cr_resp = self.list_all_cr()
-        _LOGGER.debug('%s/%s: Check deleted CR: Got all CRs.', self.group, self.plural)
+        cr_resp = self.handler.list_all_cr()
+        _LOGGER.debug(
+            '%s/%s: Check deleted CR: Got all CRs.', self.handler.group, self.handler.plural)
         # Collect names of all existing CRs
         mission_crs = {}
         for obj in cr_resp:
@@ -189,42 +223,11 @@ class RobCoMissionAPI(K8sCRHandler):
             for mission in delete_missions:
                 self.mission_status[mission].status = RobotMission.STATE_DELETED
 
-    def run(self, reprocess: bool = False, multiple_executor_threads: bool = False) -> None:
-        """Start running all callbacks."""
-        # Start callbacks for robot status
-        self.robot_api.run(
-            reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
-        # If reprocessing is enabled, check for deleted mission CRs too
-        if reprocess:
-            self.deleted_missions_thread.start()
-        # start own callbacks
-        super().run(reprocess=reprocess, multiple_executor_threads=multiple_executor_threads)
-
-    def _deleted_missions_checker(self):
-        """Continously check for deleted mission CR and mark them deleted."""
-        _LOGGER.info(
-            'Start continiously checking for deleted mission CRs')
-        while self.thread_run:
-            try:
-                self.check_deleted_missions()
-            except Exception as err:  # pylint: disable=broad-except
-                _LOGGER.error('Error checking for deleted missions: %s', err, exc_info=True)
-                # On uncovered exception in thread save the exception
-                self.thread_exceptions['deleted_missions_checker'] = err
-                # Stop the watcher
-                self.stop_watcher()
-            finally:
-                # Wait 10 seconds
-                if self.thread_run:
-                    time.sleep(10)
-
-        _LOGGER.info("Deleted mission checker stopped")
-
     def _create_mission(self, spec: Dict) -> str:
         # Use Unix timestamp as mission name
         mission_name = str(time.time())
         # Create CR
-        self.create_cr(mission_name, self.labels, spec)
+        self.handler.create_cr(mission_name, self.labels, spec)
         # Return mission_name
         return mission_name
 
@@ -238,9 +241,9 @@ class RobCoMissionAPI(K8sCRHandler):
 
     def api_cancel_mission(self, name: str) -> bool:
         """Cancel a mission."""
-        if self.check_cr_exists(name):
+        if self.handler.check_cr_exists(name):
             # Mission is canceled by deleting its CR
-            self.delete_cr(name)
+            self.handler.delete_cr(name)
             return True
         else:
             _LOGGER.error('Mission CR %s does not exist and cannot be deleted', name)

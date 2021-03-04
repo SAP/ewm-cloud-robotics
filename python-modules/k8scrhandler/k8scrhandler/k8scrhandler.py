@@ -20,10 +20,10 @@ import time
 import functools
 
 import threading
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ThreadPoolExecutor, Future
 from collections import defaultdict, OrderedDict
 
-from typing import DefaultDict, Dict, Callable, List, Optional
+from typing import DefaultDict, Dict, Callable, List, Optional, OrderedDict as TOrderedDict
 
 from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
@@ -138,12 +138,9 @@ class K8sCRHandler:
 
         # Callback stack for watch on cr
         self.callbacks: Dict[
-            str, OrderedDict[str, Callable]] = {  # pylint: disable=unsubscriptable-object
-                'ADDED': OrderedDict(),
-                'MODIFIED': OrderedDict(),
-                'DELETED': OrderedDict(),
-                'REPROCESS': OrderedDict()
-                }
+            str, TOrderedDict[str, Callable]] = self.get_callback_dict()
+        self.robot_callbacks: Dict[
+            str, Dict[str, TOrderedDict[str, Callable]]] = {}
         self.callbacks_lock = threading.Lock()
 
         # JSON template used while creating custom resources
@@ -165,8 +162,17 @@ class K8sCRHandler:
         self.thread_run = True
         self.executor = ThreadPoolExecutor(max_workers=1)
 
-        # finalizer
-        self.finalizer = ''
+    @staticmethod
+    def get_callback_dict() -> Dict[str, TOrderedDict[str, Callable]]:
+        """Get a dictionary to store callback methods."""
+        callbacks: Dict[
+            str, TOrderedDict[str, Callable]] = {
+                'ADDED': OrderedDict(),
+                'MODIFIED': OrderedDict(),
+                'DELETED': OrderedDict(),
+                'REPROCESS': OrderedDict()
+                }
+        return copy.deepcopy(callbacks)
 
     def get_status_update_method(self) -> None:
         """
@@ -198,7 +204,8 @@ class K8sCRHandler:
             _LOGGER.info('There is no status subresource defined in CRD %s', name)
 
     def register_callback(
-            self, name: str, operations: List, callback: Callable[[str, Dict], None]) -> None:
+            self, name: str, operations: List, callback: Callable[[str, Dict], None],
+            robot_name: Optional[str] = None) -> None:
         """
         Register a callback function.
 
@@ -218,30 +225,52 @@ class K8sCRHandler:
                 raise TypeError('{}/{}: Object "{}" is not callable'.format(
                     self.group, self.plural, callback))
 
+            # Assign the right callback attribute
+            log_suffix = ' for robot {}'.format(robot_name) if robot_name is not None else ''
+            if robot_name is None:
+                callbacks = self.callbacks
+            elif self.robot_callbacks.get(robot_name) is None:
+                callbacks = self.get_callback_dict()
+                self.robot_callbacks[robot_name] = callbacks
+            else:
+                callbacks = self.robot_callbacks[robot_name]
+
             # Check if a callback with the same name alread existing
             already_registered = False
-            for operation, callback_list in self.callbacks.items():
+            for operation, callback_list in callbacks.items():
                 if name in callback_list:
                     already_registered = True
 
             # Value error if callback is existing, if not register it
             if already_registered:
                 raise ValueError(
-                    '{}/{}: A callback with that name already registered'.format(
-                        self.group, self.plural))
+                    '{}/{}: A callback with that name already registered{}'.format(
+                        self.group, self.plural, log_suffix))
 
             for operation in operations:
-                self.callbacks[operation][name] = callback
-                _LOGGER.info('Callback %s registered to operation %s', name, operation)
+                callbacks[operation][name] = callback
+                _LOGGER.info(
+                    '%s/%s: Callback %s registered to operation %s%s', self.group, self.plural,
+                    name, operation, log_suffix)
 
-    def unregister_callback(self, name: str) -> None:
+    def unregister_callback(self, name: str, robot_name: Optional[str] = None) -> None:
         """Unregister a Pub/Sub order manager queue callback function."""
         with self.callbacks_lock:
-            for operation in self.callbacks:
-                removed = self.callbacks[operation].pop(name, None)
+            # Assign the right callback attribute
+            log_suffix = ' for robot {}'.format(robot_name) if robot_name is not None else ''
+            if robot_name is None:
+                callbacks = self.callbacks
+            elif self.robot_callbacks.get(robot_name) is None:
+                return
+            else:
+                callbacks = self.robot_callbacks[robot_name]
+            # Unregister callback
+            for operation in callbacks:
+                removed = callbacks[operation].pop(name, None)
                 if removed:
                     _LOGGER.info(
-                        'Callback %s unregistered from operation %s', name, operation)
+                        '%s/%s: Callback %s unregistered from operation %s%s', self.group,
+                        self.plural, name, operation, log_suffix)
 
     def run(self, reprocess: bool = False,
             multiple_executor_threads: bool = False) -> None:
@@ -276,10 +305,12 @@ class K8sCRHandler:
             elif operation == 'DELETED':
                 self._cr_cache.pop(name, None)
 
-    def _refresh_custom_resource_cache(self, crs: List[Dict]) -> None:
+    def _refresh_custom_resource_cache(self) -> Dict[str, Dict]:
         """Refresh custom resource cache from a list with custom resources."""
         _LOGGER.debug("Refreshing custom resource cache")
         with self._cr_cache_lock:
+            cr_resp = self._list_all_cr()
+            crs = cr_resp['items']
             cr_cache = {}
             for obj in crs:
                 metadata = obj.get('metadata')
@@ -289,13 +320,14 @@ class K8sCRHandler:
                 cr_cache[name] = obj
             self._cr_cache = cr_cache
 
+        return cr_resp
+
     def _synchronize_cache_loop(self) -> None:
         """Synchronize custom resource cache every 5 minutes."""
         while self.thread_run:
             time.sleep(300)
             try:
-                crs = self._list_all_cr()
-                self._refresh_custom_resource_cache(crs['items'])
+                self._refresh_custom_resource_cache()
             except Exception as err:  # pylint: disable=broad-except
                 _LOGGER.error(
                     '%s/%s: Error refreshing CR cache: %s', self.group, self.plural, err,
@@ -308,9 +340,12 @@ class K8sCRHandler:
     @k8s_cr_callback
     def _callback(self, name: str, labels: Dict, operation: str, custom_res: Dict) -> None:
         """Process custom resource operation."""
+        robot_name = labels.get('cloudrobotics.com/robot-name', '')
         # Run all registered callback functions
         with self.callbacks_lock:
             callbacks = list(self.callbacks[operation].values())
+            if self.robot_callbacks.get(robot_name) is not None:
+                callbacks.extend(self.robot_callbacks[robot_name][operation].values())
         try:
             for callback in callbacks:
                 callback(name, custom_res)
@@ -407,8 +442,11 @@ class K8sCRHandler:
 
     def _init_watcher(self) -> None:
         """Initialize CR watcher."""
-        cr_resp = self._list_all_cr()
-        _LOGGER.debug('%s/%s: Initialize CR watcher: Got all CRs.', self.group, self.plural)
+        # Sync cache
+        cr_resp = self._refresh_custom_resource_cache()
+        self._cr_cache_initialized = True
+        _LOGGER.debug(
+            '%s/%s: Initialize CR watcher: Got all CRs. Cache synced', self.group, self.plural)
         if cr_resp:
             # Set resource version for watcher to the version of the list. According to
             # https://github.com/kubernetes-client/python/issues/693#issuecomment-442893494
@@ -419,10 +457,6 @@ class K8sCRHandler:
                 self.resv_watcher = ''
             else:
                 self.resv_watcher = resource_version
-
-            # Sync cache
-            self._refresh_custom_resource_cache(cr_resp['items'])
-            self._cr_cache_initialized = True
 
             # Process custom resources
             for obj in cr_resp['items']:
@@ -638,6 +672,8 @@ class K8sCRHandler:
         with self._cr_cache_lock:
             crs = copy.deepcopy(list(self._cr_cache.values()))
 
+        futures: List[Future] = []
+
         for obj in crs:
             metadata = obj.get('metadata')
             if not metadata:
@@ -645,8 +681,12 @@ class K8sCRHandler:
             name = metadata['name']
             labels = metadata.get('labels', {})
             # Submit callbacks to ThreadPoolExecutor
-            self.executor.submit(
-                self._callback, name, labels, 'REPROCESS', obj)
+            futures.append(self.executor.submit(
+                self._callback, name, labels, 'REPROCESS', obj))
+
+        # Wait for all futures
+        for future in futures:
+            future.result()
 
     def _reprocess_crs_loop(self) -> None:
         """Reprocess existing custom resources in a loop."""
@@ -679,19 +719,15 @@ class K8sCRHandler:
         _LOGGER.info('Stopping ThreadPoolExecutor')
         self.executor.shutdown(wait=False)
 
-    def add_finalizer(self, name: str) -> bool:
+    def add_finalizer(self, name: str, finalizer: str) -> bool:
         """Add a finalizer to a CR."""
         cls = self.__class__
-        if not self.finalizer:
-            _LOGGER.error('No name for finalizer set in self.finalizer')
-            return False
-
         if self.check_cr_exists(name):
             # Get current finalizers
             cr_resp = self.get_cr(name)
             finalizers = cr_resp['metadata'].get('finalizers', [])
             # Add finalize to list
-            finalizers.append(self.finalizer)
+            finalizers.append(finalizer)
             custom_res = {'metadata': {'finalizers': finalizers}}
             # Update CR
             try:
@@ -709,30 +745,26 @@ class K8sCRHandler:
                     name, err)
                 raise
             else:
-                _LOGGER.debug('Added finalizer %s to CR %s', self.finalizer, name)
+                _LOGGER.debug('Added finalizer %s to CR %s', finalizer, name)
                 return True
         else:
             _LOGGER.error('Unable to add finalizer to CR %s. CR not found', name)
             return False
 
-    def remove_finalizer(self, name: str) -> bool:
+    def remove_finalizer(self, name: str, finalizer: str) -> bool:
         """Remove a finalizer from a CR."""
         cls = self.__class__
-        if not self.finalizer:
-            _LOGGER.error('No name for finalizer set in self.finalizer')
-            return False
-
         if self.check_cr_exists(name):
             # Get current finalizers
             cr_resp = self.get_cr(name)
             finalizers = cr_resp['metadata'].get('finalizers', [])
             # Remove finalizer from list
             try:
-                finalizers.remove(self.finalizer)
+                finalizers.remove(finalizer)
             except ValueError:
                 _LOGGER.error(
                     'Unable to remove finalizer from CR %s. Finalizer %s not found', name,
-                    self.finalizer)
+                    finalizer)
                 return False
             custom_res = {'metadata': {'finalizers': finalizers}}
             # Update CR
@@ -751,7 +783,7 @@ class K8sCRHandler:
                     self.plural, name, err)
                 raise
             else:
-                _LOGGER.debug('Removed finalizer %s from CR %s', self.finalizer, name)
+                _LOGGER.debug('Removed finalizer %s from CR %s', finalizer, name)
                 return True
         else:
             _LOGGER.error('Unable to remove finalizer from CR %s. CR not found', name)

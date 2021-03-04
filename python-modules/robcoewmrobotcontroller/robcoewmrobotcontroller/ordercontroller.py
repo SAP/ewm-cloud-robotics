@@ -12,7 +12,6 @@
 
 """K8s custom resource handler for new warehouse orders."""
 
-import os
 import logging
 
 from typing import Dict, Optional
@@ -28,17 +27,14 @@ from k8scrhandler.k8scrhandler import K8sCRHandler
 _LOGGER = logging.getLogger(__name__)
 
 
-class OrderController(K8sCRHandler):
+class OrderHandler(K8sCRHandler):
     """Handle K8s custom resources."""
 
     def __init__(self) -> None:
         """Construct."""
-        self.init_robot_fromenv()
-
         template_cr = get_sample_cr('warehouseorder')
 
-        labels = {}
-        labels['cloudrobotics.com/robot-name'] = self.robco_robot_name
+        labels: Dict[str, str] = {}
         super().__init__(
             'ewm.sap.com',
             'v1alpha1',
@@ -48,12 +44,17 @@ class OrderController(K8sCRHandler):
             labels
         )
 
-        # Set finalizer name for robot controller
-        self.finalizer = '{}.ewm-robot-controller.sap.com'.format(self.robco_robot_name)
-
     @staticmethod
-    def warehouse_order_precheck(name: str, custom_res: Dict) -> bool:
+    def warehouse_order_precheck(
+            name: str, custom_res: Dict, robot_name: Optional[str] = None) -> bool:
         """Check if warehouse order has to be processed in callback."""
+        # Check if the order belongs to the right robot
+        if robot_name is not None:
+            if custom_res['metadata'].get('labels', {}).get(
+                    'cloudrobotics.com/robot-name') != robot_name:
+                _LOGGER.info(
+                    'Skip "%s" because warehouse order is assigned to a different robot', name)
+                return False
         # Skip warehouse order which is not RUNNING
         order_status = custom_res['spec'].get('order_status')
         if order_status != WarehouseOrderCRDSpec.STATE_RUNNING:
@@ -94,19 +95,6 @@ class OrderController(K8sCRHandler):
 
         return True
 
-    def init_robot_fromenv(self) -> None:
-        """Initialize EWM Robot from environment variables."""
-        # Read environment variables
-        envvar = {}
-        envvar['ROBCO_ROBOT_NAME'] = os.environ.get('ROBCO_ROBOT_NAME')
-        # Check if complete
-        for var, val in envvar.items():
-            if val is None:
-                raise ValueError('Environment variable "{}" is not set'.format(var))
-
-        # Robot identifier
-        self.robco_robot_name = envvar['ROBCO_ROBOT_NAME']
-
     def confirm_wht(self, wht: Dict) -> None:
         """Notify order manager about current status of who + tasks."""
         # Warehouse order CR name must be lower case
@@ -125,32 +113,38 @@ class OrderController(K8sCRHandler):
         status['data'].append(wht)
         self.update_cr_status(name, status)
 
-    def get_warehouseorder(self, lgnum: str, who: str) -> Optional[WarehouseOrderCRDSpec]:
+    def get_warehouseorder(
+            self, lgnum: str, who: str,
+            robot_name: Optional[str] = None) -> Optional[WarehouseOrderCRDSpec]:
         """Get a warehouse order from CR."""
         # Warehouse order CR name must be lower case
         name = '{}.{}'.format(lgnum, who).lower()
 
         if self.check_cr_exists(name):
             custom_res = self.get_cr(name)
-            if self.warehouse_order_precheck(name, custom_res):
+            if self.warehouse_order_precheck(name, custom_res, robot_name):
                 return structure(custom_res['spec'], WarehouseOrderCRDSpec)
             else:
                 return None
         else:
             return None
 
-    def add_who_finalizer(self, lgnum: str, who: str) -> None:
+    def add_who_finalizer(self, lgnum: str, who: str, robot: str) -> None:
         """Add a finalizer to warehouse order CR."""
         # Warehouse order CR name must be lower case
         name = '{}.{}'.format(lgnum, who).lower()
 
-        if self.add_finalizer(name):
-            _LOGGER.info('Added finalizer %s to warehouse order CR %s', self.finalizer, name)
+        finalizer = '{}.ewm-robot-controller.sap.com'.format(robot)
 
-    def remove_who_finalizer(self, lgnum: str, who: str) -> None:
+        if self.add_finalizer(name, finalizer):
+            _LOGGER.info('Added finalizer %s to warehouse order CR %s', finalizer, name)
+
+    def remove_who_finalizer(self, lgnum: str, who: str, robot: str) -> None:
         """Add a finalizer from warehouse order CR."""
         # Warehouse order CR name must be lower case
         name = '{}.{}'.format(lgnum, who).lower()
 
-        if self.remove_finalizer(name):
-            _LOGGER.info('Removed finalizer %s from warehouse order CR %s', self.finalizer, name)
+        finalizer = '{}.ewm-robot-controller.sap.com'.format(robot)
+
+        if self.remove_finalizer(name, finalizer):
+            _LOGGER.info('Removed finalizer %s from warehouse order CR %s', finalizer, name)
