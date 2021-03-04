@@ -16,7 +16,7 @@ import logging
 import threading
 import time
 
-from typing import Dict
+from typing import Dict, OrderedDict as TOrderedDict
 from collections import OrderedDict
 
 from robcoewmtypes.helper import get_sample_cr
@@ -59,8 +59,7 @@ class RobotRequestController:
         self.robot_config = robot_config
 
         # Processed robotrequest CRs dictionary
-        self._processed_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, str] = OrderedDict()
+        self._processed_robotrequests: TOrderedDict[str, str] = OrderedDict()
         self._processed_robotrequests_lock = threading.Lock()
 
         # Register robotrequest status update callback

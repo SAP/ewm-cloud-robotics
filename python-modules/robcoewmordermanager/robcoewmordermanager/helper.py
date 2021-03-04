@@ -15,7 +15,7 @@
 import logging
 import time
 
-from typing import Dict, List, DefaultDict
+from typing import Dict, List, DefaultDict, OrderedDict as TOrderedDict
 
 from collections import defaultdict, namedtuple, OrderedDict
 
@@ -46,12 +46,10 @@ class ProcessedMessageMemory:
         """Construct."""
         # Warehouse order confirmations
         self.who_confirmations: DefaultDict[WhoIdentifier, List] = defaultdict(list)
-        self.deleted_whos: OrderedDict[  # pylint: disable=unsubscriptable-object
-            WhoIdentifier, float] = OrderedDict()
+        self.deleted_whos: TOrderedDict[WhoIdentifier, float] = OrderedDict()
         # Robot requests
         self.robotrequests: Dict[str, RequestFromRobotStatus] = {}
-        self.deleted_robotrequests: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, float] = OrderedDict()
+        self.deleted_robotrequests: TOrderedDict[str, float] = OrderedDict()
         self.request_count: DefaultDict[str, int] = defaultdict(int)
 
     def memorize_who_conf(self, conf: ConfirmWarehouseTask) -> None:

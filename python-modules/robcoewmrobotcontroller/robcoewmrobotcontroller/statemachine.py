@@ -15,7 +15,7 @@
 import logging
 import time
 from collections import namedtuple, OrderedDict, defaultdict
-from typing import DefaultDict, Dict, Optional, List
+from typing import DefaultDict, Dict, Optional, List, OrderedDict as TOrderedDict
 
 from transitions.core import EventData
 from transitions.extensions import LockedHierarchicalMachine as Machine
@@ -112,11 +112,10 @@ class RobotEWMMachine(Machine):
 
         # EWM
         # List of warehouse order assigned to this robot
-        self.warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
-            WhoIdentifier, WarehouseOrderCRDSpec] = OrderedDict()
+        self.warehouseorders: TOrderedDict[WhoIdentifier, WarehouseOrderCRDSpec] = OrderedDict()
         # List of sub warehouse orders of robot's warehouse orders for Pick, Pack and Pass
         # Scenario. Those are not assigned to the robot
-        self.sub_warehouseorders: OrderedDict[  # pylint: disable=unsubscriptable-object
+        self.sub_warehouseorders: TOrderedDict[
             WhoIdentifier, WarehouseOrderCRDSpec] = OrderedDict()
         # Warehouse order / warehouse task currently in process
         self.active_who: Optional[WarehouseOrder] = None

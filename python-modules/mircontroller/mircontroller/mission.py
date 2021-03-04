@@ -19,7 +19,7 @@ import threading
 
 from copy import deepcopy
 from collections import OrderedDict
-from typing import Dict, Optional
+from typing import Dict, Optional, OrderedDict as TOrderedDict
 from requests import RequestException
 from prometheus_client import Counter
 
@@ -61,8 +61,7 @@ class MissionController(K8sCRHandler):
         self._mir_robot = mir_robot
 
         self._active_mission: Dict[str, Dict] = {}
-        self._missions: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, Dict] = OrderedDict()
+        self._missions: TOrderedDict[str, Dict] = OrderedDict()
         self._missions_lock = threading.RLock()
 
         # Init CR superclass

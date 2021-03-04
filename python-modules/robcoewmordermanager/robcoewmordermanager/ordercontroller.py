@@ -17,7 +17,7 @@ import threading
 import time
 
 from collections import OrderedDict
-from typing import Dict
+from typing import Dict, OrderedDict as TOrderedDict
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
@@ -35,11 +35,9 @@ class OrderController(K8sCRHandler):
     def __init__(self) -> None:
         """Construct."""
         # Processed warehouse order CRs dictionary
-        self._processed_orders: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, str] = OrderedDict()
+        self._processed_orders: TOrderedDict[str, str] = OrderedDict()
         self._processed_orders_lock = threading.RLock()
-        self._deleted_orders: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, bool] = OrderedDict()
+        self._deleted_orders: TOrderedDict[str, bool] = OrderedDict()
 
         template_cr = get_sample_cr('warehouseorder')
 

@@ -19,7 +19,7 @@ import threading
 
 from copy import deepcopy
 from collections import OrderedDict
-from typing import Dict, Optional
+from typing import Dict, Optional, OrderedDict as TOrderedDict
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
@@ -47,8 +47,7 @@ class MissionController(K8sCRHandler):
         self._fetch_robots = fetch_robots
 
         self._active_missions: Dict[str, Dict] = {}
-        self._missions: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, Dict] = OrderedDict()
+        self._missions: TOrderedDict[str, Dict] = OrderedDict()
         self._missions_lock = threading.RLock()
 
         # Init CR superclass

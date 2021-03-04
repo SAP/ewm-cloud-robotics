@@ -17,7 +17,7 @@ import time
 import threading
 
 from collections import OrderedDict
-from typing import Dict, Generator, Optional
+from typing import Dict, Generator, Optional, OrderedDict as TOrderedDict
 
 from robcoewmtypes.helper import get_sample_cr
 from robcoewmtypes.robot import RobotMission, RobcoRobotStates
@@ -59,8 +59,7 @@ class MissionController:
         # Robot Configuration Controller
         self.robot_config = robot_config
         # Mission status dictionary
-        self.mission_status: OrderedDict[  # pylint: disable=unsubscriptable-object
-            str, RobotMission] = OrderedDict()
+        self.mission_status: TOrderedDict[str, RobotMission] = OrderedDict()
         self.mission_status_lock = threading.Lock()
 
         # Labels used to create new missions

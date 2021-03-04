@@ -14,7 +14,7 @@
 from setuptools import find_packages, setup
 
 REQUIRES = [
-    'cattrs==1.2.0',
+    'cattrs==1.3.0',
     'retrying',
     'python-json-logger',
     'k8scrhandler',
