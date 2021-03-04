@@ -514,13 +514,18 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully updated status of CR %s', self.group, self.plural, name)
 
-    def update_cr_spec(self, name: str, spec: Dict, labels: Optional[Dict] = None) -> None:
+    def update_cr_spec(
+            self, name: str, spec: Dict, labels: Optional[Dict] = None,
+            owner_cr: Optional[Dict] = None) -> None:
         """Update the status field of named cr."""
         cls = self.__class__
         custom_res = {'spec': spec}
         # Optionally change labels
-        if labels:
+        if labels is not None:
             custom_res['metadata'] = {'labels': labels}
+        if owner_cr is not None:
+            custom_res = self.set_controller_reference(custom_res, owner_cr)
+        # Optionally add controller reference
         try:
             self.co_api.patch_namespaced_custom_object(
                 self.group,
@@ -559,13 +564,16 @@ class K8sCRHandler:
             _LOGGER.debug(
                 '%s/%s: Successfully deleted CR %s', self.group, self.plural, name)
 
-    def create_cr(self, name: str, labels: Dict, spec: Dict) -> None:
+    def create_cr(
+            self, name: str, labels: Dict, spec: Dict, owner_cr: Optional[Dict] = None) -> None:
         """Create custom resource on 'orders' having json parameter as spec."""
         cls = self.__class__
         custom_res = copy.deepcopy(self.raw_cr)
         custom_res['metadata']['name'] = name
         custom_res['metadata']['labels'] = labels
         custom_res['spec'] = spec
+        if owner_cr is not None:
+            custom_res = self.set_controller_reference(custom_res, owner_cr)
         try:
             self.co_api.create_namespaced_custom_object(
                 self.group,
@@ -788,3 +796,27 @@ class K8sCRHandler:
         else:
             _LOGGER.error('Unable to remove finalizer from CR %s. CR not found', name)
             return False
+
+    @staticmethod
+    def set_controller_reference(controlled_cr: Dict, owner_cr: Dict) -> Dict:
+        """Set controller reference to custom resource."""
+        controller_reference = {
+            'apiVersion': owner_cr['apiVersion'],
+            'blockOwnerDeletion': True,
+            'controller': True,
+            'kind': owner_cr['kind'],
+            'name': owner_cr['metadata']['name'],
+            'uid': owner_cr['metadata']['uid']
+        }
+
+        refs = controlled_cr['metadata'].get('ownerReferences', [])
+        existing = False
+        for ref in refs:
+            if ref.get('controller') is True:
+                existing = True
+
+        if existing is False:
+            refs.append(controller_reference)
+            controlled_cr['metadata']['ownerReferences'] = refs
+
+        return controlled_cr

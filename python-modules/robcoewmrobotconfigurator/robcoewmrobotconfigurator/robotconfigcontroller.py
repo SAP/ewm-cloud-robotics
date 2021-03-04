@@ -102,7 +102,7 @@ class RobotConfigurationController(K8sCRHandler):
             labels['cloudrobotics.com/robot-name'] = name
 
             # Create CR
-            self.create_cr(name, labels, unstructure(self.config_spec))
+            self.create_cr(name, labels, unstructure(self.config_spec), owner_cr=custom_res)
 
     def reset_recovery_flag_cb(self, name: str, custom_res: Dict) -> None:
         """Reset recovery flag of robots if they are not in robotError state anymore."""

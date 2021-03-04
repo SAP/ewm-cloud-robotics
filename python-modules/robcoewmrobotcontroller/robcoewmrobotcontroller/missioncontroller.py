@@ -224,10 +224,12 @@ class MissionController:
                 self.mission_status[mission].status = RobotMission.STATE_DELETED
 
     def _create_mission(self, spec: Dict) -> str:
+        # Get robot CR to set controller reference
+        robot = self.robot_handler.get_cr(self.robot_config.robot_name)
         # Use Unix timestamp as mission name
         mission_name = str(time.time())
         # Create CR
-        self.handler.create_cr(mission_name, self.labels, spec)
+        self.handler.create_cr(mission_name, self.labels, spec, owner_cr=robot)
         # Return mission_name
         return mission_name
 
