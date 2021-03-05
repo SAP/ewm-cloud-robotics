@@ -238,7 +238,7 @@ class RobotEWMMachine(Machine):
                 battery_percentage = status['robot'].get('batteryPercentage', 100.0)
                 if battery_percentage < self.robot_config.conf.batteryIdle:
                     self.charge_battery()
-            elif self.state == 'movingToStaging':
+            elif self.state in ['movingToStaging', 'robotError']:
                 battery_percentage = status['robot'].get('batteryPercentage', 100.0)
                 if battery_percentage < self.robot_config.conf.batteryMin:
                     self.cancel_active_mission()
@@ -850,7 +850,7 @@ class RobotEWMMachine(Machine):
         elif self.robot_config.conf.mode == self.robot_config.conf.MODE_IDLE:
             _LOGGER.info('Robot is in IDLE mode, not requesting work')
 
-    def _batter_empty(self, event: EventData) -> bool:
+    def _battery_empty(self, event: EventData) -> bool:
         """Check if battery is empty."""
         return self.mission_ctrl.battery_percentage < self.robot_config.conf.batteryMin
 
