@@ -12,4 +12,3 @@ spec:
       inline: $INLINE_CLOUD_CHART # substituted with base64 encoded helm package via sed during push in `deploy.sh` script
     # robot:
     #   inline: $INLINE_ROBOT_CHART # substituted with base64 encoded helm package via sed during push in `deploy.sh` script
----

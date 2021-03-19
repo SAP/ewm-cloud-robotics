@@ -1,0 +1,9 @@
+image: "ewmcloudrobotics/dummy-mission-controller:latest"
+
+robot:
+  name: "z"
+
+envs:
+  log:
+    level: "info"
+    format: "json"

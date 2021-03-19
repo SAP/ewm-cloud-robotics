@@ -1,26 +1,25 @@
 ---
-{{- range $.Values.robots }}
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: dummy-mission-controller-{{ .name }}
+  name: dummy-mission-controller-{{ .Values.robot.name }}
 spec:
   replicas: 1
-  serviceName: dummy-mission-controller-{{ .name }}
+  serviceName: dummy-mission-controller-{{ .Values.robot.name }}
   selector:
     matchLabels:
-      app: dummy-mission-controller-{{ .name }}
+      app: dummy-mission-controller-{{ .Values.robot.name }}
   template:
     metadata:
       labels:
-        app: dummy-mission-controller-{{ .name }}
+        app: dummy-mission-controller-{{ .Values.robot.name }}
     spec:
       containers:
-      - name: dummy-mission-controller-{{ .name }}
+      - name: dummy-mission-controller-{{ .Values.robot.name }}
         image: {{ $.Values.image }}
         env:
         - name: ROBCO_ROBOT_NAME
-          value: "{{ .name }}"
+          value: "{{ .Values.robot.name }}"
         - name: LOG_LEVEL
           value: {{ $.Values.envs.log.level }}
         - name: LOG_FORMAT
@@ -33,4 +32,3 @@ spec:
             memory: "256Mi"
             cpu: "250m"
 ---
-{{- end }}
