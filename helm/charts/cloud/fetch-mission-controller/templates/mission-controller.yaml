@@ -18,6 +18,7 @@ metadata:
   name: fetch-mission-controller
 spec:
   replicas: 1
+  serviceName: fetch-mission-controller
   selector:
     matchLabels:
       app: fetch-mission-controller

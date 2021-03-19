@@ -5,6 +5,7 @@ metadata:
   name: robot-controller-{{ .Values.robot.name }}
 spec:
   replicas: 1
+  serviceName: robot-controller-{{ .Values.robot.name }}
   selector:
     matchLabels:
       app: robot-controller-{{ .Values.robot.name }}

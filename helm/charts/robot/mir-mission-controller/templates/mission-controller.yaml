@@ -16,6 +16,7 @@ metadata:
   name: mir-mission-controller-{{ .Values.robot.name }}
 spec:
   replicas: 1
+  serviceName: mir-mission-controller-{{ .Values.robot.name }}
   selector:
     matchLabels:
       app: mir-mission-controller-{{ .Values.robot.name }}

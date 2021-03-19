@@ -5,6 +5,7 @@ metadata:
   name: robot-controller-cloud
 spec:
   replicas: 1
+  serviceName: robot-controller-cloud
   selector:
     matchLabels:
       app: robot-controller-cloud
