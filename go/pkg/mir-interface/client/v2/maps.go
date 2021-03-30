@@ -16,6 +16,27 @@ import (
 	"github.com/pkg/errors"
 )
 
+// GetMaps returns data from MiR GET /maps
+func (c *Client) GetMaps() (*apiv2.GetMaps, error) {
+
+	endpoint := "./maps"
+
+	respBody := &apiv2.GetMaps{}
+	mirError := &apiv2.Error{}
+
+	resp, err := c.Get(endpoint, respBody, mirError)
+
+	if err == nil && (resp.StatusCode <= 199 || resp.StatusCode >= 300) {
+		if mirError != nil {
+			err = errors.Wrapf(mirError, "GET %s returned status code %v", endpoint, resp.StatusCode)
+		} else {
+			err = errors.New(fmt.Sprintf("GET %s returned status code %v", endpoint, resp.StatusCode))
+		}
+	}
+
+	return respBody, err
+}
+
 // GetMapsIDPositions returns data from MiR GET /maps/{map_id}/positions endpoint
 func (c *Client) GetMapsIDPositions(mapID string) (*apiv2.GetPositions, error) {
 

@@ -11,6 +11,7 @@ package main
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	ewm "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
@@ -23,17 +24,19 @@ import (
 )
 
 const (
-	crPathGuidesName string = "zz-cloudrobotics-path-guide"
+	pathGuidePrefix string = "mir-runtime-estimator"
 )
 
 type mirEstimator struct {
-	robotName          string
-	mirClient          *mirclientv2.Client
-	clientset          *crclient.Clientset
-	eventChan          <-chan runtimeEstimationEvent
-	moveBaseChecker    *mirMoveBaseChecker
-	preservePathGuides bool
-	ewmPathQueue       ewmPathLookup
+	robotName            string
+	mirClient            *mirclientv2.Client
+	clientset            *crclient.Clientset
+	eventChan            <-chan runtimeEstimationEvent
+	moveBaseChecker      *mirMoveBaseChecker
+	precalcPathsWhenIdle bool
+	preservePathGuides   bool
+	mirFleetConfigMode   mirFleetConfigMode
+	ewmPathQueue         ewmPathLookup
 }
 
 // Lookup table with position type IDs which can be added to path guides
@@ -44,10 +47,29 @@ var posTypeIDForPathGuides = map[int]bool{
 // newMirEstimator returns a new instance of mirEstimator
 func newMirEstimator(robotName string, mirClient *mirclientv2.Client, clientset *crclient.Clientset, eventChan <-chan runtimeEstimationEvent) *mirEstimator {
 
-	estimator := &mirEstimator{robotName: robotName, mirClient: mirClient, clientset: clientset, eventChan: eventChan, preservePathGuides: false}
+	estimator := &mirEstimator{
+		robotName:            robotName,
+		mirClient:            mirClient,
+		clientset:            clientset,
+		eventChan:            eventChan,
+		precalcPathsWhenIdle: false,
+		preservePathGuides:   false,
+		mirFleetConfigMode:   mirFleetConfigNone}
 	estimator.moveBaseChecker = newMirMoveBaseChecker(mirClient)
 	estimator.ewmPathQueue = make(ewmPathLookup)
 	return estimator
+}
+
+// Set flag if all path guides should be created on startup
+func (m *mirEstimator) setMirFleetConfigMode(cfg mirFleetConfigMode) *mirEstimator {
+	m.mirFleetConfigMode = cfg
+	return m
+}
+
+// Set flag if a MiR Robot should precalculate path guides when its move base is idle
+func (m *mirEstimator) setPrecalcPathsWhenIdle(p bool) *mirEstimator {
+	m.precalcPathsWhenIdle = p
+	return m
 }
 
 // Set flag if path guides created on MiR robot should be preserved for debugging
@@ -57,17 +79,20 @@ func (m *mirEstimator) setPreservePathGuides(p bool) *mirEstimator {
 }
 
 // Run the estimator until done channel closes
-func (m *mirEstimator) run(done <-chan struct{}, precalcPathsWhenIdle bool) {
+func (m *mirEstimator) run(done <-chan struct{}) {
 	// Main loop
 	log.Info().Msg("Starting MiR estimator")
 
-	precalcPathWhenIdleChan := make(chan struct{})
-	if precalcPathsWhenIdle {
+	precalcPathsChan := make(chan struct{})
+	if m.precalcPathsWhenIdle {
 		log.Info().Msg("Path precalculation when robot is charging or idle is enabled")
-		go func() { precalcPathWhenIdleChan <- struct{}{} }()
+		go func() { precalcPathsChan <- struct{}{} }()
+	} else if m.mirFleetConfigMode == mirFleetConfigFleet {
+		log.Info().Msg("Path guide precalculation on MiR Fleet is enabled")
+		go func() { precalcPathsChan <- struct{}{} }()
 	}
 
-	for running := true; running == true; {
+	for running := true; running; {
 		select {
 		// Handle app close with higher priority
 		case <-done:
@@ -81,8 +106,8 @@ func (m *mirEstimator) run(done <-chan struct{}, precalcPathsWhenIdle bool) {
 				if e.eventType == watch.Added && e.runtimeEstimation.Status.Status != ewm.RunTimeEstimationStatusProcessed {
 					m.processCRAdded(e.runtimeEstimation)
 				}
-			case <-precalcPathWhenIdleChan:
-				m.precalcPathsWhenIdle(precalcPathWhenIdleChan)
+			case <-precalcPathsChan:
+				m.precalcPaths(precalcPathsChan)
 			}
 		}
 	}
@@ -167,8 +192,8 @@ func (m *mirEstimator) processCRAdded(rte *ewm.RunTimeEstimation) {
 
 }
 
-func (m *mirEstimator) getPosMaps(mapID string) (*posMaps, error) {
-	posMaps := &posMaps{
+func (m *mirEstimator) getPosMaps(mapID string) (*positionMaps, error) {
+	posMaps := &positionMaps{
 		posToGUID: make(map[string]string),
 		guidToPos: make(map[string]string),
 	}
@@ -199,7 +224,7 @@ func (m *mirEstimator) getPosMaps(mapID string) (*posMaps, error) {
 	return posMaps, nil
 }
 
-func (m *mirEstimator) collectMirPaths(mapID string, posMaps *posMaps, reqEwmPaths ewmPathLookup) (*mirPaths, error) {
+func (m *mirEstimator) collectMirPaths(mapID string, posMaps *positionMaps, reqEwmPaths ewmPathLookup) (*mirPaths, error) {
 
 	mirPaths := newMirPaths()
 
@@ -253,7 +278,7 @@ func (m *mirEstimator) collectMirPaths(mapID string, posMaps *posMaps, reqEwmPat
 
 }
 
-func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknownPaths ewmPathLookup, stopAt metav1.Time) {
+func (m *mirEstimator) precalculatePaths(mapID string, posMaps *positionMaps, unknownPaths ewmPathLookup, stopAt metav1.Time) {
 
 	// precalculation does not work when the robot is moving
 
@@ -287,9 +312,14 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 		}
 
 		// Prepare path guide for precalculation. This is a) an existing one for these start and goal positions or a new temporary one
-		pathGuide, err := prepareMirPathGuide(m.mirClient, mapID, posMaps.posToGUID[ewmPath.Start], posMaps.posToGUID[ewmPath.Goal])
+		pathGuide, err := prepareMirPathGuide(
+			m.mirClient, mapID, ewmPath.Start, ewmPath.Goal, posMaps, bool(m.mirFleetConfigMode != mirFleetConfigRobot), !m.preservePathGuides)
 		if err != nil {
-			log.Error().Err(err).Msg("Creating PathGuide")
+			if errors.Is(err, PathGuideNotFoundError) && m.mirFleetConfigMode == mirFleetConfigRobot {
+				log.Warn().Msgf("Path guide for path from start position %s to goal position %s not found, waiting for MiR Fleet to create it", ewmPath.Start, ewmPath.Goal)
+			} else {
+				log.Error().Err(err).Msg("Creating PathGuide")
+			}
 			continue
 		}
 
@@ -330,28 +360,18 @@ func (m *mirEstimator) precalculatePaths(mapID string, posMaps *posMaps, unknown
 			}
 			// Delete path from precalculation queue if it is listed
 			delete(m.ewmPathQueue, ewmPath)
-		}
-	}
 
-	// Cleanup automatically created path guides
-	if !m.preservePathGuides {
-		pathGuides, err := m.mirClient.GetPathGuides()
-		if err != nil {
-			log.Error().Err(err).Msg("Error getting path guides for cleanup, continue anyway")
-			return
-		}
-		var i int
-		for _, pathGuide := range *pathGuides {
-			if pathGuide.Name == crPathGuidesName {
+			// Cleanup automatically created path guides in some cases
+			if m.mirFleetConfigMode != mirFleetConfigRobot && !m.preservePathGuides && strings.HasPrefix(pathGuide.Name, pathGuidePrefix) {
 				err := m.mirClient.DeletePathGuidesGUID(pathGuide.GUID)
 				if err != nil {
 					log.Error().Err(err).Msg("Error cleaning up path guide, continue anyway")
 				} else {
-					i++
+					log.Info().Msgf("Cleaned up path guide %s", pathGuide.GUID)
 				}
+
 			}
 		}
-		log.Info().Msgf("Cleaned up %v path guides", i)
 	}
 }
 
@@ -398,83 +418,122 @@ func (m *mirEstimator) updateCRWithResult(rte *ewm.RunTimeEstimation, mirPaths *
 	log.Info().Msgf("Found results for %v of %v run time estimation requests", len(rte.Status.RunTimes), len(rte.Spec.Paths))
 }
 
-func (m *mirEstimator) precalcPathsWhenIdle(precalcPathWhenIdleChan chan<- struct{}) {
+func (m *mirEstimator) precalcPaths(precalcPathsChan chan<- struct{}) {
 
 	// Send message to channel of main loop
 	requeue := func(t time.Duration) {
 		go func(t time.Duration) {
 			time.Sleep(t)
-			precalcPathWhenIdleChan <- struct{}{}
+			precalcPathsChan <- struct{}{}
 		}(t)
 	}
 
-	// Fill queue in background if empty
-	if len(m.ewmPathQueue) == 0 {
-		go func() {
-			defer requeue(time.Second * 120)
+	if m.mirFleetConfigMode == mirFleetConfigFleet {
 
-			// Get Map ID from MiR API
-			mirStatus, err := m.mirClient.GetStatus()
+		defer requeue(time.Second * 30)
+		// Get Maps from MiR API
+		mirMaps, err := m.mirClient.GetMaps()
+		if err != nil {
+			log.Error().Err(err).Msg("Error getting maps from MiR Fleet")
+			return
+		}
+
+		for _, mirMapsItem := range *mirMaps {
+			// Get GUIDs for all positions on each map
+			posMaps, err := m.getPosMaps(mirMapsItem.GUID)
 			if err != nil {
-				log.Error().Err(err).Msgf("Error getting status of robot %q", m.robotName)
+				log.Error().Err(err).Msgf("Error getting positions from map %s on MiR Fleet", mirMapsItem.Name)
 				return
 			}
 
-			// Get GUIDs for all positions on active map
-			posMaps, err := m.getPosMaps(mirStatus.MapID)
-			if err != nil {
-				log.Error().Err(err).Msgf("Error getting positions from active map on robot %q", m.robotName)
-				return
-			}
-
-			// Collect paths from MiR
+			// Collect existing paths from MiR
 			ewmPaths := newPathLookupForPosMaps(posMaps)
-			mirPaths, err := m.collectMirPaths(mirStatus.MapID, posMaps, ewmPaths)
-			if err != nil {
-				log.Error().Err(err).Msgf("Error getting paths from active map on robot %q", m.robotName)
-				return
-			}
-			m.ewmPathQueue = mirPaths.unknownPaths
-			log.Info().Msgf("Queue with %v paths for precalculation created on robot %q", len(m.ewmPathQueue), m.robotName)
-		}()
-		log.Info().Msg("No queue for path precalculation when robot is charging or idling. Create queue in background")
-		return
-	}
 
-	// Run only when move base is idle
-	if !m.moveBaseChecker.isIdle() {
-		// Check again 10 seconds after finishing
-		requeue(time.Second * 10)
-		return
-	}
-	// and the robot is charging or does not run a mission
-	if m.moveBaseChecker.actionType != "charging" && m.moveBaseChecker.missionQueueID != 0 {
-		// Check again 10 seconds after finishing
-		requeue(time.Second * 10)
-		return
-	}
+			// Create path guide
+			m.createPathGuides(ewmPaths, mirMapsItem.GUID, posMaps)
+		}
 
-	// Start precalculation of the first path and requeue when finished
-	defer requeue(time.Millisecond * 500)
-
-	if m.moveBaseChecker.actionType == "charging" {
-		log.Info().Msg("Robot is charging, precalculate random paths meanwhile")
 	} else {
-		log.Info().Msg("Robot is idling, precalculate random paths meanwhile")
-	}
 
-	// Get GUIDs for all positions on active map
-	posMaps, err := m.getPosMaps(m.moveBaseChecker.mapID)
-	if err != nil {
-		log.Error().Err(err).Msgf("Error getting positions from active map on robot %q", m.robotName)
-		return
-	}
+		// Fill queue in background if empty
+		if len(m.ewmPathQueue) == 0 {
+			go func() {
+				defer requeue(time.Second * 120)
 
-	for k, v := range m.ewmPathQueue {
-		calculatePath := ewmPathLookup{k: v}
-		m.precalculatePaths(m.moveBaseChecker.mapID, posMaps, calculatePath, metav1.Time{time.Now().Add(5 * time.Minute)})
-		// Go back to main loop after each precalculation
-		break
+				// Get Map ID from MiR API
+				mirStatus, err := m.mirClient.GetStatus()
+				if err != nil {
+					log.Error().Err(err).Msgf("Error getting status of robot %q", m.robotName)
+					return
+				}
+
+				// Get GUIDs for all positions on active map
+				posMaps, err := m.getPosMaps(mirStatus.MapID)
+				if err != nil {
+					log.Error().Err(err).Msgf("Error getting positions from active map on robot %q", m.robotName)
+					return
+				}
+
+				// Collect existing paths from MiR
+				ewmPaths := newPathLookupForPosMaps(posMaps)
+				mirPaths, err := m.collectMirPaths(mirStatus.MapID, posMaps, ewmPaths)
+				if err != nil {
+					log.Error().Err(err).Msgf("Error getting paths from active map on robot %q", m.robotName)
+					return
+				}
+				m.ewmPathQueue = mirPaths.unknownPaths
+				log.Info().Msgf("Queue with %v paths for precalculation created on robot %q", len(m.ewmPathQueue), m.robotName)
+			}()
+			log.Info().Msg("No queue for path precalculation when robot is charging or idling. Create queue in background")
+			return
+		}
+
+		// Run only when move base is idle
+		if !m.moveBaseChecker.isIdle() {
+			// Check again 10 seconds after finishing
+			requeue(time.Second * 10)
+			return
+		}
+		// and the robot is charging or does not run a mission
+		if m.moveBaseChecker.actionType != "charging" && m.moveBaseChecker.missionQueueID != 0 {
+			// Check again 10 seconds after finishing
+			requeue(time.Second * 10)
+			return
+		}
+
+		// Start precalculation of the first path and requeue when finished
+		defer requeue(time.Millisecond * 500)
+
+		if m.moveBaseChecker.actionType == "charging" {
+			log.Info().Msg("Robot is charging, precalculate random paths meanwhile")
+		} else {
+			log.Info().Msg("Robot is idling, precalculate random paths meanwhile")
+		}
+
+		// Get GUIDs for all positions on active map
+		posMaps, err := m.getPosMaps(m.moveBaseChecker.mapID)
+		if err != nil {
+			log.Error().Err(err).Msgf("Error getting positions from active map on robot %q", m.robotName)
+			return
+		}
+
+		for k, v := range m.ewmPathQueue {
+			calculatePath := ewmPathLookup{k: v}
+			m.precalculatePaths(m.moveBaseChecker.mapID, posMaps, calculatePath, metav1.Time{time.Now().Add(5 * time.Minute)})
+			// Go back to main loop after each precalculation
+			break
+		}
+		log.Info().Msgf("%v paths are still in queue for precalculation", len(m.ewmPathQueue))
 	}
-	log.Info().Msgf("%v paths are still in queue for precalculation", len(m.ewmPathQueue))
+}
+
+func (m *mirEstimator) createPathGuides(pathsLookup ewmPathLookup, mapID string, posMaps *positionMaps) {
+	log.Info().Msg("Creating path guides")
+	for p := range pathsLookup {
+		_, err := prepareMirPathGuide(m.mirClient, mapID, p.Start, p.Goal, posMaps, true, false)
+		if err != nil {
+			log.Error().Err(err).Msgf("Error creating path guide from start position %s to goal position %s", p.Start, p.Goal)
+		}
+	}
+	log.Info().Msg("Creating path guides finished")
 }

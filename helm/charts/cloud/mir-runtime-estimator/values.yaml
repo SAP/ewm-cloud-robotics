@@ -5,12 +5,7 @@ envs:
   mirpassword: ""
   mirhost: "mir-api.default.svc.cluster.local"
   mirhttptimeout: "60"
-  mirpreservepathguides: "false"
   mirfleetconfig: ""
-  precalcpathswhenidle: "true"
   log: 
     format: "json"
     level: "info"
-
-robot:
-  name: "z"

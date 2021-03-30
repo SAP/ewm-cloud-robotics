@@ -26,3 +26,8 @@ func (e *Error) MirError() {}
 func (e *Error) Error() string {
 	return fmt.Sprintf("ErrorCode: %s, ErrorHuman: %s", e.ErrorCode, e.ErrorHuman)
 }
+
+// NewMirError provides a fresh error instance
+func NewMirError(errorCode, errorHuman string) error {
+	return &Error{ErrorCode: errorCode, ErrorHuman: errorHuman}
+}

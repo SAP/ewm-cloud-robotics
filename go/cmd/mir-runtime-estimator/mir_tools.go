@@ -17,6 +17,9 @@ import (
 	"strings"
 )
 
+// Path guide was not found
+var PathGuideNotFoundError = errors.New("Path guide not found")
+
 // Action types move base is idle when executing them
 var actionTypesMoveBaseIdle = map[string]bool{
 	"charging":              true,
@@ -145,8 +148,8 @@ func (m *mirMoveBaseChecker) isIdle() bool {
 	return false
 }
 
-func prepareMirPathGuide(m *mirclientv2.Client, mapID string, startPosGUID, goalPosGUID string) (*mirapisv2.GetPathGuidesItem, error) {
-
+// checkExistingPathGuide checks if the path guide already exists. If a name is set, it filters by name before querying for Position GUIDs
+func checkExistingPathGuide(m *mirclientv2.Client, name, startPosGUID, goalPosGUID string) (*mirapisv2.GetPathGuidesItem, error) {
 	// Check for existing path guides with these positions
 	pathGuides, err := m.GetPathGuides()
 	if err != nil {
@@ -155,6 +158,11 @@ func prepareMirPathGuide(m *mirclientv2.Client, mapID string, startPosGUID, goal
 
 	// Check if existing path guides include start and goal positions
 	for _, pathGuide := range *pathGuides {
+		// If a name is set, filter by name first
+		if name != "" && pathGuide.Name != name {
+			continue
+		}
+
 		positions, err := m.GetPathGuidesGUIDPositions(pathGuide.GUID)
 		if err != nil {
 			log.Error().Err(err).Msg("Get PathGuidesGUIDPositions")
@@ -163,7 +171,7 @@ func prepareMirPathGuide(m *mirclientv2.Client, mapID string, startPosGUID, goal
 		startPosFound := false
 		goalPosFound := false
 		for _, position := range *positions {
-			if position.PosType == "start" && startPosFound == false {
+			if position.PosType == "start" && !startPosFound {
 				p, err := m.GetPathGuidesGUIDPositionsGUID(pathGuide.GUID, position.GUID)
 				if err != nil {
 					log.Error().Err(err).Msg("Get PathGuidesGUIDPositionsGUID")
@@ -172,7 +180,7 @@ func prepareMirPathGuide(m *mirclientv2.Client, mapID string, startPosGUID, goal
 				if p.PosGUID == startPosGUID {
 					startPosFound = true
 				}
-			} else if position.PosType == "goal" && goalPosFound == false {
+			} else if position.PosType == "goal" && !goalPosFound {
 				p, err := m.GetPathGuidesGUIDPositionsGUID(pathGuide.GUID, position.GUID)
 				if err != nil {
 					log.Error().Err(err).Msg("Get PathGuidesGUIDPositionsGUID")
@@ -184,41 +192,94 @@ func prepareMirPathGuide(m *mirclientv2.Client, mapID string, startPosGUID, goal
 			}
 		}
 		// If start and goal positions are both found, return this path guide
-		if startPosFound == true && goalPosFound == true {
+		if startPosFound && goalPosFound {
 			log.Debug().Msgf("Using existing path guide with name %s", pathGuide.Name)
 			return &pathGuide, nil
 		}
 	}
 
-	// Create new path guide
-	newPathGuide, err := m.PostPathGuides(&mirapisv2.PostPathGuides{MapID: mapID, Name: crPathGuidesName})
-	if err != nil {
-		return nil, errors.Wrap(err, "Creating PathGuide")
+	return nil, PathGuideNotFoundError
+}
+
+func prepareMirPathGuide(m *mirclientv2.Client, mapID string, ewmStart, ewmGoal string, posMaps *positionMaps, create, cleanup bool) (*mirapisv2.GetPathGuidesItem, error) {
+
+	startPosGUID := posMaps.posToGUID[ewmStart]
+	goalPosGUID := posMaps.posToGUID[ewmGoal]
+	name := fmt.Sprintf("%s-%s-%s", pathGuidePrefix, ewmStart, ewmGoal)
+
+	// Check for existing path guides by name
+	pathGuide, err := checkExistingPathGuide(m, name, startPosGUID, goalPosGUID)
+	if err == nil {
+		return pathGuide, nil
+	} else if errors.Is(err, PathGuideNotFoundError) {
+		log.Debug().Msgf("Path guide from start %s to goal %s not found when searching for name", ewmStart, ewmGoal)
+	} else {
+		return nil, errors.Wrap(err, "Getting PathGuide by name")
 	}
 
-	// start pos
-	startPos := &mirapisv2.PostPathGuidesPositions{
-		PathGuideGUID: newPathGuide.GUID,
-		PosGUID:       startPosGUID,
-		PosType:       "start"}
+	if create {
+		// Try to create new path guide before scanning all path guides for GUIDs. That would take too long.
+		newPathGuide, err := m.PostPathGuides(&mirapisv2.PostPathGuides{MapID: mapID, Name: name})
+		if err != nil {
+			return nil, errors.Wrap(err, "Creating PathGuide")
+		}
 
-	// goalPos
-	goalPos := &mirapisv2.PostPathGuidesPositions{
-		PathGuideGUID: newPathGuide.GUID,
-		PosGUID:       goalPosGUID,
-		PosType:       "goal"}
+		// start pos
+		startPos := &mirapisv2.PostPathGuidesPositions{
+			PathGuideGUID: newPathGuide.GUID,
+			PosGUID:       startPosGUID,
+			PosType:       "start"}
 
-	_, err = m.PostPathGuidesPositions(newPathGuide.GUID, startPos)
-	if err != nil {
-		return nil, errors.Wrap(err, "Posting start position to PathGuide")
+		// goalPos
+		goalPos := &mirapisv2.PostPathGuidesPositions{
+			PathGuideGUID: newPathGuide.GUID,
+			PosGUID:       goalPosGUID,
+			PosType:       "goal"}
+
+		_, err = m.PostPathGuidesPositions(newPathGuide.GUID, startPos)
+		if err != nil {
+			return nil, errors.Wrap(err, "Posting start position to PathGuide")
+		}
+
+		var returnDelete error
+		var mirError *mirapisv2.Error
+		_, err = m.PostPathGuidesPositions(newPathGuide.GUID, goalPos)
+		if err == nil {
+			log.Debug().Msgf("Using new temporary path guide %s", newPathGuide.Name)
+			return newPathGuide, nil
+		} else if errors.As(err, &mirError) {
+			log.Debug().Msgf("There is already a path guide for start position %s to goal position %s. Start searching for that", ewmStart, ewmGoal)
+			if cleanup {
+				err := m.DeletePathGuidesGUID(newPathGuide.GUID)
+				if err != nil {
+					log.Error().Err(err).Msgf("Error deleting not needed path guide for start position %s to goal position %s. Continue anyway", ewmStart, ewmGoal)
+				}
+			}
+		} else {
+			returnDelete = err
+		}
+
+		if returnDelete != nil {
+			if cleanup {
+				err := m.DeletePathGuidesGUID(newPathGuide.GUID)
+				if err != nil {
+					log.Error().Err(err).Msgf("Error deleting not needed path guide for start position %s to goal position %s. Continue anyway", ewmStart, ewmGoal)
+				}
+			}
+			return nil, errors.Wrap(returnDelete, "Posting goal position to PathGuide")
+		}
+
 	}
 
-	_, err = m.PostPathGuidesPositions(newPathGuide.GUID, goalPos)
-	if err != nil {
-		return nil, errors.Wrap(err, "Posting goal position to PathGuide")
+	// Search for existing path guides by GUID
+	pathGuide, err = checkExistingPathGuide(m, "", startPosGUID, goalPosGUID)
+	if errors.Is(err, PathGuideNotFoundError) {
+		log.Debug().Msgf("Path guide from start %s to goal %s not found when searching for GUID", ewmStart, ewmGoal)
+		return nil, err
+	} else if err != nil {
+		return nil, errors.Wrap(err, "Searching PathGuide by GUID")
 	}
 
-	log.Debug().Msg("Using new temporary path guide")
-	return newPathGuide, nil
+	return pathGuide, nil
 
 }

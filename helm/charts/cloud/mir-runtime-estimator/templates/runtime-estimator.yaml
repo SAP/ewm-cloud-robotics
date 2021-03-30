@@ -1,3 +1,4 @@
+{{ if .Values.envs.mirfleetconfig }}
 apiVersion: v1
 kind: Secret
 metadata:
@@ -13,19 +14,19 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mir-runtime-estimator-{{ .Values.robot.name }}
+  name: mir-runtime-estimator-fleet
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mir-runtime-estimator-{{ .Values.robot.name }}
+      app: mir-runtime-estimator-fleet
   template:
     metadata:
       labels:
-        app: mir-runtime-estimator-{{ .Values.robot.name }}
+        app: mir-runtime-estimator-fleet
     spec:
       containers:
-      - name: mir-runtime-estimator
+      - name: mir-runtime-estimator-fleet
         image: {{ .Values.image }}
         env:
         - name: MIR_USER
@@ -43,14 +44,8 @@ spec:
             secretKeyRef:
               name: mir-api
               key: mirpswd
-        - name: ROBCO_ROBOT_NAME
-          value: "{{ .Values.robot.name }}"
         - name: MIR_HTTP_TIMEOUT
           value: "{{ .Values.envs.mirhttptimeout }}"
-        - name: MIR_PERSERVE_PATHGUIDES
-          value: "{{ .Values.envs.mirpreservepathguides }}"
-        - name: PRECALC_PATHS_WHEN_IDLE
-          value: "{{ .Values.envs.precalcpathswhenidle }}"
         - name: MIR_FLEET_CONFIG
           value: "{{ .Values.envs.mirfleetconfig }}"
         - name: LOG_LEVEL
@@ -64,3 +59,4 @@ spec:
           limits:
             memory: "256Mi"
             cpu: "250m"
+{{ end }}

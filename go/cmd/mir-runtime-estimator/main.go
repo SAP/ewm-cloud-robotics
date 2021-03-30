@@ -39,7 +39,7 @@ func getMirClient() (*mirv2.Client, error) {
 	if mirHost == "" {
 		return nil, errors.New("Environment variable MIR_HOST is not set")
 	}
-	log.Info().Msgf("Connecting to MiR robot on host %v", mirHost)
+	log.Info().Msgf("Connecting to MiR on host %v", mirHost)
 
 	mirUser := os.Getenv("MIR_USER")
 	if mirUser == "" {
@@ -114,13 +114,33 @@ func main() {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
-	// Get robot name for which the app is deployed
-	robotName := os.Getenv("ROBCO_ROBOT_NAME")
-	if robotName == "" {
-		log.Fatal().Msg("No name in environment variable ROBCO_ROBOT_NAME")
+	// If MIR_FLEET_CONFIG is enabled pathg uides are preserved and calculated in advance on MiR Fleet instance, but no path guides are created on the robots
+	// MiR Fleet is unstable in case path guides are deleted on robot side or the same path guides are created at different robots at about the same time
+	mirFleetConfig := strings.ToUpper(os.Getenv("MIR_FLEET_CONFIG"))
+	var mirFleetConfigMode mirFleetConfigMode
+	switch mirFleetConfig {
+	case string(mirFleetConfigRobot):
+		log.Info().Msg("Starting in MiR Fleet mode: robot")
+		mirFleetConfigMode = mirFleetConfigRobot
+	case string(mirFleetConfigFleet):
+		log.Info().Msg("Starting in MiR Fleet mode: fleet")
+		mirFleetConfigMode = mirFleetConfigFleet
+	case string(mirFleetConfigNone):
+		log.Info().Msg("MiR Fleet mode disabled")
+		mirFleetConfigMode = mirFleetConfigNone
+	default:
+		log.Panic().Msgf("Value %s for environment variable MIR_FLEET_CONFIG is invalid", mirFleetConfig)
 	}
 
-	log.Info().Msgf("mir-runtime-estimator app started on robot %q", robotName)
+	// Get robot name for which the app is deployed
+	robotName := os.Getenv("ROBCO_ROBOT_NAME")
+	if robotName == "" && mirFleetConfigMode != mirFleetConfigFleet {
+		log.Fatal().Msg("No name in environment variable ROBCO_ROBOT_NAME")
+	} else if mirFleetConfigMode == mirFleetConfigFleet {
+		log.Info().Msg("mir-runtime-estimator app started on MiR Fleet")
+	} else {
+		log.Info().Msgf("mir-runtime-estimator app started on robot %q", robotName)
+	}
 
 	// Initialize MiR interface
 	mirClient, err := getMirClient()
@@ -128,27 +148,47 @@ func main() {
 		log.Fatal().Err(err).Msg("Error initializing client for MiR robot")
 	}
 
-	// Initialize CR Watchers
-	clientset, err := getClientset()
-	eventChan, err := initInformer(done, clientset, robotName)
-	if err != nil {
-		log.Fatal().Err(err).Msg("Error initializing informer for CRs")
-	}
-
+	// Create clientset and event channel for CR
+	var clientset *crclient.Clientset
+	var eventChan <-chan runtimeEstimationEvent
 	precalcPathsWhenIdle := false
-	if strings.ToLower(os.Getenv("PRECALC_PATHS_WHEN_IDLE")) == "true" {
-		precalcPathsWhenIdle = true
+
+	// MiR Fleet instance does not need to listen to runtime estimation CRs because it cannot create paths
+	if mirFleetConfigMode != mirFleetConfigFleet {
+		// Initialize CR Watchers
+		clientset, err = getClientset()
+		if err != nil {
+			log.Fatal().Err(err).Msg("Error getting ClientSet for CRs")
+		}
+		eventChan, err = initInformer(done, clientset, robotName)
+		if err != nil {
+			log.Fatal().Err(err).Msg("Error initializing informer for CRs")
+		}
+		if strings.ToLower(os.Getenv("PRECALC_PATHS_WHEN_IDLE")) == "true" {
+			precalcPathsWhenIdle = true
+		}
 	}
 
 	// Initialize MiR estimator
 	estimator := newMirEstimator(robotName, mirClient, clientset, eventChan)
-	go estimator.run(done, precalcPathsWhenIdle)
 
-	// Enable preserving pathguides if requested (debugging only)
-	mirPreservPathGuides := os.Getenv("MIR_PERSERVE_PATHGUIDES")
-	if strings.ToLower(mirPreservPathGuides) == "true" {
+	mirPreservPathGuides := bool(strings.ToLower(os.Getenv("MIR_PERSERVE_PATHGUIDES")) == "true")
+
+	// Precalculate paths when robot move base is idle
+	if precalcPathsWhenIdle {
+		estimator.setPrecalcPathsWhenIdle(true)
+	}
+
+	// Enable preserving pathguides if requested
+	if mirPreservPathGuides {
 		estimator.setPreservePathGuides(true)
 	}
+
+	// Enable MiR Fleet mode if requested
+	estimator.setMirFleetConfigMode(mirFleetConfigMode)
+
+	// Run the estimator
+	go estimator.run(done)
 
 	// Wait for interrupt signal
 	<-interruptChan

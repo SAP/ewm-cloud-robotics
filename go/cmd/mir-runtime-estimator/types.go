@@ -21,7 +21,7 @@ type runtimeEstimationEvent struct {
 }
 
 // Map positions to their MiR GUIDs and the other way round
-type posMaps struct {
+type positionMaps struct {
 	posToGUID map[string]string
 	guidToPos map[string]string
 }
@@ -39,7 +39,7 @@ func newPathLookup(paths []ewm.Path) ewmPathLookup {
 }
 
 // newPathLookupForPosMaps return a new lookup table for an entire posMap
-func newPathLookupForPosMaps(posMaps *posMaps) ewmPathLookup {
+func newPathLookupForPosMaps(posMaps *positionMaps) ewmPathLookup {
 	lookup := make(ewmPathLookup)
 	for path1 := range posMaps.posToGUID {
 		for path2 := range posMaps.posToGUID {
@@ -65,3 +65,12 @@ func newMirPaths() *mirPaths {
 	mirPaths := &mirPaths{knownPaths: make(ewmPathToMiR), unknownPaths: make(ewmPathLookup)}
 	return mirPaths
 }
+
+// Modes for MiR Fleet Management
+type mirFleetConfigMode string
+
+const (
+	mirFleetConfigFleet mirFleetConfigMode = "FLEET"
+	mirFleetConfigRobot mirFleetConfigMode = "ROBOT"
+	mirFleetConfigNone  mirFleetConfigMode = ""
+)
