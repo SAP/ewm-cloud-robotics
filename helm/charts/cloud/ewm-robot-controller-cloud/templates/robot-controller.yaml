@@ -60,4 +60,3 @@ spec:
   selector:
     matchLabels:
       app: robot-controller-cloud
----

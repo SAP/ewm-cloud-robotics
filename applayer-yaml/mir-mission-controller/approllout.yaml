@@ -1,7 +1,6 @@
 ## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
 ##
 ##
-
 ---
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
@@ -23,4 +22,3 @@ spec:
         mirpassword: ""   # Password for MiR user
         mirhost: "mir-api.default.svc.cluster.local"  # Host name of MiR API
         locfailedmaxreset: 0  # Maximum times E_LOCALIZATION_FAILED errors are resetted per successfull mission
----

@@ -1,7 +1,6 @@
 ## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
 ##
 ##
-
 ---
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
@@ -24,4 +23,3 @@ spec:
         ewmclientid: "" # client ID - OAuth
         ewmclientsecret: "" # client secret - OAuth
         ewmtokenendpoint: "" # token endpoint for OAuth token (client_credentials)
----

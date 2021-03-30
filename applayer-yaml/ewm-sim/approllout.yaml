@@ -1,7 +1,6 @@
 ## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
 ##
 ##
-
 ---
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
@@ -22,4 +21,3 @@ spec:
         log:
           level: "DEBUG"
           output: "CONSOLE"
----
