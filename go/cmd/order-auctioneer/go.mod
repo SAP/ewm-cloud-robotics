@@ -8,6 +8,7 @@ require (
 	github.com/SAP/ewm-cloud-robotics/go/pkg/zerologr v0.0.0
 	github.com/googlecloudrobotics/core v0.0.0-20200626124521-e2d1b816f510
 	github.com/pkg/errors v0.9.1
+	github.com/stretchr/testify v1.6.1
 	k8s.io/apimachinery v0.20.1
 	k8s.io/client-go v0.20.1
 	sigs.k8s.io/controller-runtime v0.7.0

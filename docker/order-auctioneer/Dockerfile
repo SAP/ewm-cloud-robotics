@@ -9,6 +9,8 @@ COPY ./go/pkg/zerologr $GOPATH/src/pkg/zerologr
 COPY ./go/pkg/apis $GOPATH/src/pkg/apis
 COPY ./go/cmd/order-auctioneer $GOPATH/src/cmd/order-auctioneer
 WORKDIR $GOPATH/src/cmd/order-auctioneer
+# Run tests
+RUN CGO_ENABLED=0 GOOS=linux go test -v
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/order-auctioneer
 ###############################################################################

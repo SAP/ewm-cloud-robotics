@@ -9,28 +9,14 @@
 
 package main
 
-func minInt(args ...int) int {
-	var min int
-	if len(args) > 0 {
-		min = args[0]
-		for _, x := range args {
-			if x < min {
-				min = x
-			}
-		}
-	}
-	return min
-}
+import (
+	"testing"
 
-func maxInt(args ...int) int {
-	var max int
-	if len(args) > 0 {
-		max = args[0]
-		for _, x := range args {
-			if x > max {
-				max = x
-			}
-		}
-	}
-	return max
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewRobotStates(t *testing.T) {
+	rs := newRobotStates()
+	assert.NotNil(t, rs.isInScope, "isInScope map must be initialized")
+	assert.NotNil(t, rs.isAvailable, "isAvailable map must be initialized")
 }

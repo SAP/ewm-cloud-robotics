@@ -26,7 +26,6 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/client-go/util/workqueue"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -396,7 +395,7 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 	}
 
 	// Define new status
-	if len(clAuc.auctionsRunning) > 0 {
+	if len(clAuc.auctionsRunning) > 0 || len(clAuc.auctionsToCreate) > 0 {
 		newStatus.Status = ewm.AuctioneerStatusAuction
 	} else if len(clAuc.waitForOrderManager) > 0 || len(clAuc.auctionsToClose) > 0 {
 		newStatus.Status = ewm.AuctioneerStatusWaiting
@@ -557,7 +556,7 @@ func (r *reconcileAuctioneer) collectAuctions(ctx context.Context, reservations 
 	for _, res := range reservations.Items {
 		// Get OrderAuctions for this OrderReservation
 		var orderAuctions ewm.OrderAuctionList
-		err := r.client.List(ctx, &orderAuctions, ctrlclient.MatchingFields{ownerReferencesUID: string(res.UID)})
+		err := r.client.List(ctx, &orderAuctions, client.MatchingFields{ownerReferencesUID: string(res.UID)})
 		if err != nil {
 			return nil, nil, errors.Wrap(err, "get OrderAuctions")
 		}
@@ -584,7 +583,7 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 	// Get data to run auctions
 	// Get OrderReservations for this Auctioneer
 	var orderReservations ewm.OrderReservationList
-	err := r.client.List(ctx, &orderReservations, ctrlclient.MatchingFields{ownerReferencesUID: string(a.UID)})
+	err := r.client.List(ctx, &orderReservations, client.MatchingFields{ownerReferencesUID: string(a.UID)})
 	if err != nil {
 		return nil, nil, errors.Wrap(err, "get OrderReservations")
 	}
@@ -758,8 +757,20 @@ func (r *reconcileAuctioneer) getAuctionWinners(res ewm.OrderReservation, aucs [
 					auc.GetName())
 				break
 			}
-			bidding := biddingPlusRobot{robot: auc.GetLabels()[robotLabel], bidding: b}
-			biddings = append(biddings, bidding)
+			found := false
+			for _, who := range res.Status.WarehouseOrders {
+				if who.Lgnum == b.Lgnum && who.Who == b.Who {
+					found = true
+					break
+				}
+			}
+
+			if found {
+				bidding := biddingPlusRobot{robot: auc.GetLabels()[robotLabel], bidding: b}
+				biddings = append(biddings, bidding)
+			} else {
+				log.Error().Msgf("No reserveration for Warehouse Order %s.%s, skipping this bid from robot %q", b.Lgnum, b.Who, auc.GetLabels()[robotLabel])
+			}
 		}
 	}
 	// Sort biddings by lowest bidding
@@ -984,7 +995,7 @@ func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clAuc *
 	for i, auction := range clAuc.auctionsToComplete {
 		if i > 49 {
 			policy := metav1.DeletePropagationBackground
-			err := r.client.Delete(ctx, &auction.reservationCR, &ctrlclient.DeleteOptions{PropagationPolicy: &policy})
+			err := r.client.Delete(ctx, &auction.reservationCR, &client.DeleteOptions{PropagationPolicy: &policy})
 			if err != nil {
 				log.Error().Err(err).Msgf("Error cleaning up OrderReservation %q", auction.reservationCR.GetName())
 			} else {

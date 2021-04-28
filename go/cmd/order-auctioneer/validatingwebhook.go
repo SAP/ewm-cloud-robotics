@@ -44,7 +44,7 @@ func (v *auctioneerValidator) Handle(ctx context.Context, req admission.Request)
 	for _, a := range auctioneers.Items {
 		if a.GetName() != auctioneer.GetName() || a.GetNamespace() != auctioneer.GetNamespace() {
 			if reflect.DeepEqual(a.Spec.Scope, auctioneer.Spec.Scope) {
-				return admission.Errored(http.StatusBadRequest, fmt.Errorf("Auctioneer %q has the same spec.scope", a.GetName()))
+				return admission.Errored(http.StatusBadRequest, fmt.Errorf("auctioneer %q has the same spec.scope", a.GetName()))
 			}
 		}
 	}
