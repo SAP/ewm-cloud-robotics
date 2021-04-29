@@ -32,6 +32,7 @@ type classifiedAuctions struct {
 	auctionsToComplete  []auction
 	auctionsRunning     []auction
 	waitForOrderManager []auction
+	inconsistent        []auction
 }
 
 // Lookup if robot is in scope and available

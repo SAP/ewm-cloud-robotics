@@ -568,6 +568,29 @@ func TestClassifyAuctions(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "Inconsistent Auction",
+			auctions: []auction{
+				{
+					orderAuction:  "1710.Test",
+					reservationCR: *createTestOrderReservation("1710.Test", createTestEWMWarehouseOrders()[1:], ewm.OrderReservationStatusReservations),
+					auctionCRs: []ewm.OrderAuction{
+						*createTestOrderAuction("1710.Test", 3, false, createTestEWMWarehouseOrders(), ewm.OrderAuctionBidStatusRunning),
+					},
+				},
+			},
+			expected: &classifiedAuctions{
+				inconsistent: []auction{
+					{
+						orderAuction:  "1710.Test",
+						reservationCR: *createTestOrderReservation("1710.Test", createTestEWMWarehouseOrders()[1:], ewm.OrderReservationStatusReservations),
+						auctionCRs: []ewm.OrderAuction{
+							*createTestOrderAuction("1710.Test", 3, false, createTestEWMWarehouseOrders(), ewm.OrderAuctionBidStatusRunning),
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, test := range tests {

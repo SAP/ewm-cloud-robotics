@@ -277,8 +277,9 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 	}
 
 	// Update bid status
-	auction.Status.BidStatus = ewm.OrderAuctionBidStatusRunning
-	err = r.client.Status().Update(ctx, auction)
+	newAuction := auction.DeepCopy()
+	newAuction.Status.BidStatus = ewm.OrderAuctionBidStatusRunning
+	err = r.client.Status().Patch(ctx, newAuction, client.MergeFrom(auction))
 	if err != nil {
 		return errors.Wrap(err, "update OrderAuctionStatus")
 	}
@@ -388,10 +389,11 @@ func (r *reconcileBidAgent) closeBid(ctx context.Context, auction *ewm.OrderAuct
 	}
 
 	// Update the OrderAuction status and close the bid process
-	auction.Status.Biddings = bidResults
-	auction.Status.BidStatus = ewm.OrderAuctionBidStatusCompleted
+	newAuction := auction.DeepCopy()
+	newAuction.Status.Biddings = bidResults
+	newAuction.Status.BidStatus = ewm.OrderAuctionBidStatusCompleted
 
-	err := r.client.Status().Update(ctx, auction)
+	err := r.client.Status().Patch(ctx, newAuction, client.MergeFrom(auction))
 	if err != nil {
 		return errors.Wrap(err, "update OrderAuctionStatus")
 	}

@@ -418,10 +418,11 @@ func (r *reconcileAuctioneer) updateStatus(ctx context.Context, a *ewm.Auctionee
 		if a.Status.Status != newStatus.Status {
 			newStatus.LastStatusChangeTime = now
 		}
-		a.Status = newStatus
+		aNew := a.DeepCopy()
+		aNew.Status = newStatus
 
-		// Update status of  Auctioneer CR
-		err := r.client.Status().Update(ctx, a)
+		// Update status of Auctioneer CR
+		err := r.client.Status().Patch(ctx, aNew, client.MergeFrom(a))
 
 		if err != nil {
 			return errors.Wrap(err, "Auctioneer CR update")
@@ -603,8 +604,11 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 		return nil, nil, errors.Wrap(err, "map warehouse orders")
 	}
 
+	// Delete inconsistent OrderReservations
+	r.deleteInconsistentReservations(ctx, classifiedAuctions)
+
 	// Run Auctions
-	// First complete auctions, second close auctions, third create auctions, forth reserve more warehouse orders if needed, fifth cleanup
+	// First complete auctions, second close auctions, third create auctions, forth reserve more warehouse orders if needed
 	// First step
 	r.doCompleteAuctions(ctx, classifiedAuctions, auctionsPerRobot)
 
@@ -617,8 +621,8 @@ func (r *reconcileAuctioneer) runAuctions(ctx context.Context, a *ewm.Auctioneer
 	// Fourth step
 	r.doCreateReservations(ctx, a, classifiedAuctions, auctionsPerRobot, ordersPerRobot, rs)
 
-	// Fifth step
-	r.doCleanupReservations(ctx, classifiedAuctions)
+	// Cleanup
+	r.cleanupReservations(ctx, classifiedAuctions)
 
 	return classifiedAuctions, ordersPerRobot, nil
 }
@@ -636,14 +640,23 @@ func (r *reconcileAuctioneer) classifyAuctions(auctions []auction, rs *robotStat
 				// If there are Reservations with OrderAssigments, wait for the order manager to assign them
 				clAuc.waitForOrderManager = append(clAuc.waitForOrderManager, auc)
 			} else {
+				// If OrderReservation contains different warehouse orders then OrderAuction it is inconsistent. This might happen when the OrderReservation is changed after OrderAuction are created
+				inconsistent := false
 				// Close if all bids of the are completed or expired and wait otherwise. All CRs of an auction should have the same ValidUntil time
 				toClose := true
 				for _, auctionCR := range auc.auctionCRs {
+					if !reflect.DeepEqual(auctionCR.Spec.WarehouseOrders, auc.reservationCR.Status.WarehouseOrders) {
+						inconsistent = true
+						log.Error().Msgf("Inconsistent auction: OrderAuction %s includes different warehouse orders than OrderReservation %s", auctionCR.GetName(), auc.reservationCR.GetName())
+						break
+					}
 					if rs.isAvailable[auctionCR.GetLabels()[robotLabel]] && auctionCR.Status.BidStatus != ewm.OrderAuctionBidStatusCompleted && auctionCR.Spec.ValidUntil.After(time.Now()) {
 						toClose = false
 					}
 				}
-				if toClose {
+				if inconsistent {
+					clAuc.inconsistent = append(clAuc.inconsistent, auc)
+				} else if toClose {
 					clAuc.auctionsToClose = append(clAuc.auctionsToClose, auc)
 				} else {
 					clAuc.auctionsRunning = append(clAuc.auctionsRunning, auc)
@@ -985,7 +998,7 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 	}
 }
 
-func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clAuc *classifiedAuctions) {
+func (r *reconcileAuctioneer) cleanupReservations(ctx context.Context, clAuc *classifiedAuctions) {
 	// Sort reservations by creation time (descending)
 	sort.SliceStable(clAuc.auctionsToComplete, func(i, j int) bool {
 		return clAuc.auctionsToComplete[i].reservationCR.GetCreationTimestamp().UTC().After(clAuc.auctionsToComplete[j].reservationCR.GetCreationTimestamp().UTC())
@@ -996,11 +1009,27 @@ func (r *reconcileAuctioneer) doCleanupReservations(ctx context.Context, clAuc *
 		if i > 49 {
 			policy := metav1.DeletePropagationBackground
 			err := r.client.Delete(ctx, &auction.reservationCR, &client.DeleteOptions{PropagationPolicy: &policy})
-			if err != nil {
+			if k8serrors.IsNotFound(err) {
+				log.Debug().Msgf("Could not clean up OrderReservation %q - not found", auction.reservationCR.GetName())
+			} else if err != nil {
 				log.Error().Err(err).Msgf("Error cleaning up OrderReservation %q", auction.reservationCR.GetName())
 			} else {
 				log.Info().Msgf("Cleaned up OrderReservation %q", auction.reservationCR.GetName())
 			}
+		}
+	}
+}
+
+func (r *reconcileAuctioneer) deleteInconsistentReservations(ctx context.Context, clAuc *classifiedAuctions) {
+	for _, auction := range clAuc.inconsistent {
+		policy := metav1.DeletePropagationBackground
+		err := r.client.Delete(ctx, &auction.reservationCR, &client.DeleteOptions{PropagationPolicy: &policy})
+		if k8serrors.IsNotFound(err) {
+			log.Debug().Msgf("Could not delete inconsistent OrderReservation %q - not found", auction.reservationCR.GetName())
+		} else if err != nil {
+			log.Error().Err(err).Msgf("Error deleting inconsistent OrderReservation %q", auction.reservationCR.GetName())
+		} else {
+			log.Info().Msgf("Deleted inconsistent OrderReservation %q", auction.reservationCR.GetName())
 		}
 	}
 }
