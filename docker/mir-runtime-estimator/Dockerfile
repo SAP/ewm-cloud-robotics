@@ -13,7 +13,7 @@ WORKDIR $GOPATH/src/cmd/mir-runtime-estimator
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/mir-runtime-estimator
 ###############################################################################
-# STEP 2 nginx image
+# STEP 2 app image
 FROM alpine:latest
 # Install SSL ca certificates
 RUN apk add --no-cache ca-certificates
@@ -22,3 +22,7 @@ COPY --from=builder /go/bin/mir-runtime-estimator /cmd/mir-runtime-estimator
 RUN chmod +x /cmd/mir-runtime-estimator
 
 ENTRYPOINT ["/cmd/mir-runtime-estimator"]
+
+# Create & use appuser
+RUN adduser -D appuser
+USER appuser

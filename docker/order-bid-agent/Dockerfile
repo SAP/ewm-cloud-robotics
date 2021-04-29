@@ -14,7 +14,7 @@ RUN CGO_ENABLED=0 GOOS=linux go test -v
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/order-bid-agent
 ###############################################################################
-# STEP 2 nginx image
+# STEP 2 app image
 FROM alpine:latest
 # Install SSL ca certificates
 RUN apk add --no-cache ca-certificates
@@ -23,3 +23,7 @@ COPY --from=builder /go/bin/order-bid-agent /cmd/order-bid-agent
 RUN chmod +x /cmd/order-bid-agent
 
 ENTRYPOINT ["/cmd/order-bid-agent"]
+
+# Create & use appuser
+RUN adduser -D appuser
+USER appuser

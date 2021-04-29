@@ -23,4 +23,8 @@ RUN pip3 install /mircontroller && \
     python3 -c "import mircontroller"
 
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "-m", "mircontroller"]
+ENTRYPOINT ["python3", "-m", "mircontroller"]
+
+# Create & use appuser
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser

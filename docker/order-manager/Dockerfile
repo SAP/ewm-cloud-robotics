@@ -28,4 +28,8 @@ RUN pip3 install /robcoewmordermanager && \
     python3 -c "import robcoewmordermanager"
 
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "-m", "robcoewmordermanager" ]
+ENTRYPOINT ["python3", "-m", "robcoewmordermanager"]
+
+# Create & use appuser
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser

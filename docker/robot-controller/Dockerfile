@@ -23,4 +23,8 @@ RUN pip3 install /robcoewmrobotcontroller && \
     python3 -c "import robcoewmrobotcontroller"
 
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "-m", "robcoewmrobotcontroller" ]
+ENTRYPOINT ["python3", "-m", "robcoewmrobotcontroller"]
+
+# Create & use appuser
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser

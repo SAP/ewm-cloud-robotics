@@ -18,4 +18,4 @@ RUN pip3 install /fetchcontroller && \
     python3 -c "import fetchcontroller"
 
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "-m", "fetchcontroller" ]
+ENTRYPOINT ["python3", "-m", "fetchcontroller"]

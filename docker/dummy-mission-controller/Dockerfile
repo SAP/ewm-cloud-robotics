@@ -23,4 +23,8 @@ RUN pip3 install /dummycontroller/ && \
     python3 -c "import dummycontroller"
 
 STOPSIGNAL SIGTERM
-ENTRYPOINT [ "python3", "-m", "dummycontroller" ]
+ENTRYPOINT ["python3", "-m", "dummycontroller"]
+
+# Create & use appuser
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
