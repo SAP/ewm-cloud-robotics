@@ -9,6 +9,8 @@ COPY ./go/pkg/zerologr $GOPATH/src/pkg/zerologr
 COPY ./go/pkg/apis $GOPATH/src/pkg/apis
 COPY ./go/cmd/order-bid-agent $GOPATH/src/cmd/order-bid-agent
 WORKDIR $GOPATH/src/cmd/order-bid-agent
+# Run tests
+RUN CGO_ENABLED=0 GOOS=linux go test -v
 # Build the binary
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/order-bid-agent
 ###############################################################################

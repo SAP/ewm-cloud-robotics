@@ -22,7 +22,6 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-	ctrlclient "sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/controller"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 	"sigs.k8s.io/controller-runtime/pkg/event"
@@ -163,7 +162,7 @@ func (r *reconcileBidAgent) Reconcile(ctx context.Context, request reconcile.Req
 
 	// Get RunTimeEstimations for this OrderAuction
 	var runTimeEstimations ewm.RunTimeEstimationList
-	err = r.client.List(ctx, &runTimeEstimations, ctrlclient.MatchingFields{ownerReferencesUID: string(auction.UID)})
+	err = r.client.List(ctx, &runTimeEstimations, client.MatchingFields{ownerReferencesUID: string(auction.UID)})
 	if err != nil {
 		log.Error().Err(err).Msg("Error get RunTimeEstimations")
 		return reconcile.Result{}, errors.Wrap(err, "get RunTimeEstimations")
@@ -293,8 +292,8 @@ func (r *reconcileBidAgent) estimateStartPosition(ctx context.Context) (string, 
 	// If warehouse orders are in process, estimated start position is the destination of the last warehouse task
 	var warehouseOrders ewm.WarehouseOrderList
 	err := r.client.List(
-		ctx, &warehouseOrders, ctrlclient.MatchingLabels{robotLabel: r.robotName},
-		ctrlclient.MatchingFields{warehouseOrderOrderStatus: string(ewm.WarehouseOrderOrderStatusRunning)})
+		ctx, &warehouseOrders, client.MatchingLabels{robotLabel: r.robotName},
+		client.MatchingFields{warehouseOrderOrderStatus: string(ewm.WarehouseOrderOrderStatusRunning)})
 	if err != nil {
 		return "", errors.Wrap(err, "get WarehouseOrders")
 	}
@@ -317,7 +316,7 @@ func (r *reconcileBidAgent) estimateStartPosition(ctx context.Context) (string, 
 
 	// If no position found yet, estimated start position is the target of the latest mission which is running or succeded
 	var missions mis.MissionList
-	err = r.client.List(ctx, &missions, ctrlclient.MatchingLabels{robotLabel: r.robotName})
+	err = r.client.List(ctx, &missions, client.MatchingLabels{robotLabel: r.robotName})
 	if err != nil {
 		return "", errors.Wrap(err, "get Missions")
 	}
