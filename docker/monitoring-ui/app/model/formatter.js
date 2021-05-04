@@ -31,7 +31,7 @@ sap.ui.define([], function () {
 				return this.getOwnerComponent().getModel("i18n").getResourceBundle().getText("na");
             }
             var lsdString = lsd.toString();
-            var dateString = lsdString.substring(0,4) + "-" + lsdString.substring(4,6) + "-" + lsdString.substring(6,8) + "T" + lsdString.substring(8,10) + ":" + lsdString.substring(10,12) + ":" + lsdString.substring(12,14);
+            var dateString = lsdString.substring(0,4) + "-" + lsdString.substring(4,6) + "-" + lsdString.substring(6,8) + "T" + lsdString.substring(8,10) + ":" + lsdString.substring(10,12) + ":" + lsdString.substring(12,14) + "Z";
 			var date = new Date(dateString);
 			return (
 				('0' + date.getDate()).slice(-2) + "." + 
