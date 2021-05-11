@@ -50,6 +50,7 @@ EOF
 cd "$DIR/../tmp/.gopath"
 export GOPATH=$(pwd)
 export GOBIN=
+export GO111MODULE=auto
 
 # Get kubernetes code-generator and apimachinery
 echo "### Get kubernetes code-generator and apimachinery ###"

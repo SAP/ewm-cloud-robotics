@@ -103,6 +103,9 @@ help() {
     printf '               version ("-v <V> | --version <V> | --version=<V>"): Specify the version used within the AppRollout (default = "dev")\n'
     printf '                   - "./deploy.sh --version=0.0.1 rollout ewm-order-manager"\n'
     printf '                   - "./deploy.sh -v 0.0.1 rollout mir-mission-controller"\n'
+    printf '    bpr:       Combine build, push and rollout in one call\n'
+    printf '    br:        Combine build and rollout in one call\n'
+    printf '    pr:        Combine push and rollout in one call\n'
     printf '    dummies:   Instantiate dummy robots in your cluster based upon Helm chart: helm/dummy-robots\n'    
     printf '               DEFAULT:\n'
     printf '                   - "./deploy.sh dummies install"\n'
@@ -223,6 +226,41 @@ rollout() {
     rm -rf tmp/
 }
 
+bpr() {
+    if [[ "$file" != '' ]]; then
+        printf 'Cannot use --file option with bpr.\n'
+        die
+    fi
+    printf 'Starting build.\n'
+    build "$@"
+    printf 'Starting push.\n'
+    file=''
+    push "$@"
+    printf 'Starting rollout.\n'
+    file=''
+    rollout "$@"
+}
+
+br() {
+    printf 'Starting build.\n'
+    build "$@"
+    printf 'Starting rollout.\n'
+    rollout "$@"
+}
+
+pr() {
+    if [[ "$file" != '' ]]; then
+        printf 'Cannot use --file option with bpr.\n'
+        die
+    fi
+    printf 'Starting push.\n'
+    file=''
+    push "$@"
+    printf 'Starting rollout.\n'
+    file=''
+    rollout "$@"
+}
+
 dummies() {
     verify_kubectl_context
 
@@ -307,7 +345,7 @@ done
 
 #############################################
 ## CALL COMMAND (FROM REMAINING POSITIONAL PARAMETERS)
-if [[ ! ""$1"" =~ ^(build|push|rollout|help|dummies)$ ]]; then
+if [[ ! ""$1"" =~ ^(build|push|rollout|bpr|br|pr|help|dummies)$ ]]; then
     help && exit 1
 else
     if [ "$2" ]; then
