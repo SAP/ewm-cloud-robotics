@@ -8,8 +8,8 @@ require (
 	github.com/SAP/ewm-cloud-robotics/go/pkg/mir-interface v0.0.0
 	github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig v0.0.0
 	github.com/pkg/errors v0.9.1
-	k8s.io/apimachinery v0.20.1
-	k8s.io/client-go v0.20.1
+	k8s.io/apimachinery v0.20.6
+	k8s.io/client-go v0.20.6
 )
 
 replace (
