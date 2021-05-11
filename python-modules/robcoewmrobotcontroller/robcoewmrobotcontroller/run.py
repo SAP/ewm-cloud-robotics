@@ -24,8 +24,6 @@ import attr
 from prometheus_client import start_http_server
 
 from robcoewmrobotcontroller.ordercontroller import OrderHandler
-from robcoewmrobotcontroller.robotrequestcontroller import (
-    RobotRequestController, RobotRequestHandler, )
 from robcoewmrobotcontroller.robot import EWMRobot
 from robcoewmrobotcontroller.robotcontroller import RobotHandler
 from robcoewmrobotcontroller.missioncontroller import MissionController, MissionHandler
@@ -43,8 +41,6 @@ class RobotController:
         validator=attr.validators.instance_of(RobotConfigurationController))
     mission: MissionController = attr.ib(
         validator=attr.validators.instance_of(MissionController))
-    robot_request: RobotRequestController = attr.ib(
-        validator=attr.validators.instance_of(RobotRequestController))
 
 
 class MainLoopController:
@@ -78,15 +74,13 @@ def create_robot_controller(
         robot_name: str,
         rc_handler: RobotConfigurationHandler,
         r_handler: RobotHandler,
-        m_handler: MissionHandler,
-        rr_handler: RobotRequestHandler) -> RobotController:
+        m_handler: MissionHandler) -> RobotController:
     """Create controllers for a robot."""
     # Create controller
     robot_config = RobotConfigurationController(robot_name, rc_handler)
     mission = MissionController(robot_config, m_handler, r_handler)
-    robot_request = RobotRequestController(robot_config, rr_handler)
 
-    return RobotController(robot_config, mission, robot_request)
+    return RobotController(robot_config, mission)
 
 
 def run_robot(
@@ -95,8 +89,7 @@ def run_robot(
     """Run one instance of a robot."""
     # Create instance of one robot
     robot = EWMRobot(
-        robot_controller.robot_config, robot_controller.mission, o_handler,
-        robot_controller.robot_request)
+        robot_controller.robot_config, robot_controller.mission, o_handler)
     return robot
 
 
@@ -113,7 +106,6 @@ def run_robots():
     r_handler = RobotHandler()
     m_handler = MissionHandler()
     o_handler = OrderHandler()
-    rr_handler = RobotRequestHandler()
 
     # Get robots
     robots_env = os.environ.get('ROBOTS')
@@ -126,8 +118,7 @@ def run_robots():
     for robot_name in robots_name:
         if not robot_name:
             continue
-        robot_controller = create_robot_controller(
-            robot_name, rc_handler, r_handler, m_handler, rr_handler)
+        robot_controller = create_robot_controller(robot_name, rc_handler, r_handler, m_handler)
         robot_controllers.append(robot_controller)
 
     # Start handler
@@ -135,7 +126,6 @@ def run_robots():
     r_handler.run(multiple_executor_threads=True)
     m_handler.run(multiple_executor_threads=True)
     o_handler.run(multiple_executor_threads=True)
-    rr_handler.run(multiple_executor_threads=True)
 
     # Create robots
     robots: List[EWMRobot] = []
@@ -151,7 +141,6 @@ def run_robots():
     r_handler.process_all_crs()
     m_handler.process_all_crs()
     o_handler.process_all_crs()
-    rr_handler.process_all_crs()
 
     try:
         # Looping while K8S stream watchers are running
@@ -161,11 +150,6 @@ def run_robots():
                 _LOGGER.error(
                     'Uncovered exception in "%s" thread of order handler. Raising it in main'
                     ' thread', k)
-                raise exc
-            for k, exc in rr_handler.thread_exceptions.items():
-                _LOGGER.error(
-                    'Uncovered exception in "%s" thread of robotrequest handler. Raising it '
-                    'in main thread', k)
                 raise exc
             for k, exc in rc_handler.thread_exceptions.items():
                 _LOGGER.error(
@@ -199,4 +183,3 @@ def run_robots():
         r_handler.stop_watcher()
         m_handler.stop_watcher()
         o_handler.stop_watcher()
-        rr_handler.stop_watcher()

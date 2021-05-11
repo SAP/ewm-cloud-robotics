@@ -19,7 +19,7 @@ import time
 from prometheus_client import start_http_server
 
 from robcoewmordermanager.ordercontroller import OrderController
-from robcoewmordermanager.robotrequestcontroller import RobotRequestController
+from robcoewmordermanager.robotconfigcontroller import RobotConfigurationController
 from robcoewmordermanager.orderreservationcontroller import OrderReservationController
 from robcoewmordermanager.orderauctioncontroller import OrderAuctionController
 from robcoewmordermanager.auctioneercontroller import AuctioneerController
@@ -66,7 +66,7 @@ def run_ordermanager():
 
     # Create K8S handler instances
     k8s_oc = OrderController()
-    k8s_rc = RobotRequestController()
+    k8s_rc = RobotConfigurationController()
     k8s_orc = OrderReservationController()
     k8s_oac = OrderAuctionController()
     k8s_auc = AuctioneerController()
@@ -81,7 +81,7 @@ def run_ordermanager():
     manager.orderauctioncontroller.run(reprocess=False, multiple_executor_threads=False)
     manager.ordercontroller.run(reprocess=True, multiple_executor_threads=True)
     manager.orderreservationcontroller.run(reprocess=True, multiple_executor_threads=True)
-    manager.robotrequestcontroller.run(reprocess=True, multiple_executor_threads=True)
+    manager.robotconfigcontroller.run(reprocess=True, multiple_executor_threads=True)
 
     _LOGGER.info('SAP EWM Order Manager started')
 
@@ -97,9 +97,9 @@ def run_ordermanager():
                     'Uncovered exception in "%s" thread of ordercontroller. Raising it in main '
                     'thread', k)
                 raise exc
-            for k, exc in manager.robotrequestcontroller.thread_exceptions.items():
+            for k, exc in manager.robotconfigcontroller.thread_exceptions.items():
                 _LOGGER.error(
-                    'Uncovered exception in "%s" thread of robotrequestcontroller. Raising it in '
+                    'Uncovered exception in "%s" thread of robotconfigcontroller. Raising it in '
                     'main thread', k)
                 raise exc
             for k, exc in manager.orderreservationcontroller.thread_exceptions.items():
@@ -132,7 +132,7 @@ def run_ordermanager():
         # Stop K8S CR watchers
         _LOGGER.info('Stopping K8S CR watchers')
         manager.ordercontroller.stop_watcher()
-        manager.robotrequestcontroller.stop_watcher()
+        manager.robotconfigcontroller.stop_watcher()
         manager.orderreservationcontroller.stop_watcher()
         manager.orderauctioncontroller.stop_watcher()
         manager.auctioneercontroller.stop_watcher()

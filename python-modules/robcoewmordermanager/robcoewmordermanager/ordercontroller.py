@@ -17,10 +17,12 @@ import threading
 import time
 
 from collections import OrderedDict
-from typing import Dict, OrderedDict as TOrderedDict
+from typing import Dict, List, OrderedDict as TOrderedDict, Tuple
+
+from cattr import structure
 
 from robcoewmtypes.helper import get_sample_cr
-from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
+from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec, WarehouseOrderCRDStatus
 
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
@@ -254,3 +256,30 @@ class OrderController(K8sCRHandler):
                     'status'].get('data'):
                 data_processed = {'process_status': custom_res['status']['data']}
                 self.update_cr_spec(name, data_processed)
+
+    def check_for_running_whos(self, robot: str) -> bool:
+        """Check if there are RUNNING warehouse orders for the robot."""
+        crs = self.list_all_cr()
+        for c_res in crs:
+            if (c_res['metadata'].get('labels', {}).get('cloudrobotics.com/robot-name') == robot
+                    and c_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_RUNNING):
+                return True
+
+        return False
+
+    def get_running_whos(self, robot: str) -> List[Tuple[WarehouseOrderCRDSpec, WarehouseOrderCRDStatus]]:
+        """Get running warehouse orders of a robot."""
+        whos = []
+        crs = self.list_all_cr()
+        for c_res in crs:
+            if (c_res['metadata'].get('labels', {}).get('cloudrobotics.com/robot-name') == robot
+                    and c_res['spec'].get('order_status') == WarehouseOrderCRDSpec.STATE_RUNNING):
+                who_spec = structure(c_res['spec'], WarehouseOrderCRDSpec)
+                if c_res.get('status', {}).get('data') is not None:
+                    who_status = structure(c_res['status'], WarehouseOrderCRDStatus)
+                else:
+                    who_status = WarehouseOrderCRDStatus()
+
+                whos.append((who_spec, who_status))
+
+        return whos

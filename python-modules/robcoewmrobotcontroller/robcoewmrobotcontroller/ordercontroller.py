@@ -55,13 +55,6 @@ class OrderHandler(K8sCRHandler):
                 _LOGGER.info(
                     'Skip "%s" because warehouse order is assigned to a different robot', name)
                 return False
-        # Skip warehouse order which is not RUNNING
-        order_status = custom_res['spec'].get('order_status')
-        if order_status != WarehouseOrderCRDSpec.STATE_RUNNING:
-            _LOGGER.debug(
-                'Skip "%s" because warehouse order is not %s but in order_status "%s"', name,
-                WarehouseOrderCRDSpec.STATE_RUNNING, order_status)
-            return False
         # Skip warehouse order if process status from order manager is not
         # equal to status of the warehouse order. Consider entries for own robot resource only
         process_status = [s for s in custom_res['spec'].get(

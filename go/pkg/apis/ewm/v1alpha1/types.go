@@ -246,12 +246,13 @@ type RobotConfigurationSpec struct {
 
 // RobotConfigurationStatus represents the status of RobotConfiguration CRD
 type RobotConfigurationStatus struct {
-	Lgnum        string `json:"lgnum"`
-	Mission      string `json:"mission"`
-	Statemachine string `json:"statemachine"`
-	SubWho       string `json:"subwho"`
-	Tanum        string `json:"tanum"`
-	Who          string `json:"who"`
+	Lgnum        string      `json:"lgnum"`
+	Mission      string      `json:"mission"`
+	Statemachine string      `json:"statemachine"`
+	SubWho       string      `json:"subwho"`
+	Tanum        string      `json:"tanum"`
+	Who          string      `json:"who"`
+	UpdateTime   metav1.Time `json:"updateTime"`
 }
 
 // RobotConfigurationMode describes the operating mode of a robot
@@ -263,55 +264,6 @@ const (
 	RobotConfigurationModeIdle   RobotConfigurationMode = "IDLE"
 	RobotConfigurationModeCharge RobotConfigurationMode = "CHARGE"
 	RobotConfigurationModeStop   RobotConfigurationMode = "STOP"
-)
-
-// +genclient
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// RobotRequest represents the RobotRequest CRD
-type RobotRequest struct {
-	metav1.TypeMeta   `json:",inline"`
-	metav1.ObjectMeta `json:"metadata,omitempty"`
-
-	Spec RobotRequestSpec `json:"spec,omitempty"`
-	// +optional
-	Status RobotRequestStatus `json:"status,omitempty"`
-}
-
-// +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
-
-// RobotRequestList represents the array of RobotRequest CRD
-type RobotRequestList struct {
-	metav1.TypeMeta `json:",inline"`
-	metav1.ListMeta `json:"metadata,omitempty"`
-
-	Items []RobotRequest `json:"items"`
-}
-
-// RobotRequestSpec represents the spec of RobotRequest CRD
-type RobotRequestSpec struct {
-	Lgnum               string `json:"lgnum"`
-	Rsrc                string `json:"rsrc"`
-	NotifyWhoCompletion string `json:"notifywhocompletion"`
-	NotifyWhtCompletion string `json:"notifywhtcompletion"`
-	RequestWork         bool   `json:"requestwork"`
-	RequestNewWho       bool   `json:"requestnewwho"`
-}
-
-// RobotRequestStatus represents the status of RobotRequest CRD
-type RobotRequestStatus struct {
-	Data   []RobotRequestSpec       `json:"data,omitempty"`
-	Status RobotRequestStatusStatus `json:"status,omitempty"`
-}
-
-// RobotRequestStatusStatus describes the status of a RobotRequest
-type RobotRequestStatusStatus string
-
-// Values for RobotRequestStatusStatus
-const (
-	RobotRequestStatusWaiting   RobotRequestStatusStatus = "WAITING"
-	RobotRequestStatusRunning   RobotRequestStatusStatus = "RUNNING"
-	RobotRequestStatusProcessed RobotRequestStatusStatus = "PROCESSED"
 )
 
 // +genclient

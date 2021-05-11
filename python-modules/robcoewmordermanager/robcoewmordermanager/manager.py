@@ -25,7 +25,8 @@ from dateutil.parser import isoparse
 
 from prometheus_client import Counter
 
-from robcoewmtypes.robot import RequestFromRobot, RequestFromRobotStatus, RobcoRobotStates
+from robcoewmtypes.robot import RobotConfigurationSpec, RobotConfigurationStatus, RobcoRobotStates
+from robcoewmtypes.statemachine_config import RobotEWMConfig
 from robcoewmtypes.warehouseorder import (
     ConfirmWarehouseTask, WarehouseOrder, WarehouseOrderCRDSpec, WarehouseOrderIdent)
 from robcoewmtypes.auction import OrderReservationSpec, OrderReservationStatus, AuctioneerStatus
@@ -40,7 +41,7 @@ from robcoewminterface.exceptions import (
 
 from .helper import ProcessedMessageMemory, RobotIdentifier, WhoIdentifier
 from .ordercontroller import OrderController
-from .robotrequestcontroller import RobotRequestController
+from .robotconfigcontroller import RobotConfigurationController
 from .orderreservationcontroller import OrderReservationController
 from .orderauctioncontroller import OrderAuctionController
 from .auctioneercontroller import AuctioneerController
@@ -60,7 +61,7 @@ class EWMOrderManager:
         'sap_ewm_warehouse_orders', 'Completed EWM Warehouse orders', ['robot', 'result'])
 
     def __init__(
-            self, oc: OrderController, rc: RobotRequestController,
+            self, oc: OrderController, rc: RobotConfigurationController,
             orc: OrderReservationController, oac: OrderAuctionController,
             auc: AuctioneerController, roc: RobotController) -> None:
         """Construct."""
@@ -76,7 +77,7 @@ class EWMOrderManager:
 
         # K8s Custom Resource Controller
         self.ordercontroller = oc
-        self.robotrequestcontroller = rc
+        self.robotconfigcontroller = rc
         self.orderreservationcontroller = orc
         self.orderauctioncontroller = oac
         self.auctioneercontroller = auc
@@ -87,8 +88,8 @@ class EWMOrderManager:
         self.ordercontroller.register_callback(
             'KubernetesWhoCR', ['MODIFIED', 'REPROCESS'], self.process_who_cr_cb)
         # Robot request controller
-        self.robotrequestcontroller.register_callback(
-            'RobotRequest', ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotrequest_callback)
+        self.robotconfigcontroller.register_callback(
+            'RobotConfiguration', ['ADDED', 'MODIFIED', 'REPROCESS'], self.robotconfig_cb)
         # Order reservation controller
         self.orderreservationcontroller.register_callback(
             'OrderReservation', ['ADDED', 'MODIFIED', 'REPROCESS'], self.orderreservation_cb)
@@ -141,158 +142,143 @@ class EWMOrderManager:
         self.reservation_timeout = float(envvar['RESERVATION_TIMEOUT'])  # type: ignore
         _LOGGER.info('Order auction reservation timeout is %s minutes', self.reservation_timeout)
 
-    def robotrequest_callback(self, name: str, custom_res: Dict) -> None:
+    def robotconfig_cb(self, name: str, custom_res: Dict) -> None:
         """
-        Handle exceptions of robotrequest CR processing.
+        Handle exceptions of robotconfiguration CR processing.
 
         Used for K8S CR handler.
         """
+        # Return if there is no status yet
+        if custom_res.get('status') is None:
+            return
         try:
-            self.process_robotrequest_cr(name, custom_res)
+            self.process_robotconfig_cr(name, custom_res)
         except (ConnectionError, TimeoutError, IOError) as err:
             _LOGGER.error('Error connecting to SAP EWM Backend: "%s" - try again later', err)
         except ODataAPIException as err:
             _LOGGER.error('Error in SAP EWM Backend: "%s" - try again later', err)
 
-    def process_robotrequest_cr(self, name: str, custom_res: Dict) -> None:
+    def process_robotconfig_cr(self, name: str, custom_res: Dict) -> None:
         """
-        Process a robotrequest custom resource.
+        Process a robotconfiguration custom resource.
 
         Used for K8S CR handler.
         """
-        if custom_res.get('status', {}).get('status') == RequestFromRobotStatus.STATE_PROCESSED:
-            return
+        # Structure the robotconfig data
+        config_spec = structure(custom_res['spec'], RobotConfigurationSpec)
+        config_status = structure(custom_res['status'], RobotConfigurationStatus)
 
-        # Structure the request data
-        request = structure(custom_res['spec'], RequestFromRobot)
-        if not request:
-            return
-        # Get statusdata if available
-        if custom_res.get('status', {}).get('data'):
-            status = structure(custom_res['status'], RequestFromRobotStatus)
-        else:
-            status_data = RequestFromRobot(request.lgnum, request.rsrc)
-            status = RequestFromRobotStatus(status_data)
+        robot = name
+        robotident = RobotIdentifier(config_spec.lgnum, robot.upper())
 
-        # Return if request was already processed
-        if self.msg_mem.check_robotrequest_processed(name, status):
-            _LOGGER.debug('Robot request "%s" already processed in previous run - skip', name)
-            return
+        firstrequest = bool(config_status != self.msg_mem.robot_conf_status[robot])
 
-        robotident = RobotIdentifier(request.lgnum, request.rsrc)
-        robot = request.rsrc.lower()
-
-        # If robot is not available or last status update is too old return
-        robot_status = self.robotcontroller.get_robot_status(robot)
-        if robot_status.robot.state != RobcoRobotStates.STATE_AVAILABLE:
-            if status.status != RequestFromRobotStatus.STATE_WAITING:
-                _LOGGER.error(
-                    'Robot %s is in state %s. Wait processing robotrequest %s', robot,
-                    robot_status.robot.state, name)
-                status.status = RequestFromRobotStatus.STATE_WAITING
-                self.robotrequestcontroller.update_status(name, unstructure(status))
-                self.msg_mem.memorize_robotrequest(name, status)
-            return
-
-        try:
-            update_time = isoparse(robot_status.robot.updateTime)
-        except ValueError:
-            if status.status != RequestFromRobotStatus.STATE_WAITING:
-                _LOGGER.error(
-                    'Unable to determine updateTime in CR status of robot %s. Not processing '
-                    'robotrequest %s', robot, name)
-                status.status = RequestFromRobotStatus.STATE_WAITING
-                self.robotrequestcontroller.update_status(name, unstructure(status))
-                self.msg_mem.memorize_robotrequest(name, status)
-            return
-        else:
-            if update_time + timedelta(minutes=2) < datetime.now(timezone.utc):
-                if status.status != RequestFromRobotStatus.STATE_WAITING:
+        # Unassign warehouse orders if robot starts charging or enters STOP mode
+        unassign = False
+        if firstrequest is True:
+            if config_status.statemachine == RobotEWMConfig.state_charging:
+                _LOGGER.info(
+                    'Robot %s starts charging, unassigning warehouse orders from queue', robot)
+                unassign = True
+            elif (config_spec.mode == RobotConfigurationSpec.MODE_STOP
+                    and config_status.statemachine in RobotEWMConfig.idle_states):
+                _LOGGER.info(
+                    'Robot %s is in STOP mode, unassigning warehouse orders from queue', robot)
+                unassign = True
+            elif config_status.statemachine in RobotEWMConfig.error_states:
+                try:
+                    update_time = isoparse(config_status.updateTime)
+                except ValueError:
+                    unassign = True
                     _LOGGER.error(
-                        'Last status update time of robot %s is older than 2 minutes. '
-                        'Wait processing robotrequest %s', robot, name)
-                    status.status = RequestFromRobotStatus.STATE_WAITING
-                    self.robotrequestcontroller.update_status(name, unstructure(status))
-                    self.msg_mem.memorize_robotrequest(name, status)
-                return
+                        'Robot %s is in error state and updateTime in CR status of '
+                        'robotconfiguration is invalid. Unassigning warehouse orders from queue',
+                        robot)
+                else:
+                    if update_time + timedelta(minutes=10) < datetime.now(timezone.utc):
+                        unassign = True
+                        _LOGGER.error(
+                            'Robot %s is in error state for more than 10 minutes. Unassigning '
+                            'warehouse orders from queue', robot)
+        if unassign is True:
+            whos = self.ordercontroller.get_running_whos(robot)
+            for who_spec, who_status in whos:
+                # Only able to unassign before first confirmation was made
+                unassign_who = True
+                for conf in who_status.data:
+                    if (conf.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF and
+                            conf.validate_confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
+                        unassign_who = False
 
-        # Determine if it is the first request
-        self.msg_mem.request_count[name] += 1
-        firstrequest = bool(self.msg_mem.request_count[name] == 1)
+                if unassign_who is True:
+                    try:
+                        self.ewmwho.unassign_robot_warehouseorder(
+                            who_spec.data.lgnum, who_spec.data.rsrc, who_spec.data.who)
+                    except (TimeoutError, ConnectionError) as err:
+                        # If not successfull. Raise to put message back in queue
+                        _LOGGER.error(
+                            'Connection error while requesting unassigning warehouse order %s from'
+                            ' robot  %s: %s', who_spec.data.who, who_spec.data.rsrc, err)
+                        raise
+                    except IOError as err:
+                        _LOGGER.error(
+                            'IOError error while requesting unassigning warehouse order %s from '
+                            'robot  %s: %s', who_spec.data.who, who_spec.data.rsrc, err)
+                        raise
+                    except NoOrderFoundError:
+                        _LOGGER.error(
+                            'Unable to unassign warehouse order %s.%s: not found',
+                            who_spec.data.lgnum, who_spec.data.who)
+                    except ODataAPIException as err:
+                        _LOGGER.error(
+                            'Business error in SAP EWM Backend while requesting unassigning '
+                            'warehouse order %s from robot  %s: %s', who_spec.data.who,
+                            who_spec.data.rsrc, err)
+                        raise
+                    else:
+                        _LOGGER.info(
+                            'Warehouse order %s.%s successfully unassigned from robot %s',
+                            who_spec.data.lgnum, who_spec.data.who, who_spec.data.rsrc)
+                    self.cleanup_who(WhoIdentifier(who_spec.data.lgnum, who_spec.data.who))
+                else:
+                    _LOGGER.error(
+                        'Cannot unassign warehouse order %s.%s from robot %s because first '
+                        'confirmation of a warehouse task is already made', who_spec.data.lgnum,
+                        who_spec.data.who, who_spec.data.rsrc)
 
-        # Request work, when robot is asking
-        if request.requestnewwho and not status.data.requestnewwho:
-            if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
-                if firstrequest:
-                    _LOGGER.info(
-                        'Order auction process running for robot %s, only looking for already '
-                        'assigned warehouse orders for robot request %s', robotident.rsrc.lower(),
-                        name)
-                # Ensure that the warehouse orders already assigned to the robot are there
-                success = self.get_and_send_robot_whos(
-                    robotident, firstrequest=firstrequest, newwho=False, onlynewwho=False)
-            else:
-                # Get a new warehouse order for the robot
-                success = self.get_and_send_robot_whos(
-                    robotident, firstrequest=firstrequest, newwho=False, onlynewwho=True)
-            if success:
-                status.data.requestnewwho = True
-        elif request.requestwork and not status.data.requestwork:
-            if self.is_orderauction_running(robotident.rsrc.lower(), firstrequest=firstrequest):
-                if firstrequest:
-                    _LOGGER.info(
-                        'Order auction process running for robot %s, only looking for already '
-                        'assigned warehouse orders for robot request %s', robotident.rsrc.lower(),
-                        name)
-                # Ensure that the warehouse orders already assigned to the robot are there
-                success = self.get_and_send_robot_whos(
-                    robotident, firstrequest=firstrequest, newwho=False, onlynewwho=False)
-            else:
-                # Get existing warehouse orders for the robot. If no exists, get a new one
-                success = self.get_and_send_robot_whos(
-                    robotident, firstrequest=firstrequest, newwho=True, onlynewwho=False)
-            if success:
-                status.data.requestwork = True
+            self.msg_mem.robot_conf_status[robot] = config_status
 
-        # Check if warehouse order was completed
-        if request.notifywhocompletion and not status.data.notifywhocompletion:
-            notfound = False
-            try:
-                who = self.ewmwho.get_warehouseorder(
-                    lgnum=robotident.lgnum, who=request.notifywhocompletion)
-            except NotFoundError:
-                notfound = True
-            else:
-                if who.status not in ['D', '']:
-                    notfound = True
-            if notfound:
-                status.data.notifywhocompletion = request.notifywhocompletion
-                _LOGGER.info(
-                    'Warehouse order %s was confirmed, notifying robot "%s"',
-                    request.notifywhocompletion, robotident.rsrc)
-                # Warehouse orders are completed in EWM, thus ensure that they are marked PROCESSED
-                self.cleanup_who(WhoIdentifier(robotident.lgnum, request.notifywhocompletion))
+        # Request work, when robot is running, idle, available and has no warehouse order assigned
+        robot_status = self.robotcontroller.get_robot_status(robot)
+        if (config_spec.mode == RobotConfigurationSpec.MODE_RUN
+                and config_status.statemachine in RobotEWMConfig.idle_states
+                and robot_status.robot.state == RobcoRobotStates.STATE_AVAILABLE
+                and robot_status.robot.batteryPercentage >= config_spec.batteryMin):
+            if self.ordercontroller.check_for_running_whos(robot) is False:
+                try:
+                    update_time = isoparse(robot_status.robot.updateTime)
+                except ValueError:
+                    if firstrequest:
+                        _LOGGER.error(
+                            'Warehouse order queue of robot %s is empty, but unable to determine '
+                            'updateTime in CR status of the robot. Not requesting new work until '
+                            'this is fixed', robot)
+                else:
+                    if update_time + timedelta(minutes=2) < datetime.now(timezone.utc):
+                        if firstrequest:
+                            _LOGGER.error(
+                                'Warehouse order queue of robot %s is empty, but last status '
+                                'update time of the robot is older than 2 minutes. Not requesting '
+                                'new work until update arrives', robot)
+                    else:
+                        if firstrequest:
+                            _LOGGER.info(
+                                'Warehouse order queue of robot %s is empty. Start requesting a '
+                                'new warehouse order', robot)
+                        self.get_and_send_robot_whos(
+                            robotident, firstrequest=firstrequest, newwho=False, onlynewwho=True)
 
-        # Check if warehouse task was completed
-        if request.notifywhtcompletion and not status.data.notifywhtcompletion:
-            try:
-                self.ewmwho.get_openwarehousetask(robotident.lgnum, request.notifywhtcompletion)
-            except NotFoundError:
-                status.data.notifywhtcompletion = request.notifywhtcompletion
-                _LOGGER.info(
-                    'Warehouse task %s was confirmed, notifying robot "%s"',
-                    request.notifywhtcompletion, robotident.rsrc)
-
-        # Save processing status to CR
-        if request == status.data:
-            status.status = RequestFromRobotStatus.STATE_PROCESSED
-            self.robotrequestcontroller.update_status(name, unstructure(status))
-            self.msg_mem.memorize_robotrequest(name, status)
-            self.msg_mem.delete_robotrequest_from_memory(name)
-        else:
-            status.status = RequestFromRobotStatus.STATE_RUNNING
-            self.robotrequestcontroller.update_status(name, unstructure(status))
-            self.msg_mem.memorize_robotrequest(name, status)
+                self.msg_mem.robot_conf_status[robot] = config_status
 
     def confirm_warehousetask(self, whtask: ConfirmWarehouseTask) -> None:
         """Confirm the warehouse task in SAP EWM using OData service."""
@@ -414,44 +400,6 @@ class EWMOrderManager:
                 # order is moved to a different queue and not assigned to the robot anymore
                 if whtask.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF:
                     self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
-        # UNASSIGN Messages
-        elif whtask.confirmationtype == ConfirmWarehouseTask.CONF_UNASSIGN:
-            # Only able to unassign before first confirmation was made
-            if whtask.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF:
-
-                try:
-                    self.ewmwho.unassign_robot_warehouseorder(
-                        whtask.lgnum, whtask.rsrc, whtask.who)
-                except (TimeoutError, ConnectionError) as err:
-                    # If not successfull. Raise to put message back in queue
-                    _LOGGER.error(
-                        'Connection error while requesting unassigning warehouse order %s from '
-                        'robot  %s: %s', whtask.who, whtask.rsrc, err)
-                    raise
-                except IOError as err:
-                    _LOGGER.error(
-                        'IOError error while requesting unassigning warehouse order %s from '
-                        'robot  %s: %s', whtask.who, whtask.rsrc, err)
-                    raise
-                except NoOrderFoundError:
-                    _LOGGER.error(
-                        'Unable to unassign warehouse order %s.%s: not found', whtask.lgnum,
-                        whtask.who)
-                except ODataAPIException as err:
-                    _LOGGER.error(
-                        'Business error in SAP EWM Backend while requesting unassigning warehouse '
-                        'order %s from robot  %s: %s', whtask.who, whtask.rsrc, err)
-                    raise
-                else:
-                    _LOGGER.info(
-                        'Warehouse order %s.%s successfully unassigned from robot %s',
-                        whtask.lgnum, whtask.who, whtask.rsrc)
-                self.cleanup_who(WhoIdentifier(whtask.lgnum, whtask.who))
-            else:
-                _LOGGER.error(
-                    'Cannot unassign warehouse order %s.%s from robot %s because first '
-                    'confirmation of warehouse task %s is already made', whtask.lgnum, whtask.who,
-                    whtask.rsrc, whtask.tanum)
 
     def get_and_send_robot_whos(
             self, robotident: RobotIdentifier, firstrequest: bool = False, newwho: bool = True,

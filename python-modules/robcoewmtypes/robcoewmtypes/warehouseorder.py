@@ -150,7 +150,6 @@ class ConfirmWarehouseTask:
 
     CONF_SUCCESS = 'SUCCESS'
     CONF_ERROR = 'ERROR'
-    CONF_UNASSIGN = 'UNASSIGN'
 
     @confirmationnumber.validator
     def validate_confirmationnumber(self, attribute, value) -> None:
@@ -163,8 +162,8 @@ class ConfirmWarehouseTask:
     def validate_confirmationtype(self, attribute, value) -> None:
         """Validate confirmation."""
         cls = self.__class__
-        if value not in [cls.CONF_SUCCESS, cls.CONF_ERROR, cls.CONF_UNASSIGN]:
-            raise ValueError('Attribute "confirmationtype" must be SUCCESS, ERROR or UNASSIGN')
+        if value not in [cls.CONF_SUCCESS, cls.CONF_ERROR]:
+            raise ValueError('Attribute "confirmationtype" must be SUCCESS or ERROR')
 
 
 @attr.s
@@ -198,3 +197,13 @@ class WarehouseOrderCRDSpec:
         cls = self.__class__
         if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING]:
             raise ValueError('Attribute "order_status" must be RUNNING or PROCESSED')
+
+
+@attr.s
+class WarehouseOrderCRDStatus:
+    """Warehouse order CRD status type."""
+
+    data: List[ConfirmWarehouseTask] = attr.ib(
+        default=attr.Factory(list), validator=attr.validators.deep_iterable(
+            member_validator=attr.validators.instance_of(ConfirmWarehouseTask),
+            iterable_validator=attr.validators.instance_of(list)))

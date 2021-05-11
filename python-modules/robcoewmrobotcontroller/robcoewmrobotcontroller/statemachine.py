@@ -15,7 +15,8 @@
 import logging
 import time
 from collections import namedtuple, OrderedDict, defaultdict
-from typing import DefaultDict, Dict, Optional, List, OrderedDict as TOrderedDict
+from datetime import datetime, timezone
+from typing import DefaultDict, Dict, Optional, OrderedDict as TOrderedDict
 
 from transitions.core import EventData
 from transitions.extensions import LockedHierarchicalMachine as Machine
@@ -26,15 +27,14 @@ from prometheus_client import Counter, Histogram
 import attr
 from cattr import structure, unstructure
 
-from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus, RequestFromRobot
+from robcoewmtypes.robot import RobotMission, RobotConfigurationStatus
+from robcoewmtypes.statemachine_config import RobotEWMConfig
 from robcoewmtypes.warehouseorder import (
     WarehouseOrder, WarehouseOrderCRDSpec, WarehouseTask, ConfirmWarehouseTask)
 
 from .ordercontroller import OrderHandler
 from .missioncontroller import MissionController
 from .robotconfigcontroller import RobotConfigurationController
-from .robotrequestcontroller import RobotRequestController
-from .statemachine_config import RobotEWMConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,8 +82,7 @@ class RobotEWMMachine(Machine):
 
     def __init__(
             self, robot_config_ctrl: RobotConfigurationController, mission_ctrl: MissionController,
-            order_handler: OrderHandler, robotrequest_ctrl: RobotRequestController,
-            initial: str = 'idle') -> None:
+            order_handler: OrderHandler, initial: str = 'idle') -> None:
         """Construct."""
         cls = self.__class__
 
@@ -104,8 +103,6 @@ class RobotEWMMachine(Machine):
         self.mission_ctrl = mission_ctrl
         # order handler
         self.order_handler = order_handler
-        # robotrequest controller
-        self.robotrequest_ctrl = robotrequest_ctrl
 
         # Last successfully processed spec of warehouse order
         self.processed_order_spec: Dict[str, Dict] = {}
@@ -147,8 +144,6 @@ class RobotEWMMachine(Machine):
         self.order_handler.register_callback(
             name+'_deleted', ['DELETED'], self.warehouseorder_deleted_cb,
             self.robot_config.robot_name)
-        self.robotrequest_ctrl.handler.register_callback(
-            name, ['MODIFIED', 'REPROCESS'], self.robotrequest_cb, self.robot_config.robot_name)
         self.mission_ctrl.handler.register_callback(
             name, ['MODIFIED', 'DELETED', 'REPROCESS'], self.mission_cb,
             self.robot_config.robot_name)
@@ -165,7 +160,6 @@ class RobotEWMMachine(Machine):
         self.mission_ctrl.robot_handler.unregister_callback(name, self.robot_config.robot_name)
         self.order_handler.unregister_callback(name, self.robot_config.robot_name)
         self.order_handler.unregister_callback(name+'_deleted', self.robot_config.robot_name)
-        self.robotrequest_ctrl.handler.unregister_callback(name, self.robot_config.robot_name)
         self.mission_ctrl.handler.unregister_callback(name, self.robot_config.robot_name)
         self.robot_config.handler.unregister_callback(name, self.robot_config.robot_name)
 
@@ -196,7 +190,8 @@ class RobotEWMMachine(Machine):
         tanum = self.active_wht.tanum if self.active_wht else ''
         subwho = self.active_sub_who.who if self.active_sub_who else ''
         state = RobotConfigurationStatus(
-            self.state, self.active_mission, lgnum, who, tanum, subwho)
+            self.state, self.active_mission, lgnum, who, tanum, subwho,
+            datetime.now(timezone.utc).isoformat(timespec='seconds'))
         self.robot_config.save_robot_state(state)
 
     def mission_cb(self, name: str, custom_res: Dict) -> None:
@@ -294,34 +289,6 @@ class RobotEWMMachine(Machine):
                     self.cancel_active_mission()
                     self.charging_canceled()
 
-    def robotrequest_cb(self, name: str, custom_res: Dict) -> None:
-        """Process robotrequest messages."""
-        # Only process custom resources labeled with own robot name
-        if custom_res['metadata'].get('labels', {}).get(
-                'cloudrobotics.com/robot-name') != self.robot_config.robot_name:
-            return
-
-        status = custom_res.get('status', {})
-        if status.get('data'):
-            # Convert message data to RequestFromRobot data class
-            robot_request = structure(status['data'], RequestFromRobot)
-
-            if self.state in self.conf.awaiting_who_completion_states and self.active_who:
-                if (robot_request.lgnum == self.active_who.lgnum
-                        and robot_request.notifywhocompletion == self.active_who.who):
-                    _LOGGER.info(
-                        'Warehouse order %s was confirmed in EWM - robot is proceeding now',
-                        self.active_who.who)
-                    self.warehouseorder_confirmed()
-
-            if self.state in self.conf.awaiting_wht_completion_states and self.active_wht:
-                if (robot_request.lgnum == self.active_wht.lgnum
-                        and robot_request.notifywhtcompletion == self.active_wht.tanum):
-                    _LOGGER.info(
-                        'Warehouse task %s was confirmed in EWM - robot is proceeding now',
-                        self.active_wht.tanum)
-                    self.warehousetask_confirmed()
-
     def warehouseorder_cb(self, name: str, custom_res: Dict) -> None:
         """Process warehouse order CRs."""
         # Only process custom resources labeled with own robot name
@@ -340,6 +307,12 @@ class RobotEWMMachine(Machine):
 
         # Convert message data to WarehouseOrderCRDSpec type
         who_crd_spec = structure(custom_res['spec'], WarehouseOrderCRDSpec)
+
+        # Check if robot is waiting for completion of this warehouse order if it is processed
+        if who_crd_spec.order_status == WarehouseOrderCRDSpec.STATE_PROCESSED:
+            self.check_awaited_warehouseorder_completion(
+                who_crd_spec.data.lgnum, who_crd_spec.data.who)
+            return
 
         self.update_warehouseorder(warehouseorder=who_crd_spec)
 
@@ -360,8 +333,30 @@ class RobotEWMMachine(Machine):
             if who in self.warehouseorders:
                 self.warehouseorders.pop(who)
                 _LOGGER.info('CR of warehouse order %s deleted. Remove it from queue', who)
+
+            # Check if robot is waiting for completion of this warehouse order
+            self.check_awaited_warehouseorder_completion(who.lgnum, who.who)
+
         # Cleanup when CR was deleted
         self.processed_order_spec.pop(name, None)
+
+    def check_awaited_warehouseorder_completion(self, lgnum: str, who: str) -> None:
+        """Check if robot is waiting for completion of this order or a task of it."""
+        if self.state in self.conf.awaiting_who_completion_states and self.active_who:
+            if (lgnum == self.active_who.lgnum
+                    and who == self.active_who.who):
+                _LOGGER.info(
+                    'Warehouse order %s completed - robot is proceeding now',
+                    self.active_who.who)
+                self.warehouseorder_confirmed()
+
+        if self.state in self.conf.awaiting_wht_completion_states and self.active_wht:
+            if (lgnum == self.active_wht.lgnum
+                    and who == self.active_wht.who):
+                _LOGGER.info(
+                    'Warehouse task %s completed - robot is proceeding now',
+                    self.active_wht.tanum)
+                self.warehousetask_confirmed()
 
     def _check_who_kwarg(self, event: EventData) -> bool:
         """Check if warehouseorder is an argument of the transition."""
@@ -413,10 +408,9 @@ class RobotEWMMachine(Machine):
         # No warehouse order in process and received order is assigned to robot
         if self.active_who is None:
             if self.robot_config.conf.mode != self.robot_config.conf.MODE_RUN:
-                _LOGGER.info(
-                    'Robot is in mode %s and not active, unassign warehouse order %s',
+                _LOGGER.warning(
+                    'Robot is in mode %s and not active. However, it received warehouse order %s',
                     self.robot_config.conf.mode, warehouseorder.who)
-                self.unassign_whos()
             elif self.state == 'movingToStaging':
                 _LOGGER.info(
                     'New warehouse order %s received while robot is on its way to staging area, '
@@ -439,7 +433,6 @@ class RobotEWMMachine(Machine):
                     'New warehouse order %s received, but robot battery level is too low at "%s" '
                     'percent. Continue charging', warehouseorder.who,
                     self.mission_ctrl.battery_percentage)
-                self.unassign_whos()
             elif self.state in self.conf.idle_states:
                 _LOGGER.info(
                     'New warehouse order %s received, while robot is in state "%s". Start '
@@ -502,9 +495,24 @@ class RobotEWMMachine(Machine):
                 # An active sub warehouse order changed
                 elif (warehouseorder.who == self.active_sub_who.who
                       and warehouseorder != self.active_sub_who):
-                    _LOGGER.info(
-                        'Active sub warehouse order %s updated, consider change on next warehouse '
-                        'task completion', warehouseorder.who)
+                    # Check if robot is waiting for completion of warehouse task of this order
+                    if self.state in self.conf.awaiting_wht_completion_states and self.active_wht:
+                        if (warehouseorder.lgnum == self.active_wht.lgnum
+                                and warehouseorder.who == self.active_wht.who):
+                            found = False
+                            for wht in warehouseorder.warehousetasks:
+                                if wht.tanum == self.active_wht.tanum:
+                                    found = True
+                                    break
+                            if not found:
+                                _LOGGER.info(
+                                    'Warehouse task %s completed - robot is proceeding now',
+                                    self.active_wht.tanum)
+                                self.warehousetask_confirmed()
+                    else:
+                        _LOGGER.info(
+                            'Active sub warehouse order %s updated, applying change on next '
+                            'warehouse task completion', warehouseorder.who)
                 # A warehouse order was received, but there are no changes
                 elif warehouseorder == self.active_sub_who:
                     _LOGGER.debug(
@@ -691,116 +699,6 @@ class RobotEWMMachine(Machine):
         else:
             raise TypeError('No warehouse task assigned to self.active_wht')
 
-    def _send_unassign_whos_request(self, event: EventData) -> None:
-        """Request to unassign warehouse orders from robot."""
-        who_remove: List[WhoIdentifier] = []
-        for whoident, who_crd in self.warehouseorders.items():
-            who = who_crd.data
-            # Do not unassign the active warehouse order
-            if who == self.active_who:
-                continue
-            # But the other warehouse orders from queue
-            for wht in who.warehousetasks:
-                confirmation = ConfirmWarehouseTask(
-                    lgnum=wht.lgnum, tanum=wht.tanum,
-                    rsrc=self.robot_config.rsrc, who=wht.who,
-                    confirmationnumber=ConfirmWarehouseTask.FIRST_CONF,
-                    confirmationtype=ConfirmWarehouseTask.CONF_UNASSIGN)
-
-                self.order_handler.confirm_wht(unstructure(confirmation))
-                who_remove.append(whoident)
-
-                _LOGGER.info(
-                    'Request to unassign warehouse order %s sent to order manager',
-                    wht.who)
-                # Needs to be sent only once per warehouse order
-                break
-
-        # Remove unassigned warehouse orders from queue
-        for whoident in who_remove:
-            self.warehouseorders.pop(whoident, None)
-
-    def _request_work(self, event: EventData) -> None:
-        """Request work from order manager."""
-        if self.conf.is_new_work_state(event.state.name):
-            _LOGGER.info('Requesting new warehouse order from order manager')
-            request = RequestFromRobot(
-                self.robot_config.conf.lgnum, self.robot_config.rsrc, requestnewwho=True)
-        else:
-            _LOGGER.info('Requesting warehouse order from order manager')
-            request = RequestFromRobot(
-                self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
-
-        self.robotrequest_ctrl.send_robot_request(unstructure(request))
-
-    def _cancel_request_work(self, event: EventData) -> None:
-        """Cancel request work from order manager."""
-        _LOGGER.info(
-            'Cancel request work from order manager because of event %s', event.event.name)
-
-        request = RequestFromRobot(
-            self.robot_config.conf.lgnum, self.robot_config.rsrc, requestnewwho=True)
-        self.robotrequest_ctrl.delete_robot_request(unstructure(request))
-
-        request = RequestFromRobot(
-            self.robot_config.conf.lgnum, self.robot_config.rsrc, requestwork=True)
-
-        self.robotrequest_ctrl.delete_robot_request(unstructure(request))
-
-    def _request_who_confirmation_notification(self, event: EventData) -> None:
-        """
-        Send a warehouse order completion request to EWM Order Manager.
-
-        It notifies the robot when the warehouse order was completed.
-        """
-        if isinstance(self.active_who, WarehouseOrder):
-            request = RequestFromRobot(
-                self.robot_config.conf.lgnum, self.robot_config.rsrc,
-                notifywhocompletion=self.active_who.who)
-
-            self.robotrequest_ctrl.send_robot_request(unstructure(request))
-
-            _LOGGER.info(
-                'Requesting warehouse order completion notification for %s from order manager',
-                self.active_who.who)
-        else:
-            raise TypeError('No warehouse order object in self.active_who')
-
-    def _cancel_who_confirmation_notification(self, event: EventData) -> None:
-        """Cancel a warehouse order completion request to EWM Order Manager."""
-        if isinstance(self.active_who, WarehouseOrder):
-            request = RequestFromRobot(
-                self.robot_config.conf.lgnum, self.robot_config.rsrc,
-                notifywhocompletion=self.active_who.who)
-
-            _LOGGER.info(
-                'Canceling warehouse order completion notification for %s from order manager',
-                self.active_who.who)
-
-            self.robotrequest_ctrl.delete_robot_request(unstructure(request))
-
-        else:
-            raise TypeError('No warehouse order object in self.active_who')
-
-    def _request_wht_confirmation_notification(self, event: EventData) -> None:
-        """
-        Send a  warehouse task completion request to EWM Order Manager.
-
-        It notifies the robot when the warehouse task was completed.
-        """
-        if isinstance(self.active_wht, WarehouseTask):
-            request = RequestFromRobot(
-                self.robot_config.conf.lgnum, self.robot_config.rsrc,
-                notifywhtcompletion=self.active_wht.tanum)
-
-            self.robotrequest_ctrl.send_robot_request(unstructure(request))
-
-            _LOGGER.info(
-                'Requesting warehouse task completion notification for %s from order manager',
-                self.active_wht.tanum)
-        else:
-            raise TypeError('No warehouse task object in self.active_wht')
-
     def _decide_whats_next(self, event: EventData) -> None:
         """Decide what the robot should do next."""
         cls = self.__class__
@@ -825,15 +723,14 @@ class RobotEWMMachine(Machine):
             if event.transition.dest not in cls.conf.idle_states:
                 self.cancel_active_mission()
             self.charge_battery()
-        elif self.robot_config.conf.mode == self.robot_config.conf.MODE_STOP:
-            _LOGGER.info('Robot is in mode STOP, unassign warehouse orders')
-            self.unassign_whos()
         elif self.failed_warehouseorders > 3:
             _LOGGER.error(
                 'Too many consecutive failed warehouse orders (%s). Robot enters error state',
                 self.failed_warehouseorders)
             self.too_many_failed_whos()
-        elif self.warehouseorders:
+        elif (self.warehouseorders
+                and self.robot_config.conf.mode in [
+                    self.robot_config.conf.MODE_RUN, self.robot_config.conf.MODE_IDLE]):
             _LOGGER.info('Warehouse order in queue, start processing')
             next_who_crd = next(iter(self.warehouseorders.values()))
             if isinstance(next_who_crd, WarehouseOrderCRDSpec):
@@ -842,13 +739,9 @@ class RobotEWMMachine(Machine):
                 raise TypeError(
                     'self.warehouseorders includes an element of type "{}"'.format(
                         type(next_who_crd)))
-        elif self.robot_config.conf.mode == self.robot_config.conf.MODE_RUN:
-            if self.mission_ctrl.api_check_state_ok():
-                self._request_work(event)
-            else:
-                _LOGGER.error('Robot is in a not available state, not requesting work')
-        elif self.robot_config.conf.mode == self.robot_config.conf.MODE_IDLE:
-            _LOGGER.info('Robot is in IDLE mode, not requesting work')
+        elif (self.warehouseorders
+                and self.robot_config.conf.mode == self.robot_config.conf.MODE_STOP):
+            _LOGGER.warning('Robot is in mode STOP, not working on warehouse orders in queue')
 
     def _battery_empty(self, event: EventData) -> bool:
         """Check if battery is empty."""

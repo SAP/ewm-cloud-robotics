@@ -94,6 +94,8 @@ spec:
               type: string
             who:
               type: string
+            updateTime:
+              type: string
   additionalPrinterColumns:
   - JSONPath: .spec.lgnum
     name: EWM Warehouse

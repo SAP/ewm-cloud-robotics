@@ -52,8 +52,6 @@ func addKnownTypes(scheme *runtime.Scheme) error {
 		&OrderAuctionList{},
 		&RobotConfiguration{},
 		&RobotConfigurationList{},
-		&RobotRequest{},
-		&RobotRequestList{},
 		&RunTimeEstimation{},
 		&RunTimeEstimationList{},
 		&WarehouseOrder{},

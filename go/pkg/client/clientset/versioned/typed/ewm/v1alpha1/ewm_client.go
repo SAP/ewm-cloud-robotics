@@ -23,7 +23,6 @@ type EwmV1alpha1Interface interface {
 	OrderAuctionsGetter
 	OrderReservationsGetter
 	RobotConfigurationsGetter
-	RobotRequestsGetter
 	RunTimeEstimationsGetter
 	WarehouseOrdersGetter
 }
@@ -47,10 +46,6 @@ func (c *EwmV1alpha1Client) OrderReservations(namespace string) OrderReservation
 
 func (c *EwmV1alpha1Client) RobotConfigurations(namespace string) RobotConfigurationInterface {
 	return newRobotConfigurations(c, namespace)
-}
-
-func (c *EwmV1alpha1Client) RobotRequests(namespace string) RobotRequestInterface {
-	return newRobotRequests(c, namespace)
 }
 
 func (c *EwmV1alpha1Client) RunTimeEstimations(namespace string) RunTimeEstimationInterface {

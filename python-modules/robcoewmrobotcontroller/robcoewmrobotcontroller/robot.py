@@ -19,14 +19,13 @@ from typing import Optional
 import attr
 
 from robcoewmtypes.robot import RobotConfigurationStatus
+from robcoewmtypes.statemachine_config import RobotEWMConfig
 from robcoewmtypes.warehouseorder import WarehouseOrderCRDSpec
 
 from .ordercontroller import OrderHandler
 from .missioncontroller import MissionController
 from .robotconfigcontroller import RobotConfigurationController
-from .robotrequestcontroller import RobotRequestController
 from .statemachine import RobotEWMMachine, WhoIdentifier
-from .statemachine_config import RobotEWMConfig
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -49,7 +48,7 @@ class EWMRobot:
     """The EWM robot representation."""
 
     def __init__(self, robot_config: RobotConfigurationController, mission_api: MissionController,
-                 order_handler: OrderHandler, robot_request: RobotRequestController) -> None:
+                 order_handler: OrderHandler) -> None:
         """Construct."""
         # Robot Mission API
         self.mission_api = mission_api
@@ -57,8 +56,6 @@ class EWMRobot:
         self.robot_config = robot_config
         # Order handler
         self.orderhandler = order_handler
-        # Robot Request controller
-        self.robotrequestcontroller = robot_request
 
         # Robot state machine
         self._init_robot_state_machine()
@@ -71,7 +68,7 @@ class EWMRobot:
             # Init state machine in specific state
             self.state_machine = RobotEWMMachine(
                 self.robot_config, self.mission_api, self.orderhandler,
-                self.robotrequestcontroller, initial=valid_state.state.statemachine)
+                initial=valid_state.state.statemachine)
             # Restore state machine attributes
             self.state_machine.active_mission = valid_state.state.mission
             if valid_state.state.who:
@@ -109,8 +106,7 @@ class EWMRobot:
             # Initialize a fresh state machine
             _LOGGER.info('Initialize fresh state machine')
             self.state_machine = RobotEWMMachine(
-                self.robot_config, self.mission_api, self.orderhandler,
-                self.robotrequestcontroller)
+                self.robot_config, self.mission_api, self.orderhandler)
             self.state_machine.start_fresh_machine()
 
         # Connect state machine to external events

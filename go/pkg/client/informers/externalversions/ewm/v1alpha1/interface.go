@@ -25,8 +25,6 @@ type Interface interface {
 	OrderReservations() OrderReservationInformer
 	// RobotConfigurations returns a RobotConfigurationInformer.
 	RobotConfigurations() RobotConfigurationInformer
-	// RobotRequests returns a RobotRequestInformer.
-	RobotRequests() RobotRequestInformer
 	// RunTimeEstimations returns a RunTimeEstimationInformer.
 	RunTimeEstimations() RunTimeEstimationInformer
 	// WarehouseOrders returns a WarehouseOrderInformer.
@@ -62,11 +60,6 @@ func (v *version) OrderReservations() OrderReservationInformer {
 // RobotConfigurations returns a RobotConfigurationInformer.
 func (v *version) RobotConfigurations() RobotConfigurationInformer {
 	return &robotConfigurationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
-}
-
-// RobotRequests returns a RobotRequestInformer.
-func (v *version) RobotRequests() RobotRequestInformer {
-	return &robotRequestInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // RunTimeEstimations returns a RunTimeEstimationInformer.

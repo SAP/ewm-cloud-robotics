@@ -108,47 +108,6 @@ class ResourceGroupDescription:
 # Non SAP OData Types are starting here
 
 @attr.s
-class RequestFromRobot:
-    """Robot request type."""
-
-    # Robot identification
-    lgnum: str = attr.ib(
-        validator=attr.validators.instance_of(str), converter=strstrip)
-    rsrc: str = attr.ib(
-        validator=attr.validators.instance_of(str), converter=strstrip)
-    # Use case specific attributes
-    requestwork: bool = attr.ib(
-        default=False, validator=validate_annotation, converter=bool)
-    requestnewwho: bool = attr.ib(
-        default=False, validator=validate_annotation, converter=bool)
-    notifywhocompletion: str = attr.ib(
-        default='', validator=attr.validators.instance_of(str), converter=strstrip)
-    notifywhtcompletion: str = attr.ib(
-        default='', validator=attr.validators.instance_of(str), converter=strstrip)
-
-
-@attr.s
-class RequestFromRobotStatus:
-    """Robot request status type."""
-
-    STATE_PROCESSED = 'PROCESSED'
-    STATE_RUNNING = 'RUNNING'
-    STATE_WAITING = 'WAITING'
-
-    # Status of request
-    data: RequestFromRobot = attr.ib(validator=validate_annotation)
-    # Processing status
-    status: str = attr.ib(default=STATE_RUNNING)
-
-    @status.validator
-    def validate_status(self, attribute, value) -> None:
-        """Validate confirmation."""
-        cls = self.__class__
-        if value not in [cls.STATE_PROCESSED, cls.STATE_RUNNING, cls.STATE_WAITING]:
-            raise ValueError('Attribute "status" must be WATING, RUNNING or PROCESSED')
-
-
-@attr.s
 class RobotMission:
     """Data class for robot missions."""
 
@@ -209,6 +168,8 @@ class RobotConfigurationStatus:
     who: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     tanum: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
     subwho: str = attr.ib(default='', validator=validate_annotation, converter=strstrip)
+    updateTime: str = attr.ib(  # pylint: disable=invalid-name
+        default='1970-01-01T00:00:00.000000Z', validator=validate_annotation, converter=strstrip)
 
 
 @attr.s

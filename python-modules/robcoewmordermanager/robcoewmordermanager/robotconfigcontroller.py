@@ -10,40 +10,31 @@
 # otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
 #
 
-"""K8s custom resource handler for robot requests."""
+"""K8s custom resource handler for EWM RobotConfigurations."""
 
 import logging
 
 from typing import Dict
 
 from robcoewmtypes.helper import get_sample_cr
-
 from k8scrhandler.k8scrhandler import K8sCRHandler
 
 _LOGGER = logging.getLogger(__name__)
 
 
-class RobotRequestController(K8sCRHandler):
-    """Handle K8s custom resources."""
+class RobotConfigurationController(K8sCRHandler):
+    """Handle K8s RobotConfiguration custom resources."""
 
     def __init__(self) -> None:
         """Construct."""
-        template_cr = get_sample_cr('robotrequest')
+        template_cr = get_sample_cr('robotconfiguration')
 
+        labels: Dict[str, str] = {}
         super().__init__(
             'ewm.sap.com',
             'v1alpha1',
-            'robotrequests',
+            'robotconfigurations',
             'default',
             template_cr,
-            {}
+            labels
         )
-
-    def update_status(
-            self, name: str, status: Dict) -> bool:
-        """Update status of robotrequest ."""
-        if self.check_cr_exists(name):
-            self.update_cr_status(name, status)
-            return True
-        else:
-            return False

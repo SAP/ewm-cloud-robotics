@@ -19,8 +19,6 @@ type OrderReservationExpansion interface{}
 
 type RobotConfigurationExpansion interface{}
 
-type RobotRequestExpansion interface{}
-
 type RunTimeEstimationExpansion interface{}
 
 type WarehouseOrderExpansion interface{}
