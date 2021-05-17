@@ -207,7 +207,7 @@ class EWMOrderManager:
                 unassign_who = True
                 for conf in who_status.data:
                     if (conf.confirmationnumber == ConfirmWarehouseTask.FIRST_CONF and
-                            conf.validate_confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
+                            conf.confirmationtype == ConfirmWarehouseTask.CONF_SUCCESS):
                         unassign_who = False
 
                 if unassign_who is True:
@@ -241,20 +241,22 @@ class EWMOrderManager:
                             who_spec.data.lgnum, who_spec.data.who, who_spec.data.rsrc)
                     self.cleanup_who(WhoIdentifier(who_spec.data.lgnum, who_spec.data.who))
                 else:
-                    _LOGGER.error(
+                    _LOGGER.info(
                         'Cannot unassign warehouse order %s.%s from robot %s because first '
                         'confirmation of a warehouse task is already made', who_spec.data.lgnum,
                         who_spec.data.who, who_spec.data.rsrc)
 
             self.msg_mem.robot_conf_status[robot] = config_status
 
-        # Request work, when robot is running, idle, available and has no warehouse order assigned
+        # Request work, when robot is running, idle, available, has no warehouse order assigned
+        # and no order auction is running
         robot_status = self.robotcontroller.get_robot_status(robot)
         if (config_spec.mode == RobotConfigurationSpec.MODE_RUN
                 and config_status.statemachine in RobotEWMConfig.idle_states
                 and robot_status.robot.state == RobcoRobotStates.STATE_AVAILABLE
                 and robot_status.robot.batteryPercentage >= config_spec.batteryMin):
-            if self.ordercontroller.check_for_running_whos(robot) is False:
+            if (self.ordercontroller.check_for_running_whos(robot) is False
+                    and self.is_orderauction_running(robot, firstrequest) is False):
                 try:
                     update_time = isoparse(robot_status.robot.updateTime)
                 except ValueError:

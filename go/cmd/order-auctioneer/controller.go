@@ -318,7 +318,7 @@ func (r *reconcileAuctioneer) Reconcile(ctx context.Context, request reconcile.R
 	}
 
 	// Get robots for this Auctioneer
-	robotStates, err := r.getRobots(ctx, &auctioneer)
+	robotStates, err := r.getRobotStates(ctx, &auctioneer)
 	if err != nil {
 		log.Error().Err(err).Msg("Error get robots")
 		r.setErrorStatus(ctx, &auctioneer, err)
@@ -469,7 +469,7 @@ func (r *reconcileAuctioneer) getReconcileResult(a *ewm.Auctioneer, rs *robotSta
 	return reconcile.Result{RequeueAfter: requeueAfter}
 }
 
-func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) (*robotStates, error) {
+func (r *reconcileAuctioneer) getRobotStates(ctx context.Context, a *ewm.Auctioneer) (*robotStates, error) {
 
 	robotStates := newRobotStates()
 
@@ -486,7 +486,8 @@ func (r *reconcileAuctioneer) getRobots(ctx context.Context, a *ewm.Auctioneer) 
 	for _, rb := range robots.Items {
 		robotBattery[rb.GetName()] = rb.Status.Robot.BatteryPercentage
 		state := string(rb.Status.Robot.State)
-		if r.deployedRobots[rb.GetName()] && robotAvailable[state] {
+		// If last status update of a robot is older than 10 minutes, it is treated as unavailable
+		if r.deployedRobots[rb.GetName()] && robotAvailable[state] && rb.Status.Robot.UpdateTime.Add(time.Second*10).UTC().After(time.Now().UTC()) {
 			isRobotAvailable[rb.GetName()] = true
 		}
 	}

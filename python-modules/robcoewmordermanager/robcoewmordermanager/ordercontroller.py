@@ -267,7 +267,8 @@ class OrderController(K8sCRHandler):
 
         return False
 
-    def get_running_whos(self, robot: str) -> List[Tuple[WarehouseOrderCRDSpec, WarehouseOrderCRDStatus]]:
+    def get_running_whos(
+            self, robot: str) -> List[Tuple[WarehouseOrderCRDSpec, WarehouseOrderCRDStatus]]:
         """Get running warehouse orders of a robot."""
         whos = []
         crs = self.list_all_cr()
