@@ -73,7 +73,7 @@ spec:
       containers:
       - name: kubectl-proxy-robots
         image: bitnami/kubectl:latest
-        args: ["proxy", "--port=8001", "--accept-paths=^/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/*", "--reject-methods='DELETE,POST,PUT,PATCH'"]
+        args: ["proxy", "--port=8001", "--accept-paths=^/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/*", "--reject-methods='DELETE,POST,PUT,PATCH'", "--keepalive=10s"]
         resources:
           requests:
             memory: "16Mi"
@@ -83,7 +83,7 @@ spec:
             cpu: "250m"
       - name: kubectl-proxy-warehouseorders
         image: bitnami/kubectl:latest
-        args: ["proxy", "--port=8002", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/warehouseorders/*", "--reject-methods='DELETE,POST,PUT,PATCH'"]
+        args: ["proxy", "--port=8002", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/warehouseorders/*", "--reject-methods='DELETE,POST,PUT,PATCH'", "--keepalive=10s"]
         resources:
           requests:
             memory: "16Mi"
@@ -93,7 +93,7 @@ spec:
             cpu: "250m"
       - name: kubectl-proxy-robotconfigurations
         image: bitnami/kubectl:latest
-        args: ["proxy", "--port=8003", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/*", "--reject-methods='DELETE,POST'"]
+        args: ["proxy", "--port=8003", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/*", "--reject-methods='DELETE,POST'", "--keepalive=10s"]
         resources:
           requests:
             memory: "16Mi"

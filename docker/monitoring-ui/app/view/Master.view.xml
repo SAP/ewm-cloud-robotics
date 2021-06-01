@@ -25,7 +25,8 @@ otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/ma
 			<u:ObjectPageSection title="{i18n>robots}">
 				<u:subSections>
 					<u:ObjectPageSubSection>
-						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'name', descending: false } }">
+						<Table id="idRobots" inset="false" items="{ path: 'robots>/rows', sorter: { path: 'name', descending: false } }"
+							growing="true" growingScrollToLoad="false">
 							<columns>
 								<Column visible="{masterLayout>/mediumExpanded}">
 									<Text text="{i18n>updateTime}"/>

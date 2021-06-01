@@ -7,7 +7,7 @@
 				"type": "JSON"
 			},
 			"zewm_robco_srv": {
-				"uri": "/ewm-monitoring-ui/ZEWM_ROBCO_SRV/",
+				"uri": "ZEWM_ROBCO_SRV/",
 				"type": "OData",
 				"settings": {
 					"odataVersion": "2.0",

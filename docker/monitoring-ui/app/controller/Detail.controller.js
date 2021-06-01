@@ -62,7 +62,7 @@ sap.ui.define([
 					if(refreshConfig) {
 						var newRobotSelected = true;
 						if(typeof(that.getOwnerComponent().getModel("robotConfig")) !== "undefined") {
-							if(that.getOwnerComponent().getModel("robotConfig").getData().selfLink === data.items[i].metadata.selfLink) {
+							if(that.getOwnerComponent().getModel("robotConfig").getData().uid === data.items[i].metadata.uid) {
 								newRobotSelected = false;
 								robotConfigurationJSON = that.getOwnerComponent().getModel("robotConfig").getData();
 							}
@@ -70,7 +70,6 @@ sap.ui.define([
 
 						if(newRobotSelected) {
 							robotConfigurationJSON = ({
-								"selfLink": data.items[i].metadata.selfLink,
 								"name": data.items[i].metadata.name,
 								"batteryIdle": data.items[i].spec.batteryIdle,
 								"batteryMin": data.items[i].spec.batteryMin,
@@ -216,7 +215,7 @@ sap.ui.define([
 
 			$.ajax({
 				type: 'PATCH',
-				url: configData.selfLink,
+				url: 'robotconfigurations/' + configData.name,
 				data: JSON.stringify(patchData),
 				processData: false,
 				contentType: 'application/merge-patch+json',
@@ -236,7 +235,7 @@ sap.ui.define([
 			patchData.spec["recoverFromRobotError"] = true;
 			$.ajax({
 				type: 'PATCH',
-				url: this.getOwnerComponent().getModel("robotConfig").getData().selfLink,
+				url: 'robotconfigurations/' + this.getOwnerComponent().getModel("robotConfig").getData().name,
 				data: JSON.stringify(patchData),
 				processData: false,
 				contentType: 'application/merge-patch+json',

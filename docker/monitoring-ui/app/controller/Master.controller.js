@@ -119,7 +119,7 @@ sap.ui.define([
 					}
 
 					modelData.rows.push(robotJSON);
-					furtherLinks.push(data.items[i].metadata.selfLink.replace("robots", "robotconfigurations"));
+					furtherLinks.push("robotconfigurations/" + data.items[i].metadata.name);
 				}
 				var robotConfigFeedback = 0;
 				// enhance robot information with robotconfiguration regarding the ewm status
