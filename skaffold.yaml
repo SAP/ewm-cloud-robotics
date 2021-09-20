@@ -95,10 +95,6 @@ test:
   - image: mir-runtime-estimator
     structureTests:
       - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
-deploy:
-  kubectl:
-    manifests:
-    - ""
 
 #########################################################################################
 
