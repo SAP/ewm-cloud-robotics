@@ -159,7 +159,7 @@ class MiRRobot:
 
         return True
 
-    def get_mission_active_action(self, mission: int) -> str:
+    def get_mission_active_action(self, mission: str) -> str:
         """Get active action of a mission."""
         # Get actions from REST interface
         http_resp_actions = self._mir_api.http_get(
@@ -186,7 +186,7 @@ class MiRRobot:
 
         return ''
 
-    def get_mission_state(self, mission: int) -> Tuple[str, str]:
+    def get_mission_state(self, mission: str) -> Tuple[str, str]:
         """Get the state of a mission of mission queue."""
         # Get data from REST interface
         http_resp = self._mir_api.http_get('mission_queue/{qm}'.format(qm=mission))
@@ -235,7 +235,7 @@ class MiRRobot:
         _LOGGER.error('Error getting "position guid" for "%s"', position)
         return ''
 
-    def get_trolley(self, dock_name: str) -> int:
+    def get_trolley(self, dock_name: str) -> str:
         """Go to the docking position and get a trolley there."""
         cls = self.__class__
         # Get relevant parameters
@@ -253,9 +253,9 @@ class MiRRobot:
         http_resp = self._mir_api.http_post('mission_queue', jsonbody=jsonbody)
 
         resp_json = http_resp.json()
-        return resp_json['id']
+        return str(resp_json['id'])
 
-    def return_trolley(self, dock_name: str) -> int:
+    def return_trolley(self, dock_name: str) -> str:
         """Go to the docking position and return robot's trolley there."""
         cls = self.__class__
         # Get relevant parameters
@@ -273,9 +273,9 @@ class MiRRobot:
         http_resp = self._mir_api.http_post('mission_queue', jsonbody=jsonbody)
 
         resp_json = http_resp.json()
-        return resp_json['id']
+        return str(resp_json['id'])
 
-    def moveto_named_position(self, target_name: str) -> int:
+    def moveto_named_position(self, target_name: str) -> str:
         """Move robot to a named position of the map."""
         cls = self.__class__
         # Get relevant parameters
@@ -293,10 +293,10 @@ class MiRRobot:
         http_resp = self._mir_api.http_post('mission_queue', jsonbody=jsonbody)
 
         resp_json = http_resp.json()
-        return resp_json['id']
+        return str(resp_json['id'])
 
     def charge_robot(
-            self, charger_name: str, threshold_battery: float, target_battery: float) -> int:
+            self, charger_name: str, threshold_battery: float, target_battery: float) -> str:
         """Charge robot at the charging position."""
         cls = self.__class__
         # Get relevant parameters
@@ -318,7 +318,7 @@ class MiRRobot:
         http_resp = self._mir_api.http_post('mission_queue', jsonbody=jsonbody)
 
         resp_json = http_resp.json()
-        return resp_json['id']
+        return str(resp_json['id'])
 
     def update(self) -> None:
         """Update entire MiR robot."""

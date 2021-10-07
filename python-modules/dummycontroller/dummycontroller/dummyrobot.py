@@ -63,7 +63,7 @@ class DummyRobot:
         self.last_state_change = '1970-01-01T00:00:00.000Z'
         self.trolley_attached = False
         self.active_map = None
-        self.get_mission_state_counter: Dict[int, int] = {}
+        self.get_mission_state_counter: Dict[str, int] = {}
         self.next_mission_id = 0
 
         # Init remaining attributes from environment variables
@@ -83,7 +83,7 @@ class DummyRobot:
 
         return envvar
 
-    def get_mission_state(self, mission: int) -> Tuple[str, str]:
+    def get_mission_state(self, mission: str) -> Tuple[str, str]:
         """Get the state of a mission of mission queue."""
         if mission not in self.get_mission_state_counter:
             self.get_mission_state_counter[mission] = 0
@@ -99,26 +99,26 @@ class DummyRobot:
 
         return (mission_state, '')
 
-    def get_trolley(self, dock_name: str) -> int:
+    def get_trolley(self, dock_name: str) -> str:
         """Go to the docking position and get a trolley there."""
         self.next_mission_id += 1
-        return self.next_mission_id
+        return str(self.next_mission_id)
 
-    def return_trolley(self, dock_name: str) -> int:
+    def return_trolley(self, dock_name: str) -> str:
         """Go to the docking position and return robot's trolley there."""
         self.next_mission_id += 1
-        return self.next_mission_id
+        return str(self.next_mission_id)
 
-    def moveto_named_position(self, target_name: str) -> int:
+    def moveto_named_position(self, target_name: str) -> str:
         """Move robot to a named position of the map."""
         self.next_mission_id += 1
-        return self.next_mission_id
+        return str(self.next_mission_id)
 
     def charge_robot(
-            self, charger_name: str, threshold_battery: float, target_battery: float) -> int:
+            self, charger_name: str, threshold_battery: float, target_battery: float) -> str:
         """Charge robot at the charging position."""
         self.next_mission_id += 1
-        return self.next_mission_id
+        return str(self.next_mission_id)
 
     def update(self) -> None:
         """Update dummy robot."""

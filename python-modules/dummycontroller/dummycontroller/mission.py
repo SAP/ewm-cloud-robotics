@@ -282,7 +282,7 @@ class MissionController(K8sCRHandler):
 
     def run_action_charge(
             self, charger_name: str, threshold_battery: float, target_battery: float,
-            mission_queue_id: Optional[int] = None) -> str:
+            mission_queue_id: Optional[str] = None) -> str:
         """Run mission charge on the robot."""
         if not self._active_mission:
             # No active mission for robot - action failed
@@ -309,7 +309,7 @@ class MissionController(K8sCRHandler):
         return self.watch_running_mission(mission_queue_id, False)
 
     def run_action_movetonamedposition(
-            self, target: str, mission_queue_id: Optional[int] = None) -> str:
+            self, target: str, mission_queue_id: Optional[str] = None) -> str:
         """Run mission moveToNamedPosition on the robot."""
         if not self._active_mission:
             # No active mission for robot - action failed
@@ -335,7 +335,7 @@ class MissionController(K8sCRHandler):
         return self.watch_running_mission(mission_queue_id, False)
 
     def run_action_gettrolley(
-            self, dock_name: str, mission_queue_id: Optional[int] = None) -> str:
+            self, dock_name: str, mission_queue_id: Optional[str] = None) -> str:
         """Run mission getTrolley on the robot."""
         if not self._active_mission:
             # No active mission for robot - action failed
@@ -361,7 +361,7 @@ class MissionController(K8sCRHandler):
         return self.watch_running_mission(mission_queue_id, True)
 
     def run_action_returntrolley(
-            self, dock_name: str, mission_queue_id: Optional[int] = None) -> str:
+            self, dock_name: str, mission_queue_id: Optional[str] = None) -> str:
         """Run mission returnTrolley on the robot."""
         if not self._active_mission:
             # No active mission for robot - action failed
@@ -386,7 +386,7 @@ class MissionController(K8sCRHandler):
 
         return self.watch_running_mission(mission_queue_id, True)
 
-    def watch_running_mission(self, mission_queue_id: int, with_active_action: bool) -> str:
+    def watch_running_mission(self, mission_queue_id: str, with_active_action: bool) -> str:
         """Watch a running mission and return its result when finished."""
         try:
             state_resp = self._dummy_robot.get_mission_state(mission_queue_id)
