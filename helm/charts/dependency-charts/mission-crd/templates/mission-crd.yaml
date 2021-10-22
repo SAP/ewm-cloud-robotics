@@ -1,16 +1,8 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   name: missions.mission.cloudrobotics.com
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .metadata.creationTimestamp
-    description: |-
-      CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
-
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-    name: Age
-    type: date
   group: mission.cloudrobotics.com
   names:
     kind: Mission
@@ -18,114 +10,160 @@ spec:
     plural: missions
     singular: mission
   scope: Namespaced
-  validation:
-    openAPIV3Schema:
-      properties:
-        spec:
-          maxProperties: 2
-          properties:
-            actions:
-              items:
-                oneOf:
-                - maxProperties: 1
-                  properties:
-                    charge:
-                      maxProperties: 3
-                      properties:
-                        chargerName:
-                          type: string
-                        targetBatteryPercent:
-                          maximum: 100
-                          minimum: 0
-                          type: integer
-                        thresholdBatteryPercent:
-                          maximum: 100
-                          minimum: 0
-                          type: integer
-                      required:
-                      - chargerName
-                      - thresholdBatteryPercent
-                      - targetBatteryPercent
-                      type: object
-                  required:
-                  - charge
-                  type: object
-                - maxProperties: 1
-                  properties:
-                    moveToNamedPosition:
-                      maxProperties: 1
-                      properties:
-                        targetName:
-                          type: string
-                      required:
-                      - targetName
-                      type: object
-                  required:
-                  - moveToNamedPosition
-                  type: object
-                - maxProperties: 1
-                  properties:
-                    getTrolley:
-                      maxProperties: 1
-                      properties:
-                        dockName:
-                          type: string
-                      required:
-                      - dockName
-                      type: object
-                  required:
-                  - getTrolley
-                  type: object
-                - maxProperties: 1
-                  properties:
-                    returnTrolley:
-                      maxProperties: 1
-                      properties:
-                        dockName:
-                          type: string
-                      required:
-                      - dockName
-                      type: object
-                  required:
-                  - returnTrolley
-                  type: object
-              type: array
-            timeOutSec:
-              minimum: 0
-              type: integer
-          required:
-          - actions
+  versions:
+    - name: v1alpha1
+      served: true
+      storage: true
+      additionalPrinterColumns:
+      - jsonPath: .metadata.creationTimestamp
+        description: |-
+          CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+
+          Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+        name: Age
+        type: date
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
           type: object
-        status:
           properties:
-            activeAction:
-              maxProperties: 1
+            spec:
+              maxProperties: 2
               properties:
+                actions:
+                  items:
+                    properties:
+                      charge:
+                        maxProperties: 3
+                        properties:
+                          chargerName:
+                            type: string
+                          targetBatteryPercent:
+                            description: |-
+                              If actually performing the charge action, charge until this level is
+                              reached.
+                            maximum: 100
+                            minimum: 0
+                            type: integer
+                          thresholdBatteryPercent:
+                            description: |-
+                              Only perform the charge action if battery level is lower than this
+                              threshold, otherwise do nothing.
+                            maximum: 100
+                            minimum: 0
+                            type: integer
+                        required:
+                        - chargerName
+                        - thresholdBatteryPercent
+                        - targetBatteryPercent
+                        type: object
+                      moveToNamedPosition:
+                        maxProperties: 1
+                        properties:
+                          targetName:
+                            description: String id of target position as created on robot.
+                            type: string
+                        required:
+                        - targetName
+                        type: object
+                      getTrolley:
+                        maxProperties: 1
+                        properties:
+                          dockName:
+                            description: |-
+                              Name of dock to get trolley from as created on robot.
+                            type: string
+                        required:
+                        - dockName
+                        type: object
+                      returnTrolley:
+                        maxProperties: 1
+                        properties:
+                          dockName:
+                            description: |-
+                              Name of dock to return trolley to as created on robot.
+                            type: string
+                        required:
+                        - dockName
+                        type: object
+                    oneOf:
+                    - maxProperties: 1
+                      properties:
+                        charge:
+                      required:
+                      - charge
+                    - maxProperties: 1
+                      properties:
+                        moveToNamedPosition:
+                      required:
+                      - moveToNamedPosition
+                    - maxProperties: 1
+                      properties:
+                        getTrolley:
+                      required:
+                      - getTrolley
+                    - maxProperties: 1
+                      properties:
+                        returnTrolley:
+                      required:
+                      - returnTrolley
+                    type: object
+                  type: array
+                timeOutSec:
+                  minimum: 0
+                  type: integer
+              required:
+              - actions
+              type: object
+            status:
+              properties:
+                activeAction:
+                  maxProperties: 1
+                  properties:
+                    status:
+                      description: |2-
+                        - "": Used if no other specific status applies.
+                        - DOCKING: Robot is currently docking.
+                        - MOVING: Robot is moving.
+                        - TIMEOUT: Mission duration exceeded MissionSpec.timeOutSec. Can only be set if
+                        MissionStatus.status is FAILED.
+                      type: string
+                      enum:
+                        - ""
+                        - MOVING
+                        - DOCKING
+                        - TIMEOUT
+                  title: Information about the currently executed action within a mission
+                  type: object
+                message:
+                  type: string
+                missionQueueIds:
+                  description: Links the goal to the entry in the robots mission queue.
+                  items:
+                    type: string                    
+                  type: array
                 status:
+                  description: |-
+                    The various states of the mission execution.
+
+                    - CREATED: initial state
+                    - ACCEPTED: mission has been validated on
+                    - RUNNING: active state (processing)
+                    - SUCCEEDED: terminal states
                   type: string
                   enum:
-                    - ""
-                    - MOVING
-                    - DOCKING
-            message:
-              type: string
-            status:
-              type: string
-              enum:
-                # initial state
-                - CREATED
-                # mission has been validated on
-                - ACCEPTED
-                # active state (processing)
-                - RUNNING
-                # terminal states
-                - SUCCEEDED
-                - CANCELED
-                - FAILED
-            timeOfActuation:
-              type: string
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
-    served: true
-    storage: true
+                    # initial state
+                    - CREATED
+                    # mission has been validated on
+                    - ACCEPTED
+                    # active state (processing)
+                    - RUNNING
+                    # terminal states
+                    - SUCCEEDED
+                    - CANCELED
+                    - FAILED
+                timeOfActuation:
+                  format: date-time
+                  type: string
+              type: object

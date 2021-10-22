@@ -8,20 +8,9 @@ metadata:
   # name must match the spec fields below, and be in the form: <plural>.<group>
   name: orderauctions.ewm.sap.com
 spec:
-  # list of versions supported by this CustomResourceDefinition
   group: ewm.sap.com
-  # list of versions supported by this CustomResourceDefinition
-  version: v1alpha1
-  versions:
-    - name: v1alpha1
-      # Each version can be enabled/disabled by Served flag.
-      served: true
-      # One and only one version must be marked as the storage version.
-      storage: true
   # either Namespaced or Cluster
   scope: Namespaced
-  subresources:
-    status: {}
   names:
     # plural name to be used in the URL: /apis/<group>/<version>/<plural>
     plural: orderauctions
@@ -32,173 +21,182 @@ spec:
     # shortNames allow shorter string to match your resource on the CLI
     shortNames:
     - oa
-  validation:
-    openAPIV3Schema:
-      type: object
-      required:
-        - spec
-      properties:
-        spec:
+  # list of versions supported by this CustomResourceDefinition
+  versions:
+    - name: v1alpha1
+      # Each version can be enabled/disabled by Served flag.
+      served: true
+      # One and only one version must be marked as the storage version.
+      storage: true
+      subresources:
+        status: {}
+      schema:
+        openAPIV3Schema:
           type: object
           required:
-            - warehouseorders
-            - validuntil
-            - auctionstatus
+            - spec
           properties:
-            warehouseorders:
-              type: array
-              items:
-                type: object
-                required:
-                  - lgnum
-                  - who
-                  - status
-                  - areawho
-                  - lgtyp
-                  - lgpla
-                  - queue
-                  - rsrc
-                  - lsd
-                  - topwhoid
-                  - refwhoid
-                  - flgwho
-                  - flgto
-                  - warehousetasks
-                properties:
-                  lgnum:
-                    type: string
-                  who:
-                    type: string
-                  status:
-                    type: string
-                  areawho:
-                    type: string
-                  lgtyp:
-                    type: string
-                  lgpla:
-                    type: string
-                  queue:
-                    type: string
-                  rsrc:
-                    type: string
-                  lsd:
-                    type: integer
-                  topwhoid:
-                    type: string
-                  refwhoid:
-                    type: string
-                  flgwho:
-                    type: boolean
-                  flgto:
-                    type: boolean
-                  warehousetasks:
-                    type: array
-                    items:
-                      type: object
-                      required: 
-                        - flghuto
-                        - lgnum
-                        - nlber
-                        - nlenr
-                        - nlpla
-                        - nltyp
-                        - priority
-                        - procty
-                        - tanum
-                        - tostat
-                        - unitv
-                        - unitw
-                        - vlber
-                        - vlenr
-                        - vlpla
-                        - vltyp
-                        - volum
-                        - weight
-                        - who
-                      properties:
-                        flghuto:
-                          type: boolean
-                        lgnum:
-                          type: string
-                        nlber:
-                          type: string
-                        nlenr:
-                          type: string
-                        nlpla:
-                          type: string
-                        nltyp:
-                          type: string
-                        priority:
-                          type: integer
-                        procty:
-                          type: string
-                        tanum:
-                          type: string
-                        tostat:
-                          type: string
-                        unitv:
-                          type: string
-                        unitw:
-                          type: string
-                        vlber:
-                          type: string
-                        vlenr:
-                          type: string
-                        vlpla:
-                          type: string
-                        vltyp:
-                          type: string
-                        volum:
-                          type: number
-                        weight:
-                          type: number
-                        who:
-                          type: string
-            validuntil:
-              type: string
-            auctionstatus:
-              type: string
-              enum:
-                - OPEN
-                - CLOSED
-                - COMPLETED
-        status:
-          type: object
-          properties:
-            bidstatus:
-              type: string
-              enum:
-                - RUNNING
-                - COMPLETED
-            biddings:
-              type: array
-              items:
-                type: object
-                required:
-                  - lgnum
-                  - who
-                  - bidding
-                properties:
-                  lgnum:
-                    type: string
-                  who:
-                    type: string
-                  bidding:
-                    type: number
-  additionalPrinterColumns:
-  - JSONPath: .spec.auctionstatus
-    name: Status of the auction
-    type: string
-  - JSONPath: .spec.validuntil
-    name: Auction valid until
-    type: string
-  - JSONPath: .status.bidstatus
-    name: Status of the bid
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    description: |-
-      CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
+            spec:
+              type: object
+              required:
+                - warehouseorders
+                - validuntil
+                - auctionstatus
+              properties:
+                warehouseorders:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - lgnum
+                      - who
+                      - status
+                      - areawho
+                      - lgtyp
+                      - lgpla
+                      - queue
+                      - rsrc
+                      - lsd
+                      - topwhoid
+                      - refwhoid
+                      - flgwho
+                      - flgto
+                      - warehousetasks
+                    properties:
+                      lgnum:
+                        type: string
+                      who:
+                        type: string
+                      status:
+                        type: string
+                      areawho:
+                        type: string
+                      lgtyp:
+                        type: string
+                      lgpla:
+                        type: string
+                      queue:
+                        type: string
+                      rsrc:
+                        type: string
+                      lsd:
+                        type: integer
+                      topwhoid:
+                        type: string
+                      refwhoid:
+                        type: string
+                      flgwho:
+                        type: boolean
+                      flgto:
+                        type: boolean
+                      warehousetasks:
+                        type: array
+                        items:
+                          type: object
+                          required: 
+                            - flghuto
+                            - lgnum
+                            - nlber
+                            - nlenr
+                            - nlpla
+                            - nltyp
+                            - priority
+                            - procty
+                            - tanum
+                            - tostat
+                            - unitv
+                            - unitw
+                            - vlber
+                            - vlenr
+                            - vlpla
+                            - vltyp
+                            - volum
+                            - weight
+                            - who
+                          properties:
+                            flghuto:
+                              type: boolean
+                            lgnum:
+                              type: string
+                            nlber:
+                              type: string
+                            nlenr:
+                              type: string
+                            nlpla:
+                              type: string
+                            nltyp:
+                              type: string
+                            priority:
+                              type: integer
+                            procty:
+                              type: string
+                            tanum:
+                              type: string
+                            tostat:
+                              type: string
+                            unitv:
+                              type: string
+                            unitw:
+                              type: string
+                            vlber:
+                              type: string
+                            vlenr:
+                              type: string
+                            vlpla:
+                              type: string
+                            vltyp:
+                              type: string
+                            volum:
+                              type: number
+                            weight:
+                              type: number
+                            who:
+                              type: string
+                validuntil:
+                  type: string
+                auctionstatus:
+                  type: string
+                  enum:
+                    - OPEN
+                    - CLOSED
+                    - COMPLETED
+            status:
+              type: object
+              properties:
+                bidstatus:
+                  type: string
+                  enum:
+                    - RUNNING
+                    - COMPLETED
+                biddings:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - lgnum
+                      - who
+                      - bidding
+                    properties:
+                      lgnum:
+                        type: string
+                      who:
+                        type: string
+                      bidding:
+                        type: number
+      additionalPrinterColumns:
+      - JSONPath: .spec.auctionstatus
+        name: Status of the auction
+        type: string
+      - JSONPath: .spec.validuntil
+        name: Auction valid until
+        type: string
+      - JSONPath: .status.bidstatus
+        name: Status of the bid
+        type: string
+      - JSONPath: .metadata.creationTimestamp
+        description: |-
+          CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
 
-      Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
-    name: Age
-    type: date
+          Populated by the system. Read-only. Null for lists. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#metadata
+        name: Age
+        type: date
