@@ -96,16 +96,16 @@ spec:
                 updateTime:
                   type: string
       additionalPrinterColumns:
-      - JSONPath: .status.status
+      - jsonPath: .status.status
         name: Status
         type: string
-      - JSONPath: .status.lastStatusChangeTime
+      - jsonPath: .status.lastStatusChangeTime
         name: Last status change time
         type: string
-      - JSONPath: .status.message
+      - jsonPath: .status.message
         name: Message
         type: string
-      - JSONPath: .metadata.creationTimestamp
+      - jsonPath: .metadata.creationTimestamp
         description: |-
           CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
 

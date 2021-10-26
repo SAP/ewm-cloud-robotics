@@ -215,16 +215,16 @@ spec:
                       who:
                         type: string
       additionalPrinterColumns:
-      - JSONPath: .spec.data.lgnum
+      - jsonPath: .spec.data.lgnum
         name: EWM Warehouse
         type: string
-      - JSONPath: .spec.data.rsrc
+      - jsonPath: .spec.data.rsrc
         name: EWM Robot
         type: string
-      - JSONPath: .spec.order_status
+      - jsonPath: .spec.order_status
         name: Order Status
         type: string
-      - JSONPath: .metadata.creationTimestamp
+      - jsonPath: .metadata.creationTimestamp
         description: |-
           CreationTimestamp is a timestamp representing the server time when this object was created. It is not guaranteed to be set in happens-before order across separate operations. Clients may not set this value. It is represented in RFC3339 form and is in UTC.
 
