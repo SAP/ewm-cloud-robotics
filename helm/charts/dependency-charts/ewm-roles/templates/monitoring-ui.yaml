@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sap-ewm:monitoring-ui
+rules:
+- apiGroups:
+  - registry.cloudrobotics.com
+  resources:
+  - robots
+  - robots/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - warehouseorders
+  - warehouseorders/status
+  - robotconfigurations
+  - robotconfigurations/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - robotconfigurations
+  verbs:
+  - update
+  - patch

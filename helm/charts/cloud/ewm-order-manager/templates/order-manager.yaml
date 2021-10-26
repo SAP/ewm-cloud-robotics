@@ -1,4 +1,22 @@
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: order-manager
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:order-manager
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:order-manager
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: order-manager
+---
+apiVersion: v1
 kind: Secret
 metadata:
   name: ewm-odata-api
@@ -29,6 +47,7 @@ spec:
       labels:
         app: order-manager
     spec:
+      serviceAccountName: order-manager
       containers:
       - image: {{ .Values.image }}
         name: order-manager

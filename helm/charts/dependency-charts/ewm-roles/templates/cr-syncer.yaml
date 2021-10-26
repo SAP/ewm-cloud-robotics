@@ -2,7 +2,7 @@
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
 metadata:
-  name: cloud-robotics:cr-syncer:ewm-sap
+  name: cloud-robotics:cr-syncer:sap-ewm
   labels:
     cr-syncer.cloudrobotics.com/aggregate-to-robot-service: "true"
 rules:

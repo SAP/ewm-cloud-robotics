@@ -1,0 +1,32 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sap-ewm:robot-configurator
+rules:
+- apiGroups:
+  - registry.cloudrobotics.com
+  resources:
+  - robots
+  - robots/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - robotconfigurations
+  - robotconfigurations/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - robotconfigurations
+  verbs:
+  - create
+  - update
+  - patch
+  - delete

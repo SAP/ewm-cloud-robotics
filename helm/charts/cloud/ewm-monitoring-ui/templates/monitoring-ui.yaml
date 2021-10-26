@@ -1,4 +1,22 @@
 apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: monitoring-ui
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:monitoring-ui
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:monitoring-ui
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: monitoring-ui
+---
+apiVersion: v1
 kind: Secret
 metadata:
   name: ewm-odata-api
@@ -66,6 +84,7 @@ spec:
       labels:
         app: monitoring-ui
     spec:
+      serviceAccountName: monitoring-ui
       volumes:
       - name: nginx-configmap-volume
         configMap:

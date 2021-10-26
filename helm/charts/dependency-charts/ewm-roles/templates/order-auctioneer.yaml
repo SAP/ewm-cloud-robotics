@@ -1,0 +1,48 @@
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: sap-ewm:order-auctioneer
+rules:
+- apiGroups:
+  - registry.cloudrobotics.com
+  resources:
+  - robots
+  - robots/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - auctioneers
+  - auctioneers/status
+  - warehouseorders
+  - warehouseorders/status
+  - orderauctions
+  - orderauctions/status
+  - orderreservations
+  - orderreservations/status
+  - robotconfigurations
+  - robotconfigurations/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - auctioneers/status
+  verbs:
+  - update
+  - patch
+- apiGroups:
+  - ewm.sap.com
+  resources:
+  - orderauctions
+  - orderreservations
+  verbs:
+  - create
+  - update
+  - patch
+  - delete
