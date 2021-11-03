@@ -1,20 +1,33 @@
 apiVersion: v1
 kind: ServiceAccount
 metadata:
-  name: robot-configurator
+  name: robot-controller
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-configurator
+  name: sap-ewm:robot-controller-cloud
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: sap-ewm:robot-configurator
+  name: sap-ewm:robot-controller
 subjects:
 - namespace: {{ .Release.Namespace }}
   kind: ServiceAccount
-  name: robot-configurator
+  name: robot-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:robot-controller-cloud:read-crds
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:read-crds
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: robot-controller
 ---
 apiVersion: apps/v1
 kind: StatefulSet
@@ -31,7 +44,7 @@ spec:
       labels:
         app: robot-controller-cloud
     spec:
-      serviceAccountName: robot-configurator
+      serviceAccountName: robot-controller
       containers:
       - image: {{ $.Values.image }}
         name: robot-controller

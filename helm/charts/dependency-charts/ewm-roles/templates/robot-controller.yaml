@@ -13,6 +13,22 @@ rules:
   - list
   - watch
 - apiGroups:
+  - mission.cloudrobotics.com
+  resources:
+  - missions
+  - missions/status
+  verbs:
+  - get
+  - list
+  - watch
+- apiGroups:
+  - mission.cloudrobotics.com
+  resources:
+  - missions/status
+  verbs:
+  - update
+  - patch
+- apiGroups:
   - ewm.sap.com
   resources:
   - warehouseorders
