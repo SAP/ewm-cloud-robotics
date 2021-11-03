@@ -55,8 +55,8 @@ func (f *sharedInformerFactory) ForResource(resource schema.GroupVersionResource
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().OrderReservations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("robotconfigurations"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().RobotConfigurations().Informer()}, nil
-	case v1alpha1.SchemeGroupVersion.WithResource("runtimeestimations"):
-		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().RunTimeEstimations().Informer()}, nil
+	case v1alpha1.SchemeGroupVersion.WithResource("traveltimecalculations"):
+		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().TravelTimeCalculations().Informer()}, nil
 	case v1alpha1.SchemeGroupVersion.WithResource("warehouseorders"):
 		return &genericInformer{resource: resource.GroupResource(), informer: f.Ewm().V1alpha1().WarehouseOrders().Informer()}, nil
 

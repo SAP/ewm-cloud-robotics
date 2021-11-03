@@ -24,14 +24,14 @@ import (
 )
 
 const (
-	pathGuidePrefix string = "mir-runtime-estimator"
+	pathGuidePrefix string = "mir-travel-time-calculator"
 )
 
 type mirEstimator struct {
 	robotName            string
 	mirClient            *mirclientv2.Client
 	clientset            *crclient.Clientset
-	eventChan            <-chan runtimeEstimationEvent
+	eventChan            <-chan travelTimeCalculationEvent
 	moveBaseChecker      *mirMoveBaseChecker
 	precalcPathsWhenIdle bool
 	preservePathGuides   bool
@@ -45,7 +45,7 @@ var posTypeIDForPathGuides = map[int]bool{
 }
 
 // newMirEstimator returns a new instance of mirEstimator
-func newMirEstimator(robotName string, mirClient *mirclientv2.Client, clientset *crclient.Clientset, eventChan <-chan runtimeEstimationEvent) *mirEstimator {
+func newMirEstimator(robotName string, mirClient *mirclientv2.Client, clientset *crclient.Clientset, eventChan <-chan travelTimeCalculationEvent) *mirEstimator {
 
 	estimator := &mirEstimator{
 		robotName:            robotName,
@@ -103,8 +103,8 @@ func (m *mirEstimator) run(done <-chan struct{}) {
 				running = false
 			case e := <-m.eventChan:
 				// Handle events from CR event channel
-				if e.eventType == watch.Added && e.runtimeEstimation.Status.Status != ewm.RunTimeEstimationStatusProcessed {
-					m.processCRAdded(e.runtimeEstimation)
+				if e.eventType == watch.Added && e.travelTimeCalculation.Status.Status != ewm.TravelTimeCalculationStatusProcessed {
+					m.processCRAdded(e.travelTimeCalculation)
 				}
 			case <-precalcPathsChan:
 				m.precalcPaths(precalcPathsChan)
@@ -114,21 +114,21 @@ func (m *mirEstimator) run(done <-chan struct{}) {
 	log.Info().Msg("MiR estimator stopped")
 }
 
-func (m *mirEstimator) processCRAdded(rte *ewm.RunTimeEstimation) {
+func (m *mirEstimator) processCRAdded(rte *ewm.TravelTimeCalculation) {
 	// Prepare context and CR interface
 	ctx := context.Background()
-	crInterface := m.clientset.EwmV1alpha1().RunTimeEstimations(rte.GetNamespace())
+	crInterface := m.clientset.EwmV1alpha1().TravelTimeCalculations(rte.GetNamespace())
 
-	log.Info().Msgf("Start runtime estimation for CR %q", rte.GetName())
+	log.Info().Msgf("Start travel time calculation for CR %q", rte.GetName())
 
 	var err error
 
 	// Set status RUNNING if not done yet
 	if rte.Status.Status == "" {
-		rte.Status.Status = ewm.RunTimeEstimationStatusRunning
+		rte.Status.Status = ewm.TravelTimeCalculationStatusRunning
 		rte, err = crInterface.UpdateStatus(ctx, rte, metav1.UpdateOptions{})
 		if err != nil {
-			log.Error().Err(err).Msgf("Updating status of RunTimeEstimation %q failed", rte.GetName())
+			log.Error().Err(err).Msgf("Updating status of TravelTimeCalculation %q failed", rte.GetName())
 		}
 	}
 
@@ -156,11 +156,11 @@ func (m *mirEstimator) processCRAdded(rte *ewm.RunTimeEstimation) {
 
 	// In case there are unknown paths
 	if len(mirPaths.unknownPaths) > 0 {
-		// Update status of RunTimeEstimation with preliminary results, because precalculation could take a while
+		// Update status of TravelTimeCalculation with preliminary results, because precalculation could take a while
 		m.updateCRWithResult(rte, mirPaths)
 		rte, err = crInterface.UpdateStatus(ctx, rte, metav1.UpdateOptions{})
 		if err != nil {
-			log.Error().Err(err).Msgf("Updating status with preliminary results of RunTimeEstimation %q failed", rte.GetName())
+			log.Error().Err(err).Msgf("Updating status with preliminary results of TravelTimeCalculation %q failed", rte.GetName())
 		}
 
 		// Precalculate paths which are unknown
@@ -180,15 +180,15 @@ func (m *mirEstimator) processCRAdded(rte *ewm.RunTimeEstimation) {
 		mirPaths.unknownPaths = mirPathsPrec.unknownPaths
 	}
 
-	// Update status of RunTimeEstimation
+	// Update status of TravelTimeCalculation
 	m.updateCRWithResult(rte, mirPaths)
-	rte.Status.Status = ewm.RunTimeEstimationStatusProcessed
+	rte.Status.Status = ewm.TravelTimeCalculationStatusProcessed
 	rte, err = crInterface.UpdateStatus(ctx, rte, metav1.UpdateOptions{})
 	if err != nil {
-		log.Error().Err(err).Msgf("Updating status with results of RunTimeEstimation %q failed", rte.GetName())
+		log.Error().Err(err).Msgf("Updating status with results of TravelTimeCalculation %q failed", rte.GetName())
 	}
 
-	log.Info().Msgf("Finished runtime estimation for CR %q", rte.GetName())
+	log.Info().Msgf("Finished travel time calculation for CR %q", rte.GetName())
 
 }
 
@@ -405,7 +405,7 @@ func (m *mirEstimator) checkPathCreated(mapID, startPosGUID, goalPosGUID string)
 	return false
 }
 
-func (m *mirEstimator) updateCRWithResult(rte *ewm.RunTimeEstimation, mirPaths *mirPaths) {
+func (m *mirEstimator) updateCRWithResult(rte *ewm.TravelTimeCalculation, mirPaths *mirPaths) {
 	// Empty slice first
 	rte.Status.RunTimes = nil
 	// Append run times of all known paths to CR status

@@ -13,19 +13,19 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mir-runtime-estimator-{{ .Values.robot.name }}
+  name: mir-travel-time-calculator-{{ .Values.robot.name }}
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mir-runtime-estimator-{{ .Values.robot.name }}
+      app: mir-travel-time-calculator-{{ .Values.robot.name }}
   template:
     metadata:
       labels:
-        app: mir-runtime-estimator-{{ .Values.robot.name }}
+        app: mir-travel-time-calculator-{{ .Values.robot.name }}
     spec:
       containers:
-      - name: mir-runtime-estimator
+      - name: mir-travel-time-calculator
         image: {{ .Values.image }}
         env:
         - name: MIR_USER

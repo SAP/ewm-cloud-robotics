@@ -37,8 +37,8 @@ func (c *FakeEwmV1alpha1) RobotConfigurations(namespace string) v1alpha1.RobotCo
 	return &FakeRobotConfigurations{c, namespace}
 }
 
-func (c *FakeEwmV1alpha1) RunTimeEstimations(namespace string) v1alpha1.RunTimeEstimationInterface {
-	return &FakeRunTimeEstimations{c, namespace}
+func (c *FakeEwmV1alpha1) TravelTimeCalculations(namespace string) v1alpha1.TravelTimeCalculationInterface {
+	return &FakeTravelTimeCalculations{c, namespace}
 }
 
 func (c *FakeEwmV1alpha1) WarehouseOrders(namespace string) v1alpha1.WarehouseOrderInterface {

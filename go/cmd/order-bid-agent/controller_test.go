@@ -169,14 +169,14 @@ func createTestMission() *mis.Mission {
 	return &m
 }
 
-func createTestRuntimeEstimation(estimatationExpired bool) *ewm.RunTimeEstimation {
-	r := ewm.RunTimeEstimation{
+func createTestTravelTimeCalculation(estimatationExpired bool) *ewm.TravelTimeCalculation {
+	r := ewm.TravelTimeCalculation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      "1710.12345-robot-1",
 			Namespace: metav1.NamespaceDefault,
 			Labels:    map[string]string{robotLabel: "robot-1"},
 		},
-		Spec: ewm.RunTimeEstimationSpec{
+		Spec: ewm.TravelTimeCalculationSpec{
 			StartPosition: "Staging",
 			ValidUntil:    testTimeNotExpired,
 			Paths: []ewm.Path{
@@ -185,8 +185,8 @@ func createTestRuntimeEstimation(estimatationExpired bool) *ewm.RunTimeEstimatio
 				{Start: "Staging", Goal: "GR-YDI3"},
 			},
 		},
-		Status: ewm.RunTimeEstimationStatus{
-			Status: ewm.RunTimeEstimationStatusProcessed,
+		Status: ewm.TravelTimeCalculationStatus{
+			Status: ewm.TravelTimeCalculationStatusProcessed,
 			RunTimes: []ewm.RunTime{
 				{Start: "Staging", Goal: "GR-YDI1", Time: 1.1},
 				{Start: "Staging", Goal: "GR-YDI2", Time: 2.2},
@@ -197,7 +197,7 @@ func createTestRuntimeEstimation(estimatationExpired bool) *ewm.RunTimeEstimatio
 
 	if estimatationExpired {
 		r.Spec.ValidUntil = testTimeExpired
-		r.Status.Status = ewm.RunTimeEstimationStatusRunning
+		r.Status.Status = ewm.TravelTimeCalculationStatusRunning
 		r.Status.RunTimes = r.Status.RunTimes[1:]
 	}
 
@@ -261,21 +261,21 @@ func TestReconcileOne(t *testing.T) {
 
 	o.Reconcile(ctx, reconcileRequest)
 
-	// Expected status of RuntimeEstimation
-	var runtimeEstimationResult ewm.RunTimeEstimationList
-	o.client.List(ctx, &runtimeEstimationResult)
+	// Expected status of TravelTimeCalculation
+	var travelTimeCalculationResult ewm.TravelTimeCalculationList
+	o.client.List(ctx, &travelTimeCalculationResult)
 
-	// One RuntimeEstimation with those specifications
-	assert.Equal(t, len(runtimeEstimationResult.Items), 1)
+	// One TravelTimeCalculation with those specifications
+	assert.Equal(t, len(travelTimeCalculationResult.Items), 1)
 
-	var runtimeEstimationNames []string
+	var travelTimeCalculationNames []string
 	var ewmPaths []ewm.Path
-	for _, r := range runtimeEstimationResult.Items {
-		runtimeEstimationNames = append(runtimeEstimationNames, r.GetName())
+	for _, r := range travelTimeCalculationResult.Items {
+		travelTimeCalculationNames = append(travelTimeCalculationNames, r.GetName())
 		ewmPaths = append(ewmPaths, r.Spec.Paths...)
 		assert.Equal(t, r.Spec.StartPosition, "Staging")
 	}
-	assert.Contains(t, runtimeEstimationNames, "1710.12345-robot-1")
+	assert.Contains(t, travelTimeCalculationNames, "1710.12345-robot-1")
 	assert.Contains(t, ewmPaths, ewm.Path{Start: "Staging", Goal: "GR-YDI1"})
 	assert.Contains(t, ewmPaths, ewm.Path{Start: "Staging", Goal: "GR-YDI2"})
 	assert.Contains(t, ewmPaths, ewm.Path{Start: "Staging", Goal: "GR-YDI3"})
@@ -303,21 +303,21 @@ func TestReconcileTwo(t *testing.T) {
 
 	o.Reconcile(ctx, reconcileRequest)
 
-	// Expected status of RuntimeEstimation
-	var runtimeEstimationResult ewm.RunTimeEstimationList
-	o.client.List(ctx, &runtimeEstimationResult)
+	// Expected status of TravelTimeCalculation
+	var travelTimeCalculationResult ewm.TravelTimeCalculationList
+	o.client.List(ctx, &travelTimeCalculationResult)
 
-	// One RuntimeEstimation with those specifications
-	assert.Equal(t, len(runtimeEstimationResult.Items), 1)
+	// One TravelTimeCalculation with those specifications
+	assert.Equal(t, len(travelTimeCalculationResult.Items), 1)
 
-	var runtimeEstimationNames []string
+	var travelTimeCalculationNames []string
 	var ewmPaths []ewm.Path
-	for _, r := range runtimeEstimationResult.Items {
-		runtimeEstimationNames = append(runtimeEstimationNames, r.GetName())
+	for _, r := range travelTimeCalculationResult.Items {
+		travelTimeCalculationNames = append(travelTimeCalculationNames, r.GetName())
 		ewmPaths = append(ewmPaths, r.Spec.Paths...)
 		assert.Equal(t, r.Spec.StartPosition, "GI-YDO9")
 	}
-	assert.Contains(t, runtimeEstimationNames, "1710.12345-robot-1")
+	assert.Contains(t, travelTimeCalculationNames, "1710.12345-robot-1")
 	assert.Contains(t, ewmPaths, ewm.Path{Start: "GI-YDO9", Goal: "GR-YDI1"})
 	assert.Contains(t, ewmPaths, ewm.Path{Start: "GI-YDO9", Goal: "GR-YDI2"})
 	assert.Contains(t, ewmPaths, ewm.Path{Start: "GI-YDO9", Goal: "GR-YDI3"})
@@ -329,10 +329,10 @@ func TestReconcileThree(t *testing.T) {
 
 	var clientObjects []client.Object
 
-	// Test case: existing OrderAuction, no WarehouseOrders in queue, one mission to Staging is running, RuntimeEstimation is completed
+	// Test case: existing OrderAuction, no WarehouseOrders in queue, one mission to Staging is running, TravelTimeCalculation is completed
 	clientObjects = append(clientObjects, createTestMission())
 	clientObjects = append(clientObjects, createTestOrderAuction("1710.12345", false, createTestEWMWarehouseOrders(), false))
-	clientObjects = append(clientObjects, createTestRuntimeEstimation(false))
+	clientObjects = append(clientObjects, createTestTravelTimeCalculation(false))
 
 	o := createTestBidAgentController(clientObjects...)
 
@@ -362,10 +362,10 @@ func TestReconcileFour(t *testing.T) {
 
 	var clientObjects []client.Object
 
-	// Test case: existing expired OrderAuction, no WarehouseOrders in queue, one mission to Staging is running, RuntimeEstimation is not completed but expired
+	// Test case: existing expired OrderAuction, no WarehouseOrders in queue, one mission to Staging is running, TravelTimeCalculation is not completed but expired
 	clientObjects = append(clientObjects, createTestMission())
 	clientObjects = append(clientObjects, createTestOrderAuction("1710.12345", true, createTestEWMWarehouseOrders(), false))
-	clientObjects = append(clientObjects, createTestRuntimeEstimation(true))
+	clientObjects = append(clientObjects, createTestTravelTimeCalculation(true))
 
 	o := createTestBidAgentController(clientObjects...)
 

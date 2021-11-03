@@ -43,13 +43,13 @@ type RobotConfigurationListerExpansion interface{}
 // RobotConfigurationNamespaceLister.
 type RobotConfigurationNamespaceListerExpansion interface{}
 
-// RunTimeEstimationListerExpansion allows custom methods to be added to
-// RunTimeEstimationLister.
-type RunTimeEstimationListerExpansion interface{}
+// TravelTimeCalculationListerExpansion allows custom methods to be added to
+// TravelTimeCalculationLister.
+type TravelTimeCalculationListerExpansion interface{}
 
-// RunTimeEstimationNamespaceListerExpansion allows custom methods to be added to
-// RunTimeEstimationNamespaceLister.
-type RunTimeEstimationNamespaceListerExpansion interface{}
+// TravelTimeCalculationNamespaceListerExpansion allows custom methods to be added to
+// TravelTimeCalculationNamespaceLister.
+type TravelTimeCalculationNamespaceListerExpansion interface{}
 
 // WarehouseOrderListerExpansion allows custom methods to be added to
 // WarehouseOrderLister.

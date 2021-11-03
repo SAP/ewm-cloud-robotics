@@ -28,7 +28,7 @@ The fetch mission controller is deployed to the cloud cluster. It watches on mis
 ## Runtime estimators
 following soon
 
-# mir-runtime-estimator
+# mir-travel-time-calculator
 following soon
 
 # Simulation apps

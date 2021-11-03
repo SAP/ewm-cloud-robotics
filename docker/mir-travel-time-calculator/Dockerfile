@@ -8,20 +8,20 @@ COPY ./go/pkg/zerologconfig $GOPATH/src/pkg/zerologconfig
 COPY ./go/pkg/apis $GOPATH/src/pkg/apis
 COPY ./go/pkg/client $GOPATH/src/pkg/client
 COPY ./go/pkg/mir-interface $GOPATH/src/pkg/mir-interface
-COPY ./go/cmd/mir-runtime-estimator $GOPATH/src/cmd/mir-runtime-estimator
-WORKDIR $GOPATH/src/cmd/mir-runtime-estimator
+COPY ./go/cmd/mir-travel-time-calculator $GOPATH/src/cmd/mir-travel-time-calculator
+WORKDIR $GOPATH/src/cmd/mir-travel-time-calculator
 # Build the binary
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/mir-runtime-estimator
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/mir-travel-time-calculator
 ###############################################################################
 # STEP 2 app image
 FROM alpine:latest
 # Install SSL ca certificates
 RUN apk add --no-cache ca-certificates
 # Copy Go static executable
-COPY --from=builder /go/bin/mir-runtime-estimator /cmd/mir-runtime-estimator
-RUN chmod +x /cmd/mir-runtime-estimator
+COPY --from=builder /go/bin/mir-travel-time-calculator /cmd/mir-travel-time-calculator
+RUN chmod +x /cmd/mir-travel-time-calculator
 
-ENTRYPOINT ["/cmd/mir-runtime-estimator"]
+ENTRYPOINT ["/cmd/mir-travel-time-calculator"]
 
 # Create & use appuser
 RUN adduser -D appuser

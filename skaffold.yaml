@@ -55,10 +55,10 @@ build:
       context: .
       docker:
         dockerfile: docker/order-bid-agent/Dockerfile
-    - image: mir-runtime-estimator
+    - image: mir-travel-time-calculator
       context: .
       docker:
-        dockerfile: docker/mir-runtime-estimator/Dockerfile
+        dockerfile: docker/mir-travel-time-calculator/Dockerfile
   local: 
     push: false
 test:
@@ -92,9 +92,9 @@ test:
   - image: order-bid-agent
     structureTests:
       - docker/order-bid-agent/test/container-structure-test/prod.yaml
-  - image: mir-runtime-estimator
+  - image: mir-travel-time-calculator
     structureTests:
-      - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
+      - docker/mir-travel-time-calculator/test/container-structure-test/prod.yaml
 
 #########################################################################################
 
@@ -168,9 +168,9 @@ profiles:
             dependencies:
               paths: 
                 - .
-        - image: mir-runtime-estimator
+        - image: mir-travel-time-calculator
           custom:
-            buildCommand: ./scripts/gcr-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh mir-travel-time-calculator docker/mir-travel-time-calculator/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -244,9 +244,9 @@ profiles:
             dependencies:
               paths: 
                 - .
-        - image: mir-runtime-estimator
+        - image: mir-travel-time-calculator
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh mir-travel-time-calculator docker/mir-travel-time-calculator/Dockerfile ./
             dependencies:
               paths: 
                 - .
@@ -373,23 +373,23 @@ profiles:
       - image: mir-mission-controller
         structureTests:
           - docker/mir-mission-controller/test/container-structure-test/prod.yaml
-  ## mir-runtime-estimator
-  - name: mir-runtime-estimator
+  ## mir-travel-time-calculator
+  - name: mir-travel-time-calculator
     build:
       tagPolicy:
         envTemplate:
           template: "dirty"
       artifacts:
-        - image: mir-runtime-estimator
+        - image: mir-travel-time-calculator
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh mir-runtime-estimator docker/mir-runtime-estimator/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh mir-travel-time-calculator docker/mir-travel-time-calculator/Dockerfile ./
             dependencies:
               paths: 
                 - .      
     test:
-      - image: mir-runtime-estimator
+      - image: mir-travel-time-calculator
         structureTests:
-          - docker/mir-runtime-estimator/test/container-structure-test/prod.yaml
+          - docker/mir-travel-time-calculator/test/container-structure-test/prod.yaml
   ## dummy-mission-controller
   - name: dummy-mission-controller
     build:

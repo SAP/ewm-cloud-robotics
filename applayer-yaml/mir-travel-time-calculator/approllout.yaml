@@ -5,17 +5,17 @@
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
 metadata:
-  name: mir-runtime-estimator
+  name: mir-travel-time-calculator
   labels:
-    app: mir-runtime-estimator
+    app: mir-travel-time-calculator
 spec:
-  appName: mir-runtime-estimator-$APP_VERSION
+  appName: mir-travel-time-calculator-$APP_VERSION
   robots:
   - selector:
       matchLabels:
         model: mir100
     values:
-      image: "ewmcloudrobotics/mir-runtime-estimator:latest"
+      image: "ewmcloudrobotics/mir-travel-time-calculator:latest"
       envs:
         miruser: "" # User to connect to MiR API
         mirpassword: "" # Password for MiR user

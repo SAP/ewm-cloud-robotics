@@ -5,7 +5,7 @@
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: App
 metadata:
-  name: mir-runtime-estimator-$APP_VERSION # $APP_VERSION is substituted with desired version (default 'dev') via sed during push in `deploy.sh` script
+  name: mir-travel-time-calculator-$APP_VERSION # $APP_VERSION is substituted with desired version (default 'dev') via sed during push in `deploy.sh` script
 spec:
   components:
     cloud:

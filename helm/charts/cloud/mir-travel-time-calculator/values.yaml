@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/mir-runtime-estimator"
+image: "ewmcloudrobotics/mir-travel-time-calculator"
 
 envs:
   miruser: "admin"

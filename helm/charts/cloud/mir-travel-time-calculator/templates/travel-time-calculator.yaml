@@ -14,19 +14,19 @@ stringData:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: mir-runtime-estimator-fleet
+  name: mir-travel-time-calculator-fleet
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: mir-runtime-estimator-fleet
+      app: mir-travel-time-calculator-fleet
   template:
     metadata:
       labels:
-        app: mir-runtime-estimator-fleet
+        app: mir-travel-time-calculator-fleet
     spec:
       containers:
-      - name: mir-runtime-estimator-fleet
+      - name: mir-travel-time-calculator-fleet
         image: {{ .Values.image }}
         env:
         - name: MIR_USER

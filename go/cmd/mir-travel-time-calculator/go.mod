@@ -1,4 +1,4 @@
-module github.com/SAP/ewm-cloud-robotics/go/cmd/mir-runtime-estimator
+module github.com/SAP/ewm-cloud-robotics/go/cmd/mir-travel-time-calculator
 
 go 1.15
 

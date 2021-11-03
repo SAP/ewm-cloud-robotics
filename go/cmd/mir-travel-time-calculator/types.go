@@ -15,9 +15,9 @@ import (
 	"k8s.io/apimachinery/pkg/watch"
 )
 
-type runtimeEstimationEvent struct {
-	eventType         watch.EventType
-	runtimeEstimation *ewm.RunTimeEstimation
+type travelTimeCalculationEvent struct {
+	eventType             watch.EventType
+	travelTimeCalculation *ewm.TravelTimeCalculation
 }
 
 // Map positions to their MiR GUIDs and the other way round

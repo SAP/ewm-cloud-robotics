@@ -25,8 +25,8 @@ type Interface interface {
 	OrderReservations() OrderReservationInformer
 	// RobotConfigurations returns a RobotConfigurationInformer.
 	RobotConfigurations() RobotConfigurationInformer
-	// RunTimeEstimations returns a RunTimeEstimationInformer.
-	RunTimeEstimations() RunTimeEstimationInformer
+	// TravelTimeCalculations returns a TravelTimeCalculationInformer.
+	TravelTimeCalculations() TravelTimeCalculationInformer
 	// WarehouseOrders returns a WarehouseOrderInformer.
 	WarehouseOrders() WarehouseOrderInformer
 }
@@ -62,9 +62,9 @@ func (v *version) RobotConfigurations() RobotConfigurationInformer {
 	return &robotConfigurationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
-// RunTimeEstimations returns a RunTimeEstimationInformer.
-func (v *version) RunTimeEstimations() RunTimeEstimationInformer {
-	return &runTimeEstimationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
+// TravelTimeCalculations returns a TravelTimeCalculationInformer.
+func (v *version) TravelTimeCalculations() TravelTimeCalculationInformer {
+	return &travelTimeCalculationInformer{factory: v.factory, namespace: v.namespace, tweakListOptions: v.tweakListOptions}
 }
 
 // WarehouseOrders returns a WarehouseOrderInformer.

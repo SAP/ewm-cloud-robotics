@@ -269,37 +269,37 @@ const (
 // +genclient
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// RunTimeEstimation represents the RunTimeEstimation CRD
-type RunTimeEstimation struct {
+// TravelTimeCalculation represents the TravelTimeCalculation CRD
+type TravelTimeCalculation struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec RunTimeEstimationSpec `json:"spec,omitempty"`
+	Spec TravelTimeCalculationSpec `json:"spec,omitempty"`
 	// +optional
-	Status RunTimeEstimationStatus `json:"status,omitempty"`
+	Status TravelTimeCalculationStatus `json:"status,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
-// RunTimeEstimationList represents the array of RunTimeEstimation CRD
-type RunTimeEstimationList struct {
+// TravelTimeCalculationList represents the array of TravelTimeCalculation CRD
+type TravelTimeCalculationList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	Items []RunTimeEstimation `json:"items"`
+	Items []TravelTimeCalculation `json:"items"`
 }
 
-// RunTimeEstimationSpec represents the spec of RunTimeEstimation CRD
-type RunTimeEstimationSpec struct {
+// TravelTimeCalculationSpec represents the spec of TravelTimeCalculation CRD
+type TravelTimeCalculationSpec struct {
 	Paths         []Path      `json:"paths"`
 	StartPosition string      `json:"startPosition"`
 	ValidUntil    metav1.Time `json:"validuntil"`
 }
 
-// RunTimeEstimationStatus represents the status of RunTimeEstimation CRD
-type RunTimeEstimationStatus struct {
-	RunTimes []RunTime                     `json:"runtimes,omitempty"`
-	Status   RunTimeEstimationStatusStatus `json:"status,omitempty"`
+// TravelTimeCalculationStatus represents the status of TravelTimeCalculation CRD
+type TravelTimeCalculationStatus struct {
+	RunTimes []RunTime                         `json:"runtimes,omitempty"`
+	Status   TravelTimeCalculationStatusStatus `json:"status,omitempty"`
 }
 
 // Path represents a path from start to goal#
@@ -315,13 +315,13 @@ type RunTime struct {
 	Time  float64 `json:"time"`
 }
 
-// RunTimeEstimationStatusStatus describes the status of a RunTimeEstimation
-type RunTimeEstimationStatusStatus string
+// TravelTimeCalculationStatusStatus describes the status of a TravelTimeCalculation
+type TravelTimeCalculationStatusStatus string
 
-// Values for RunTimeEstimationStatusStatus
+// Values for TravelTimeCalculationStatusStatus
 const (
-	RunTimeEstimationStatusRunning   RunTimeEstimationStatusStatus = "RUNNING"
-	RunTimeEstimationStatusProcessed RunTimeEstimationStatusStatus = "PROCESSED"
+	TravelTimeCalculationStatusRunning   TravelTimeCalculationStatusStatus = "RUNNING"
+	TravelTimeCalculationStatusProcessed TravelTimeCalculationStatusStatus = "PROCESSED"
 )
 
 // +genclient

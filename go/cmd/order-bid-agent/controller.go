@@ -78,9 +78,9 @@ func addBidAgentController(ctx context.Context, mgr manager.Manager, robotName s
 	}
 
 	// Cache for OwnerReferences.UID
-	err = mgr.GetCache().IndexField(ctx, &ewm.RunTimeEstimation{}, ownerReferencesUID, indexOwnerReferences)
+	err = mgr.GetCache().IndexField(ctx, &ewm.TravelTimeCalculation{}, ownerReferencesUID, indexOwnerReferences)
 	if err != nil {
-		return errors.Wrap(err, "add IndexField RunTimeEstimation")
+		return errors.Wrap(err, "add IndexField TravelTimeCalculation")
 	}
 	// Cache for Warehouse Order Spec.OrderStatus
 	err = mgr.GetCache().IndexField(ctx, &ewm.WarehouseOrder{}, warehouseOrderOrderStatus, indexWarehouseOrderOrderStatus)
@@ -95,12 +95,12 @@ func addBidAgentController(ctx context.Context, mgr manager.Manager, robotName s
 		return errors.Wrap(err, "watch OrderAuction")
 	}
 
-	// Watch RunTimeEstimation CRs
-	err = c.Watch(&source.Kind{Type: &ewm.RunTimeEstimation{}},
+	// Watch TravelTimeCalculation CRs
+	err = c.Watch(&source.Kind{Type: &ewm.TravelTimeCalculation{}},
 		&handler.EnqueueRequestForOwner{OwnerType: &ewm.OrderAuction{}, IsController: true})
 
 	if err != nil {
-		return errors.Wrap(err, "watch RunTimeEstimation")
+		return errors.Wrap(err, "watch TravelTimeCalculation")
 	}
 
 	return err
@@ -109,7 +109,7 @@ func addBidAgentController(ctx context.Context, mgr manager.Manager, robotName s
 // indexOwnerReferences indexes resources by the UIDs of their owner references.
 func indexOwnerReferences(o client.Object) (refs []string) {
 	switch obj := o.(type) {
-	case *ewm.RunTimeEstimation:
+	case *ewm.TravelTimeCalculation:
 		for _, ref := range obj.OwnerReferences {
 			refs = append(refs, string(ref.UID))
 		}
@@ -160,22 +160,22 @@ func (r *reconcileBidAgent) Reconcile(ctx context.Context, request reconcile.Req
 		return reconcile.Result{}, nil
 	}
 
-	// Get RunTimeEstimations for this OrderAuction
-	var runTimeEstimations ewm.RunTimeEstimationList
-	err = r.client.List(ctx, &runTimeEstimations, client.MatchingFields{ownerReferencesUID: string(auction.UID)})
+	// Get TravelTimeCalculations for this OrderAuction
+	var travelTimeCalculations ewm.TravelTimeCalculationList
+	err = r.client.List(ctx, &travelTimeCalculations, client.MatchingFields{ownerReferencesUID: string(auction.UID)})
 	if err != nil {
-		log.Error().Err(err).Msg("Error get RunTimeEstimations")
-		return reconcile.Result{}, errors.Wrap(err, "get RunTimeEstimations")
+		log.Error().Err(err).Msg("Error get TravelTimeCalculations")
+		return reconcile.Result{}, errors.Wrap(err, "get TravelTimeCalculations")
 	}
 
-	// If there is no RunTimeEstimation request, create a new one
-	if len(runTimeEstimations.Items) == 0 {
+	// If there is no TravelTimeCalculation request, create a new one
+	if len(travelTimeCalculations.Items) == 0 {
 		log.Info().Msgf("New OrderAuction %q with %v warehouse orders arrived", auction.GetName(), len(auction.Spec.WarehouseOrders))
-		log.Info().Msgf("No RunTimeEstimation CR for OrderAuction %q found, creating a new request", auction.GetName())
-		err = r.requestRunTimeEstimation(ctx, &auction)
+		log.Info().Msgf("No TravelTimeCalculation CR for OrderAuction %q found, creating a new request", auction.GetName())
+		err = r.requestTravelTimeCalculation(ctx, &auction)
 		if err != nil {
-			log.Error().Err(err).Msg("Error request RunTimeEstimation")
-			return reconcile.Result{}, errors.Wrap(err, "request RunTimeEstimation")
+			log.Error().Err(err).Msg("Error request TravelTimeCalculation")
+			return reconcile.Result{}, errors.Wrap(err, "request TravelTimeCalculation")
 		}
 
 		// Reconcile latest some seconds before the auction closes
@@ -193,8 +193,8 @@ func (r *reconcileBidAgent) Reconcile(ctx context.Context, request reconcile.Req
 	collectedEstimations := make(map[ewm.Path]float64)
 	var startPosition string
 	// There should be only one CR in this array
-	for _, runT := range runTimeEstimations.Items {
-		if runT.Status.Status == ewm.RunTimeEstimationStatusProcessed || closeBid {
+	for _, runT := range travelTimeCalculations.Items {
+		if runT.Status.Status == ewm.TravelTimeCalculationStatusProcessed || closeBid {
 			closeBid = true
 			startPosition = runT.Spec.StartPosition
 			for _, runTime := range runT.Status.RunTimes {
@@ -216,7 +216,7 @@ func (r *reconcileBidAgent) Reconcile(ctx context.Context, request reconcile.Req
 	return reconcile.Result{}, nil
 }
 
-func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auction *ewm.OrderAuction) error {
+func (r *reconcileBidAgent) requestTravelTimeCalculation(ctx context.Context, auction *ewm.OrderAuction) error {
 	// Estimate start position of the robot for this auction
 	startPosition, err := r.estimateStartPosition(ctx)
 	if err != nil {
@@ -228,7 +228,7 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 	// for each warehouse order in the auction
 	// This approach optimizes warehouse order processing by reducing empty drives of the robots
 
-	spec := ewm.RunTimeEstimationSpec{StartPosition: startPosition}
+	spec := ewm.TravelTimeCalculationSpec{StartPosition: startPosition}
 
 	existingPaths := make(map[ewm.Path]bool)
 
@@ -258,8 +258,8 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 		return nil
 	}
 
-	// Create RunTimeEstimation CR
-	runT := ewm.RunTimeEstimation{
+	// Create TravelTimeCalculation CR
+	runT := ewm.TravelTimeCalculation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      auction.GetName(),
 			Namespace: metav1.NamespaceDefault,
@@ -273,7 +273,7 @@ func (r *reconcileBidAgent) requestRunTimeEstimation(ctx context.Context, auctio
 	// Create CR
 	err = r.client.Create(ctx, &runT)
 	if err != nil {
-		return errors.Wrap(err, "create RunTimeEstimation")
+		return errors.Wrap(err, "create TravelTimeCalculation")
 	}
 
 	// Update bid status
@@ -356,7 +356,7 @@ func (r *reconcileBidAgent) estimateStartPosition(ctx context.Context) (string, 
 }
 
 func (r *reconcileBidAgent) closeBid(ctx context.Context, auction *ewm.OrderAuction, startPosition string,
-	runTimeEstimations map[ewm.Path]float64) error {
+	travelTimeCalculations map[ewm.Path]float64) error {
 
 	log.Info().Msgf("Starting to close bid process for OrderAuction CR %q", auction.GetName())
 	var bidResults []ewm.WarehouseOrderBidding
@@ -370,7 +370,7 @@ func (r *reconcileBidAgent) closeBid(ctx context.Context, auction *ewm.OrderAuct
 			path := ewm.Path{Start: startPosition, Goal: w.Warehousetasks[0].Vlpla}
 
 			// Create bidding from runtime. If path is not found do not create a bid for this warehouse order
-			if value, existing := runTimeEstimations[path]; existing {
+			if value, existing := travelTimeCalculations[path]; existing {
 				log.Debug().Msgf("Path %+v of warehouse order %s.%s found with bidding %v", path, w.Lgnum, w.Who, value)
 				bidding = value
 			} else if path.Start == path.Goal {

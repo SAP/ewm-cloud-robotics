@@ -59,7 +59,7 @@ func getMirClient() (*mirv2.Client, error) {
 	}
 	log.Info().Msgf("Timeout for MiR HTTP API set to %v seconds", httpTimeout)
 
-	mirClient, err := mirv2.NewClient(mirHost, mirUser, mirPassword, "mir-runtime-estimator", httpTimeout)
+	mirClient, err := mirv2.NewClient(mirHost, mirUser, mirPassword, "mir-travel-time-calculator", httpTimeout)
 	if err != nil {
 		return nil, errors.Wrapf(err, "NewClient")
 	}
@@ -82,18 +82,18 @@ func getClientset() (*crclient.Clientset, error) {
 	return clientset, nil
 }
 
-func initInformer(done <-chan struct{}, clientset *crclient.Clientset, robotName string) (<-chan runtimeEstimationEvent, error) {
+func initInformer(done <-chan struct{}, clientset *crclient.Clientset, robotName string) (<-chan travelTimeCalculationEvent, error) {
 
 	factory := crfactory.NewSharedInformerFactory(clientset, 0)
-	informer := factory.Ewm().V1alpha1().RunTimeEstimations().Informer()
+	informer := factory.Ewm().V1alpha1().TravelTimeCalculations().Informer()
 
 	// Add event handler
-	eventChan := make(chan runtimeEstimationEvent)
+	eventChan := make(chan travelTimeCalculationEvent)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			rte := obj.(*ewm.RunTimeEstimation)
+			rte := obj.(*ewm.TravelTimeCalculation)
 			if rte.GetLabels()[robotLabel] == robotName {
-				eventChan <- runtimeEstimationEvent{eventType: watch.Added, runtimeEstimation: rte}
+				eventChan <- travelTimeCalculationEvent{eventType: watch.Added, travelTimeCalculation: rte}
 			}
 		},
 	})
@@ -137,9 +137,9 @@ func main() {
 	if robotName == "" && mirFleetConfigMode != mirFleetConfigFleet {
 		log.Fatal().Msg("No name in environment variable ROBCO_ROBOT_NAME")
 	} else if mirFleetConfigMode == mirFleetConfigFleet {
-		log.Info().Msg("mir-runtime-estimator app started on MiR Fleet")
+		log.Info().Msg("mir-travel-time-calculator app started on MiR Fleet")
 	} else {
-		log.Info().Msgf("mir-runtime-estimator app started on robot %q", robotName)
+		log.Info().Msgf("mir-travel-time-calculator app started on robot %q", robotName)
 	}
 
 	// Initialize MiR interface
@@ -150,7 +150,7 @@ func main() {
 
 	// Create clientset and event channel for CR
 	var clientset *crclient.Clientset
-	var eventChan <-chan runtimeEstimationEvent
+	var eventChan <-chan travelTimeCalculationEvent
 	precalcPathsWhenIdle := false
 
 	// MiR Fleet instance does not need to listen to runtime estimation CRs because it cannot create paths

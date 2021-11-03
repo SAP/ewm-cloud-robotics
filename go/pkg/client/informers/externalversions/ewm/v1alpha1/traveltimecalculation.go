@@ -25,59 +25,59 @@ import (
 	cache "k8s.io/client-go/tools/cache"
 )
 
-// RunTimeEstimationInformer provides access to a shared informer and lister for
-// RunTimeEstimations.
-type RunTimeEstimationInformer interface {
+// TravelTimeCalculationInformer provides access to a shared informer and lister for
+// TravelTimeCalculations.
+type TravelTimeCalculationInformer interface {
 	Informer() cache.SharedIndexInformer
-	Lister() v1alpha1.RunTimeEstimationLister
+	Lister() v1alpha1.TravelTimeCalculationLister
 }
 
-type runTimeEstimationInformer struct {
+type travelTimeCalculationInformer struct {
 	factory          internalinterfaces.SharedInformerFactory
 	tweakListOptions internalinterfaces.TweakListOptionsFunc
 	namespace        string
 }
 
-// NewRunTimeEstimationInformer constructs a new informer for RunTimeEstimation type.
+// NewTravelTimeCalculationInformer constructs a new informer for TravelTimeCalculation type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewRunTimeEstimationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
-	return NewFilteredRunTimeEstimationInformer(client, namespace, resyncPeriod, indexers, nil)
+func NewTravelTimeCalculationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers) cache.SharedIndexInformer {
+	return NewFilteredTravelTimeCalculationInformer(client, namespace, resyncPeriod, indexers, nil)
 }
 
-// NewFilteredRunTimeEstimationInformer constructs a new informer for RunTimeEstimation type.
+// NewFilteredTravelTimeCalculationInformer constructs a new informer for TravelTimeCalculation type.
 // Always prefer using an informer factory to get a shared informer instead of getting an independent
 // one. This reduces memory footprint and number of connections to the server.
-func NewFilteredRunTimeEstimationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
+func NewFilteredTravelTimeCalculationInformer(client versioned.Interface, namespace string, resyncPeriod time.Duration, indexers cache.Indexers, tweakListOptions internalinterfaces.TweakListOptionsFunc) cache.SharedIndexInformer {
 	return cache.NewSharedIndexInformer(
 		&cache.ListWatch{
 			ListFunc: func(options v1.ListOptions) (runtime.Object, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.EwmV1alpha1().RunTimeEstimations(namespace).List(context.TODO(), options)
+				return client.EwmV1alpha1().TravelTimeCalculations(namespace).List(context.TODO(), options)
 			},
 			WatchFunc: func(options v1.ListOptions) (watch.Interface, error) {
 				if tweakListOptions != nil {
 					tweakListOptions(&options)
 				}
-				return client.EwmV1alpha1().RunTimeEstimations(namespace).Watch(context.TODO(), options)
+				return client.EwmV1alpha1().TravelTimeCalculations(namespace).Watch(context.TODO(), options)
 			},
 		},
-		&ewmv1alpha1.RunTimeEstimation{},
+		&ewmv1alpha1.TravelTimeCalculation{},
 		resyncPeriod,
 		indexers,
 	)
 }
 
-func (f *runTimeEstimationInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
-	return NewFilteredRunTimeEstimationInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
+func (f *travelTimeCalculationInformer) defaultInformer(client versioned.Interface, resyncPeriod time.Duration) cache.SharedIndexInformer {
+	return NewFilteredTravelTimeCalculationInformer(client, f.namespace, resyncPeriod, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc}, f.tweakListOptions)
 }
 
-func (f *runTimeEstimationInformer) Informer() cache.SharedIndexInformer {
-	return f.factory.InformerFor(&ewmv1alpha1.RunTimeEstimation{}, f.defaultInformer)
+func (f *travelTimeCalculationInformer) Informer() cache.SharedIndexInformer {
+	return f.factory.InformerFor(&ewmv1alpha1.TravelTimeCalculation{}, f.defaultInformer)
 }
 
-func (f *runTimeEstimationInformer) Lister() v1alpha1.RunTimeEstimationLister {
-	return v1alpha1.NewRunTimeEstimationLister(f.Informer().GetIndexer())
+func (f *travelTimeCalculationInformer) Lister() v1alpha1.TravelTimeCalculationLister {
+	return v1alpha1.NewTravelTimeCalculationLister(f.Informer().GetIndexer())
 }
