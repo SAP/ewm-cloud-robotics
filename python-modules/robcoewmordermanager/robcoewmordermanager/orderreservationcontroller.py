@@ -32,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 class OrderReservationController(K8sCRHandler):
     """Handle K8s custom resources."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         template_cr = get_sample_cr('orderreservation')
 
@@ -40,7 +40,7 @@ class OrderReservationController(K8sCRHandler):
             'ewm.sap.com',
             'v1alpha1',
             'orderreservations',
-            'default',
+            namespace,
             template_cr,
             {}
         )

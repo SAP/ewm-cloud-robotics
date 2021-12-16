@@ -47,6 +47,7 @@ type reconcileAuctioneer struct {
 	client         client.Client
 	scheme         *runtime.Scheme
 	deployedRobots map[string]bool
+	namespace      string
 }
 
 // Implement reconcile.Reconciler so the controller can reconcile objects
@@ -66,10 +67,10 @@ var statemachineUnavailable = map[string]bool{
 }
 
 // Add a new instance of auctioneer controller to a manager
-func addAuctioneerController(ctx context.Context, mgr manager.Manager, deployedRobots map[string]bool) error {
+func addAuctioneerController(ctx context.Context, mgr manager.Manager, namespace string, deployedRobots map[string]bool) error {
 
 	// Create auctioneer controller
-	r := &reconcileAuctioneer{client: mgr.GetClient(), scheme: mgr.GetScheme(), deployedRobots: deployedRobots}
+	r := &reconcileAuctioneer{client: mgr.GetClient(), scheme: mgr.GetScheme(), deployedRobots: deployedRobots, namespace: namespace}
 	c, err := controller.New("auctioneer-controller", mgr, controller.Options{Reconciler: r})
 
 	if err != nil {
@@ -883,7 +884,7 @@ func (r *reconcileAuctioneer) doCreateAuctions(ctx context.Context, a *ewm.Aucti
 				oa := ewm.OrderAuction{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      fmt.Sprintf("%s-%s", auction.orderAuction, robot),
-						Namespace: metav1.NamespaceDefault,
+						Namespace: r.namespace,
 						Labels:    map[string]string{robotLabel: robot, orderAuctionLabel: auction.orderAuction},
 					},
 					Spec: ewm.OrderAuctionSpec{
@@ -962,7 +963,7 @@ func (r *reconcileAuctioneer) doCreateReservations(ctx context.Context, a *ewm.A
 			or := ewm.OrderReservation{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      orderAuctionName,
-					Namespace: metav1.NamespaceDefault,
+					Namespace: r.namespace,
 					Labels:    map[string]string{orderAuctionLabel: orderAuctionName},
 				},
 				Spec: ewm.OrderReservationSpec{

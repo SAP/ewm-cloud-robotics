@@ -42,7 +42,7 @@ class MissionController(K8sCRHandler):
 
     activeaction_templ = {'status': 'DOCKING'}
 
-    def __init__(self, dummy_robot: DummyRobot) -> None:
+    def __init__(self, dummy_robot: DummyRobot, namespace: str) -> None:
         """Construct."""
         # Instance of DummyRobot robot
         self._dummy_robot = dummy_robot
@@ -59,7 +59,7 @@ class MissionController(K8sCRHandler):
             'mission.cloudrobotics.com',
             'v1alpha1',
             'missions',
-            'default',
+            namespace,
             template_cr,
             labels
         )

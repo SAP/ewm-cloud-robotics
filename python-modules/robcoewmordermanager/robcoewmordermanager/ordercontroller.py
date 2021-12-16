@@ -34,7 +34,7 @@ _LOGGER = logging.getLogger(__name__)
 class OrderController(K8sCRHandler):
     """Handle K8s custom resources."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         # Processed warehouse order CRs dictionary
         self._processed_orders: TOrderedDict[str, str] = OrderedDict()
@@ -47,7 +47,7 @@ class OrderController(K8sCRHandler):
             'ewm.sap.com',
             'v1alpha1',
             'warehouseorders',
-            'default',
+            namespace,
             template_cr,
             {}
         )

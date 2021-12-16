@@ -23,7 +23,7 @@ _LOGGER = logging.getLogger(__name__)
 class RobCoRobotAPI(K8sCRHandler):
     """Handle K8s Robot custom resources."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         template_cr = get_sample_cr('robco_robot')
 
@@ -31,7 +31,7 @@ class RobCoRobotAPI(K8sCRHandler):
             'registry.cloudrobotics.com',
             'v1alpha1',
             'robots',
-            'default',
+            namespace,
             template_cr,
             {}
         )

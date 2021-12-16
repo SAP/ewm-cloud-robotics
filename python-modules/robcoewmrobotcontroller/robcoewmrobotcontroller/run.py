@@ -101,11 +101,14 @@ def run_robots():
     # Start prometheus client
     start_http_server(8000)
 
+    # Identify namespace for custom resources
+    namespace = os.environ.get('K8S_NAMESPACE', 'default')
+
     # Create handler
-    rc_handler = RobotConfigurationHandler()
-    r_handler = RobotHandler()
-    m_handler = MissionHandler()
-    o_handler = OrderHandler()
+    rc_handler = RobotConfigurationHandler(namespace)
+    r_handler = RobotHandler(namespace)
+    m_handler = MissionHandler(namespace)
+    o_handler = OrderHandler(namespace)
 
     # Get robots
     robots_env = os.environ.get('ROBOTS')
@@ -135,6 +138,8 @@ def run_robots():
         robots.append(robot)
 
     _LOGGER.info('All %s robots started', len(robots))
+    _LOGGER.info('Watching custom resources of namespace %s', namespace)
+
 
     # Reprocess CRs from all handler once when all robots are started
     rc_handler.process_all_crs()

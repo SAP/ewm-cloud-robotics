@@ -33,7 +33,7 @@ class RobotConfigurationController(K8sCRHandler):
         'moveTrolley_waitingForErrorRecovery', 'pickPackPass_waitingForErrorRecovery',
         'robotError']
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         self.init_default_values_fromenv()
 
@@ -43,7 +43,7 @@ class RobotConfigurationController(K8sCRHandler):
             'ewm.sap.com',
             'v1alpha1',
             'robotconfigurations',
-            'default',
+            namespace,
             template_cr,
             {}
         )

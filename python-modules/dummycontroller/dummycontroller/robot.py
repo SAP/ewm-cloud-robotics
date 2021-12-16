@@ -31,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 class RobotController(K8sCRHandler):
     """DummyRobot robot controller."""
 
-    def __init__(self, dummy_robot: DummyRobot) -> None:
+    def __init__(self, dummy_robot: DummyRobot, namespace: str) -> None:
         """Construct."""
         # Instance with Dummy robot
         self._dummy_robot = dummy_robot
@@ -44,7 +44,7 @@ class RobotController(K8sCRHandler):
             'registry.cloudrobotics.com',
             'v1alpha1',
             'robots',
-            'default',
+            namespace,
             self.robot_template_cr,
             labels
         )

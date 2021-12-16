@@ -12,6 +12,7 @@
 
 """Run the MiR mission controller."""
 
+import os
 import logging
 
 from prometheus_client import start_http_server
@@ -32,6 +33,9 @@ def run_missioncontroller():
     # Register handler to control main loop
     loop_control = MainLoopController()
 
+    # Identify namespace for custom resources
+    namespace = os.environ.get('K8S_NAMESPACE', 'default')
+
     # Create instance for MiR API
     mir_api = MiRInterface()
 
@@ -39,14 +43,15 @@ def run_missioncontroller():
     mir_robot = MiRRobot(mir_api)
 
     # Create K8S handler instances
-    k8s_rc = RobotController(mir_robot)
-    k8s_mc = MissionController(mir_robot)
+    k8s_rc = RobotController(mir_robot, namespace)
+    k8s_mc = MissionController(mir_robot, namespace)
 
     # Start
     k8s_rc.run(reprocess=False)
     k8s_mc.run(reprocess=False)
 
     _LOGGER.info('MiR controller started for robot %s', mir_robot.robco_robot_name)
+    _LOGGER.info('Watching custom resources of namespace %s', namespace)
 
     try:
         # Looping while K8S watchers are running

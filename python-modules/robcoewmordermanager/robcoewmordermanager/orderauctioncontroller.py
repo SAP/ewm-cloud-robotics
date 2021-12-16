@@ -30,7 +30,7 @@ _LOGGER = logging.getLogger(__name__)
 class OrderAuctionController(K8sCRHandler):
     """Handle K8s custom resources."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         template_cr = get_sample_cr('orderauction')
 
@@ -38,7 +38,7 @@ class OrderAuctionController(K8sCRHandler):
             'ewm.sap.com',
             'v1alpha1',
             'orderauctions',
-            'default',
+            namespace,
             template_cr,
             {}
         )

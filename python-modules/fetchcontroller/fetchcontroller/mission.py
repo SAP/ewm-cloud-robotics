@@ -41,7 +41,7 @@ class MissionController(K8sCRHandler):
 
     activeaction_templ = {'status': 'DOCKING'}
 
-    def __init__(self, fetch_robots: FetchRobots) -> None:
+    def __init__(self, fetch_robots: FetchRobots, namespace: str) -> None:
         """Construct."""
         # Instance with all FetchCore robots
         self._fetch_robots = fetch_robots
@@ -56,7 +56,7 @@ class MissionController(K8sCRHandler):
             'mission.cloudrobotics.com',
             'v1alpha1',
             'missions',
-            'default',
+            namespace,
             template_cr,
             {}
         )

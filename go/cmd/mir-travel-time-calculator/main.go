@@ -22,6 +22,7 @@ import (
 	mirv2 "github.com/SAP/ewm-cloud-robotics/go/pkg/mir-interface/client/v2"
 	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig"
 	"github.com/pkg/errors"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/watch"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -82,18 +83,18 @@ func getClientset() (*crclient.Clientset, error) {
 	return clientset, nil
 }
 
-func initInformer(done <-chan struct{}, clientset *crclient.Clientset, robotName string) (<-chan travelTimeCalculationEvent, error) {
+func initInformer(done <-chan struct{}, clientset *crclient.Clientset, namespace, robotName string) (<-chan travelTimeCalculationEvent, error) {
 
-	factory := crfactory.NewSharedInformerFactory(clientset, 0)
+	factory := crfactory.NewSharedInformerFactoryWithOptions(clientset, 0, crfactory.WithNamespace(namespace))
 	informer := factory.Ewm().V1alpha1().TravelTimeCalculations().Informer()
 
 	// Add event handler
 	eventChan := make(chan travelTimeCalculationEvent)
 	informer.AddEventHandler(cache.ResourceEventHandlerFuncs{
 		AddFunc: func(obj interface{}) {
-			rte := obj.(*ewm.TravelTimeCalculation)
-			if rte.GetLabels()[robotLabel] == robotName {
-				eventChan <- travelTimeCalculationEvent{eventType: watch.Added, travelTimeCalculation: rte}
+			ttc := obj.(*ewm.TravelTimeCalculation)
+			if ttc.GetLabels()[robotLabel] == robotName {
+				eventChan <- travelTimeCalculationEvent{eventType: watch.Added, travelTimeCalculation: ttc}
 			}
 		},
 	})
@@ -114,6 +115,12 @@ func main() {
 	interruptChan := make(chan os.Signal, 1)
 	signal.Notify(interruptChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 
+	// Get namespace of custom resources to be watched
+	namespace := os.Getenv("K8S_NAMESPACE")
+	if namespace == "" {
+		namespace = metav1.NamespaceDefault
+	}
+
 	// If MIR_FLEET_CONFIG is enabled pathg uides are preserved and calculated in advance on MiR Fleet instance, but no path guides are created on the robots
 	// MiR Fleet is unstable in case path guides are deleted on robot side or the same path guides are created at different robots at about the same time
 	mirFleetConfig := strings.ToUpper(os.Getenv("MIR_FLEET_CONFIG"))
@@ -131,6 +138,8 @@ func main() {
 	default:
 		log.Panic().Msgf("Value %s for environment variable MIR_FLEET_CONFIG is invalid", mirFleetConfig)
 	}
+
+	log.Info().Msgf("Watch custom resources of namespace %v", namespace)
 
 	// Get robot name for which the app is deployed
 	robotName := os.Getenv("ROBCO_ROBOT_NAME")
@@ -160,7 +169,7 @@ func main() {
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error getting ClientSet for CRs")
 		}
-		eventChan, err = initInformer(done, clientset, robotName)
+		eventChan, err = initInformer(done, clientset, namespace, robotName)
 		if err != nil {
 			log.Fatal().Err(err).Msg("Error initializing informer for CRs")
 		}

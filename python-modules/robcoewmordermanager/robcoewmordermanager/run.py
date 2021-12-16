@@ -12,6 +12,7 @@
 
 """Run the SAP EWM order manager."""
 
+import os
 import signal
 import logging
 import time
@@ -64,13 +65,16 @@ def run_ordermanager():
     # Start prometheus client
     start_http_server(8000)
 
+    # Identify namespace for custom resources
+    namespace = os.environ.get('K8S_NAMESPACE', 'default')
+
     # Create K8S handler instances
-    k8s_oc = OrderController()
-    k8s_rc = RobotConfigurationController()
-    k8s_orc = OrderReservationController()
-    k8s_oac = OrderAuctionController()
-    k8s_auc = AuctioneerController()
-    k8s_roc = RobotController()
+    k8s_oc = OrderController(namespace)
+    k8s_rc = RobotConfigurationController(namespace)
+    k8s_orc = OrderReservationController(namespace)
+    k8s_oac = OrderAuctionController(namespace)
+    k8s_auc = AuctioneerController(namespace)
+    k8s_roc = RobotController(namespace)
 
     # Create order manager instance
     manager = EWMOrderManager(k8s_oc, k8s_rc, k8s_orc, k8s_oac, k8s_auc, k8s_roc)
@@ -84,6 +88,7 @@ def run_ordermanager():
     manager.robotconfigcontroller.run(reprocess=True, multiple_executor_threads=True)
 
     _LOGGER.info('SAP EWM Order Manager started')
+    _LOGGER.info('Watching custom resources of namespace %s', namespace)
 
     try:
         # Looping while K8S watchers are running

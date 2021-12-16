@@ -32,7 +32,7 @@ _LOGGER = logging.getLogger(__name__)
 class RobotController(K8sCRHandler):
     """FetchCore robot controller."""
 
-    def __init__(self, fetch_robots: FetchRobots) -> None:
+    def __init__(self, fetch_robots: FetchRobots, namespace: str) -> None:
         """Construct."""
         # Instance with all FetchCore robots
         self._fetch_robots = fetch_robots
@@ -45,7 +45,7 @@ class RobotController(K8sCRHandler):
             'registry.cloudrobotics.com',
             'v1alpha1',
             'robots',
-            'default',
+            namespace,
             self.robot_template_cr,
             {}
         )
@@ -56,7 +56,7 @@ class RobotController(K8sCRHandler):
             'registry.cloudrobotics.com',
             'v1alpha1',
             'robottypes',
-            'default',
+            namespace,
             template_robottype_cr,
             {}
         )

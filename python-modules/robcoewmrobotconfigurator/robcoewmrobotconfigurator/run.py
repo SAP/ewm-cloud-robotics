@@ -12,6 +12,7 @@
 
 """Run the SAP EWM robot configurator."""
 
+import os
 import signal
 import logging
 import time
@@ -55,9 +56,12 @@ def run_robotconfigurator():
     # Register handler to control main loop
     loop_control = MainLoopController()
 
+    # Identify namespace for custom resources
+    namespace = os.environ.get('K8S_NAMESPACE', 'default')
+
     # Create CR watcher instances
-    k8s_rb = RobCoRobotAPI()
-    k8s_rc = RobotConfigurationController()
+    k8s_rb = RobCoRobotAPI(namespace)
+    k8s_rc = RobotConfigurationController(namespace)
 
     # Create EWM robot syncer instance
     robotsync = EWMRobotSync(k8s_rc)
@@ -72,6 +76,7 @@ def run_robotconfigurator():
     k8s_rb.run(reprocess=True)
 
     _LOGGER.info('SAP EWM Robot Configurator started')
+    _LOGGER.info('Watching custom resources of namespace %s', namespace)
 
     try:
         # Looping while K8S watchers are running

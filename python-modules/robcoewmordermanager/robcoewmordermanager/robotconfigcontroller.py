@@ -25,7 +25,7 @@ _LOGGER = logging.getLogger(__name__)
 class RobotConfigurationController(K8sCRHandler):
     """Handle K8s RobotConfiguration custom resources."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         template_cr = get_sample_cr('robotconfiguration')
 
@@ -34,7 +34,7 @@ class RobotConfigurationController(K8sCRHandler):
             'ewm.sap.com',
             'v1alpha1',
             'robotconfigurations',
-            'default',
+            namespace,
             template_cr,
             labels
         )

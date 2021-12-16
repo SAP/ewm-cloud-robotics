@@ -45,6 +45,7 @@ type reconcileBidAgent struct {
 	client    client.Client
 	scheme    *runtime.Scheme
 	robotName string
+	namespace string
 }
 
 // Implement reconcile.Reconciler so the controller can reconcile objects
@@ -67,10 +68,10 @@ func (f fitsRobotLabelPredicate) Update(e event.UpdateEvent) bool {
 }
 
 // Add a new instance of bid agent controller to a manager
-func addBidAgentController(ctx context.Context, mgr manager.Manager, robotName string) error {
+func addBidAgentController(ctx context.Context, mgr manager.Manager, namespace, robotName string) error {
 
 	// Create bid agent controller
-	r := &reconcileBidAgent{client: mgr.GetClient(), scheme: mgr.GetScheme(), robotName: robotName}
+	r := &reconcileBidAgent{client: mgr.GetClient(), scheme: mgr.GetScheme(), robotName: robotName, namespace: namespace}
 	c, err := controller.New("bid-agent-controller", mgr, controller.Options{Reconciler: r})
 
 	if err != nil {
@@ -262,7 +263,7 @@ func (r *reconcileBidAgent) requestTravelTimeCalculation(ctx context.Context, au
 	runT := ewm.TravelTimeCalculation{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      auction.GetName(),
-			Namespace: metav1.NamespaceDefault,
+			Namespace: r.namespace,
 			Labels:    map[string]string{robotLabel: r.robotName, orderAuctionLabel: auction.GetLabels()[orderAuctionLabel]},
 		},
 		Spec: spec,

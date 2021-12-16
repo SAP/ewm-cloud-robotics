@@ -114,21 +114,21 @@ func (m *mirEstimator) run(done <-chan struct{}) {
 	log.Info().Msg("MiR estimator stopped")
 }
 
-func (m *mirEstimator) processCRAdded(rte *ewm.TravelTimeCalculation) {
+func (m *mirEstimator) processCRAdded(ttc *ewm.TravelTimeCalculation) {
 	// Prepare context and CR interface
 	ctx := context.Background()
-	crInterface := m.clientset.EwmV1alpha1().TravelTimeCalculations(rte.GetNamespace())
+	crInterface := m.clientset.EwmV1alpha1().TravelTimeCalculations(ttc.GetNamespace())
 
-	log.Info().Msgf("Start travel time calculation for CR %q", rte.GetName())
+	log.Info().Msgf("Start travel time calculation for CR %q", ttc.GetName())
 
 	var err error
 
 	// Set status RUNNING if not done yet
-	if rte.Status.Status == "" {
-		rte.Status.Status = ewm.TravelTimeCalculationStatusRunning
-		rte, err = crInterface.UpdateStatus(ctx, rte, metav1.UpdateOptions{})
+	if ttc.Status.Status == "" {
+		ttc.Status.Status = ewm.TravelTimeCalculationStatusRunning
+		ttc, err = crInterface.UpdateStatus(ctx, ttc, metav1.UpdateOptions{})
 		if err != nil {
-			log.Error().Err(err).Msgf("Updating status of TravelTimeCalculation %q failed", rte.GetName())
+			log.Error().Err(err).Msgf("Updating status of TravelTimeCalculation %q failed", ttc.GetName())
 		}
 	}
 
@@ -147,7 +147,7 @@ func (m *mirEstimator) processCRAdded(rte *ewm.TravelTimeCalculation) {
 	}
 
 	// Collect paths from MiR
-	reqEwmPaths := newPathLookup(rte.Spec.Paths)
+	reqEwmPaths := newPathLookup(ttc.Spec.Paths)
 	mirPaths, err := m.collectMirPaths(mirStatus.MapID, posMaps, reqEwmPaths)
 	if err != nil {
 		log.Error().Err(err).Msgf("Error getting paths from active map on robot %q", m.robotName)
@@ -157,14 +157,14 @@ func (m *mirEstimator) processCRAdded(rte *ewm.TravelTimeCalculation) {
 	// In case there are unknown paths
 	if len(mirPaths.unknownPaths) > 0 {
 		// Update status of TravelTimeCalculation with preliminary results, because precalculation could take a while
-		m.updateCRWithResult(rte, mirPaths)
-		rte, err = crInterface.UpdateStatus(ctx, rte, metav1.UpdateOptions{})
+		m.updateCRWithResult(ttc, mirPaths)
+		ttc, err = crInterface.UpdateStatus(ctx, ttc, metav1.UpdateOptions{})
 		if err != nil {
-			log.Error().Err(err).Msgf("Updating status with preliminary results of TravelTimeCalculation %q failed", rte.GetName())
+			log.Error().Err(err).Msgf("Updating status with preliminary results of TravelTimeCalculation %q failed", ttc.GetName())
 		}
 
 		// Precalculate paths which are unknown
-		m.precalculatePaths(mirStatus.MapID, posMaps, mirPaths.unknownPaths, metav1.Time{rte.Spec.ValidUntil.Add(time.Second * -10)})
+		m.precalculatePaths(mirStatus.MapID, posMaps, mirPaths.unknownPaths, metav1.Time{ttc.Spec.ValidUntil.Add(time.Second * -10)})
 
 		// Collect precalculated paths
 		mirPathsPrec, err := m.collectMirPaths(mirStatus.MapID, posMaps, mirPaths.unknownPaths)
@@ -181,14 +181,14 @@ func (m *mirEstimator) processCRAdded(rte *ewm.TravelTimeCalculation) {
 	}
 
 	// Update status of TravelTimeCalculation
-	m.updateCRWithResult(rte, mirPaths)
-	rte.Status.Status = ewm.TravelTimeCalculationStatusProcessed
-	rte, err = crInterface.UpdateStatus(ctx, rte, metav1.UpdateOptions{})
+	m.updateCRWithResult(ttc, mirPaths)
+	ttc.Status.Status = ewm.TravelTimeCalculationStatusProcessed
+	ttc, err = crInterface.UpdateStatus(ctx, ttc, metav1.UpdateOptions{})
 	if err != nil {
-		log.Error().Err(err).Msgf("Updating status with results of TravelTimeCalculation %q failed", rte.GetName())
+		log.Error().Err(err).Msgf("Updating status with results of TravelTimeCalculation %q failed", ttc.GetName())
 	}
 
-	log.Info().Msgf("Finished travel time calculation for CR %q", rte.GetName())
+	log.Info().Msgf("Finished travel time calculation for CR %q", ttc.GetName())
 
 }
 
@@ -405,17 +405,17 @@ func (m *mirEstimator) checkPathCreated(mapID, startPosGUID, goalPosGUID string)
 	return false
 }
 
-func (m *mirEstimator) updateCRWithResult(rte *ewm.TravelTimeCalculation, mirPaths *mirPaths) {
+func (m *mirEstimator) updateCRWithResult(ttc *ewm.TravelTimeCalculation, mirPaths *mirPaths) {
 	// Empty slice first
-	rte.Status.RunTimes = nil
+	ttc.Status.RunTimes = nil
 	// Append run times of all known paths to CR status
-	for _, ewmPath := range rte.Spec.Paths {
+	for _, ewmPath := range ttc.Spec.Paths {
 		if path, ok := mirPaths.knownPaths[ewmPath]; ok {
 			ewmRuntime := ewm.RunTime{Start: ewmPath.Start, Goal: ewmPath.Goal, Time: path.Time}
-			rte.Status.RunTimes = append(rte.Status.RunTimes, ewmRuntime)
+			ttc.Status.RunTimes = append(ttc.Status.RunTimes, ewmRuntime)
 		}
 	}
-	log.Info().Msgf("Found results for %v of %v run time estimation requests", len(rte.Status.RunTimes), len(rte.Spec.Paths))
+	log.Info().Msgf("Found results for %v of %v run time estimation requests", len(ttc.Status.RunTimes), len(ttc.Spec.Paths))
 }
 
 func (m *mirEstimator) precalcPaths(precalcPathsChan chan<- struct{}) {

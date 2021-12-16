@@ -33,7 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 class MissionHandler(K8sCRHandler):
     """Handle Mission custom resources."""
 
-    def __init__(self) -> None:
+    def __init__(self, namespace: str) -> None:
         """Construct."""
         template_cr = get_sample_cr('robco_mission')
 
@@ -42,7 +42,7 @@ class MissionHandler(K8sCRHandler):
             'mission.cloudrobotics.com',
             'v1alpha1',
             'missions',
-            'default',
+            namespace,
             template_cr,
             labels
         )

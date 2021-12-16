@@ -12,6 +12,7 @@
 
 """Run the DummyRobot mission controller."""
 
+import os
 import logging
 
 from dummycontroller.dummyrobot import DummyRobot
@@ -27,18 +28,22 @@ def run_missioncontroller():
     # Register handler to control main loop
     loop_control = MainLoopController()
 
+    # Identify namespace for custom resources
+    namespace = os.environ.get('K8S_NAMESPACE', 'default')
+
     # Create instance for dummy robot
     robot = DummyRobot()
 
     # Create K8S handler instances
-    k8s_rc = RobotController(robot)
-    k8s_mc = MissionController(robot)
+    k8s_rc = RobotController(robot, namespace)
+    k8s_mc = MissionController(robot, namespace)
 
     # Start
     k8s_rc.run(reprocess=False)
     k8s_mc.run(reprocess=True)
 
     _LOGGER.info('DummyRobot controller started for robot %s', robot.robco_robot_name)
+    _LOGGER.info('Watching custom resources of namespace %s', namespace)
 
     try:
         # Looping while Pub/Sub subscriber is running

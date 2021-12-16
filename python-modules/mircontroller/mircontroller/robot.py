@@ -31,7 +31,7 @@ _LOGGER = logging.getLogger(__name__)
 class RobotController(K8sCRHandler):
     """MiR robot controller."""
 
-    def __init__(self, mir_robot: MiRRobot) -> None:
+    def __init__(self, mir_robot: MiRRobot, namespace: str) -> None:
         """Construct."""
         # Instance with MiR robot
         self._mir_robot = mir_robot
@@ -44,7 +44,7 @@ class RobotController(K8sCRHandler):
             'registry.cloudrobotics.com',
             'v1alpha1',
             'robots',
-            'default',
+            namespace,
             self.robot_template_cr,
             labels
         )

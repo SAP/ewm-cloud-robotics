@@ -12,6 +12,7 @@
 
 """Run the FetchCore mission controller."""
 
+import os
 import logging
 
 from prometheus_client import start_http_server
@@ -32,6 +33,9 @@ def run_missioncontroller():
     # Register handler to control main loop
     loop_control = MainLoopController()
 
+    # Identify namespace for custom resources
+    namespace = os.environ.get('K8S_NAMESPACE', 'default')
+
     # Create instance for FetchCore interface
     fetch_api = FetchInterface()
     # Start thread to update FetchCore bearer token
@@ -42,14 +46,15 @@ def run_missioncontroller():
     fetch_robots = FetchRobots(fetch_api)
 
     # Create K8S handler instances
-    k8s_rc = RobotController(fetch_robots)
-    k8s_mc = MissionController(fetch_robots)
+    k8s_rc = RobotController(fetch_robots, namespace)
+    k8s_mc = MissionController(fetch_robots, namespace)
 
     # Start
     k8s_rc.run(reprocess=True)
     k8s_mc.run(reprocess=False)
 
     _LOGGER.info('FetchCore mission controller started')
+    _LOGGER.info('Watching custom resources of namespace %s', namespace)
 
     try:
         # Looping while K8S watchers are running

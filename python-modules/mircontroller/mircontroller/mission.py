@@ -55,7 +55,7 @@ class MissionController(K8sCRHandler):
         'returnTrolley': 'dockName'
         }
 
-    def __init__(self, mir_robot: MiRRobot) -> None:
+    def __init__(self, mir_robot: MiRRobot, namespace: str) -> None:
         """Construct."""
         # Instance of MiR robot
         self._mir_robot = mir_robot
@@ -72,7 +72,7 @@ class MissionController(K8sCRHandler):
             'mission.cloudrobotics.com',
             'v1alpha1',
             'missions',
-            'default',
+            namespace,
             template_cr,
             labels
         )

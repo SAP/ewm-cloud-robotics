@@ -17,6 +17,7 @@ import (
 	mis "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/mission/v1alpha1"
 	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig"
 	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologr"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -28,6 +29,12 @@ import (
 var log = zerologconfig.GetGlobalLogger()
 
 func main() {
+	// Get namespace of custom resources to be watched
+	namespace := os.Getenv("K8S_NAMESPACE")
+	if namespace == "" {
+		namespace = metav1.NamespaceDefault
+	}
+
 	// Get robot name for which the app is deployed
 	robotName := os.Getenv("ROBCO_ROBOT_NAME")
 
@@ -36,6 +43,7 @@ func main() {
 	}
 
 	log.Info().Msgf("Order-Bid-Agent app started on robot: %v", robotName)
+	log.Info().Msgf("Watch custom resources of namespace %v", namespace)
 
 	// Context
 	ctx := context.Background()
@@ -48,14 +56,14 @@ func main() {
 
 	// Create new manager
 	ctrl.SetLogger(zerologr.NewLogger(log))
-	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{Scheme: sc})
+	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{Scheme: sc, Namespace: namespace})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Unable to create controller manager")
 	}
 
 	// Add the bid-agent-controller
 	log.Info().Msg("Setting up bid-agent-controller")
-	err = addBidAgentController(ctx, mgr, robotName)
+	err = addBidAgentController(ctx, mgr, namespace, robotName)
 	if err != nil {
 		log.Fatal().Err(err).Msg("Unable to add bid-agent-controller to manager")
 	}
