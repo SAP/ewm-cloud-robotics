@@ -16,7 +16,7 @@ import (
 	ewm "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/ewm/v1alpha1"
 	mis "github.com/SAP/ewm-cloud-robotics/go/pkg/apis/mission/v1alpha1"
 	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologconfig"
-	"github.com/SAP/ewm-cloud-robotics/go/pkg/zerologr"
+	"github.com/go-logr/zerologr"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes/scheme"
@@ -55,7 +55,7 @@ func main() {
 	mis.AddToScheme(sc)
 
 	// Create new manager
-	ctrl.SetLogger(zerologr.NewLogger(log))
+	ctrl.SetLogger(zerologr.New(log))
 	mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{Scheme: sc, Namespace: namespace})
 	if err != nil {
 		log.Fatal().Err(err).Msg("Unable to create controller manager")

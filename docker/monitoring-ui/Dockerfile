@@ -1,6 +1,6 @@
 ###############################################################################
 # STEP 1 build executable binary
-FROM golang:1.15-alpine as builder
+FROM golang:1.17-alpine as builder
 # Install SSL ca certificates
 RUN apk update && apk add git && apk add ca-certificates && apk add wget && apk add unzip
 # Build OpenUI5 SDK
@@ -15,7 +15,7 @@ WORKDIR $GOPATH/src/cmd/nginx-odata-auth
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o /go/bin/nginx-odata-auth
 ###############################################################################
 # STEP 2 nginx image
-FROM nginx:1.19-alpine
+FROM nginx:1.21-alpine
 # Install SSL ca certificates
 RUN apk update && apk add ca-certificates
 # Copy openui5 resources
