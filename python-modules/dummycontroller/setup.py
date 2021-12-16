@@ -14,7 +14,6 @@
 from setuptools import find_packages, setup
 
 REQUIRES = [
-    'attrs==20.3.0',
     'requests',
     'retrying',
     'python-json-logger',
