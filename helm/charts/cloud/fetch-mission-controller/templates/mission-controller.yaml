@@ -16,6 +16,19 @@ subjects:
   kind: ServiceAccount
   name: fetch-mission-controller
 ---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fetch-mission-controller:read-crds
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:read-crds
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: fetch-mission-controller
+---
 apiVersion: v1
 kind: Secret
 metadata:

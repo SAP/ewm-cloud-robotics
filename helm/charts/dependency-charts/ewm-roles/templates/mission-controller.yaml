@@ -8,6 +8,7 @@ rules:
   resources:
   - robots
   - robots/status
+  - robottypes
   verbs:
   - get
   - list
