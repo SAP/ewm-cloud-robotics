@@ -93,6 +93,7 @@ metadata:
   name: order-auctioneer
 webhooks:
 - name: auctioneers.ewm.sap.com
+  admissionReviewVersions: ["v1"]
   failurePolicy: Fail
   clientConfig:
     service:
@@ -110,3 +111,4 @@ webhooks:
     - UPDATE
     resources:
     - auctioneers
+  sideEffects: None
