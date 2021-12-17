@@ -570,6 +570,7 @@ class K8sCRHandler:
         cls = self.__class__
         custom_res = copy.deepcopy(self.raw_cr)
         custom_res['metadata']['name'] = name
+        custom_res['metadata']['namespace'] = self.namespace
         custom_res['metadata']['labels'] = labels
         custom_res['spec'] = spec
         if owner_cr is not None:
