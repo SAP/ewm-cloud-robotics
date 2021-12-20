@@ -27,6 +27,7 @@ from typing import DefaultDict, Dict, Callable, List, Optional, OrderedDict as T
 
 from kubernetes import client, config, watch
 from kubernetes.client.rest import ApiException
+from urllib3.exceptions import ProtocolError
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -127,9 +128,6 @@ class K8sCRHandler:
 
         # Latest resource version processed by watcher
         self.resv_watcher = ''
-
-        # Error counter for watcher
-        self.err_count_watcher = 0
 
         # CR Cache
         self._cr_cache: Dict[str, Dict] = {}
@@ -431,14 +429,13 @@ class K8sCRHandler:
                 '%s/%s: Exception when watching CustomObjectsApi: %s',
                 self.group, self.plural, err)
 
-            # On unknown errors backoff for a maximum of 60 seconds
-            self.err_count_watcher += 1
-            backoff = min(60, self.err_count_watcher)
-            _LOGGER.info('%s/%s: Backing off for %s seconds', self.group, self.plural, backoff)
-            time.sleep(backoff)
-        else:
-            # Reset error counter
-            self.err_count_watcher = 0
+            # On unknown errors backoff for 5 seconds
+            _LOGGER.info('%s/%s: Backing off for 5 seconds', self.group, self.plural)
+            time.sleep(5)
+        except ProtocolError:
+            _LOGGER.error(
+                '%s/%s: ProtocolError when watching CustomObjectsApi. Restarting watcher',
+                self.group, self.plural)
 
     def _init_watcher(self) -> None:
         """Initialize CR watcher."""
