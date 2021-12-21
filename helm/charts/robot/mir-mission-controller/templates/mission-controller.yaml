@@ -54,6 +54,8 @@ spec:
           value: {{ .Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
         resources:
           requests:
             memory: "64Mi"
@@ -81,7 +83,7 @@ kind: ServiceMonitor
 metadata:
   name: mir-mission-controller-{{ .Values.robot.name }}
   labels:
-    prometheus: kube-prometheus
+    prometheus: {{ .Values.tenant }}-kube-prometheus
 spec:
   endpoints:
   - port: metrics

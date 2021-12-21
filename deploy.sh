@@ -55,6 +55,9 @@ replace_tags_by_digests() {
     file_path=$1
     images=$(grep image: $file_path | sed -e "s/image://" -e 's/[[:space:]"]//g')
     while IFS= read -ra image; do
+        if [[ "${image}" = '' ]]; then
+            continue
+        fi
         image_untagged=$(echo $image | sed 's/\(.*\):.*/\1/')
         # Ensure to have the latest version of the image locally
         printf 'Pulling docker image '$image'\n'
@@ -74,7 +77,7 @@ replace_tags_by_digests() {
 ## COMMANDS
 
 help() {
-    printf 'Usage: "./deploy.sh COMMAND <APP>"\n'
+    printf 'Usage: "./deploy.sh COMMAND <APP> <PROJECT>"\n'
     printf '    COMMANDS:\n'
     printf '    build:     Build Docker images and push to container registry\n'
     printf '               DEFAULT:\n'
@@ -118,7 +121,7 @@ help() {
 
 build() {
     if [[ "$registry" = '' ]]; then
-        registry="eu.gcr.io/"$(gcloud config get-value project)
+        registry=$(cat ~/.config/ewm-cloud-robotics-deployments/$project/REGISTRY)
     fi
     printf "Building images for "$1" and pushing to "$registry"\n"
     export CR=$registry
@@ -161,7 +164,7 @@ push() {
 
     verify_kubectl_context
     if [[ "$file" = '' ]]; then
-        file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$chart/app.yaml    
+        file=~/.config/ewm-cloud-robotics-deployments/$project/$chart/app.yaml    
     fi
     printf 'Using: '$file' to register the App '$chart'\n'
 
@@ -200,7 +203,7 @@ rollout() {
 
     verify_kubectl_context
     if [[ "$file" = '' ]]; then
-        file=~/.config/ewm-cloud-robotics-deployments/$(gcloud config get-value project)/$chart/approllout.yaml
+        file=~/.config/ewm-cloud-robotics-deployments/$project/$chart/approllout.yaml
     fi
     printf 'Using: '$file' to create an AppRollout of '$chart'\n'
 
@@ -348,6 +351,11 @@ done
 if [[ ! ""$1"" =~ ^(build|push|rollout|bpr|br|pr|help|dummies)$ ]]; then
     help && exit 1
 else
+    if [ "$3" ]; then
+        project=$3
+    else
+        help && die 'Please specify the project you want to '$1
+    fi
     if [ "$2" ]; then
         "$@"
     elif [ ""$1"" =  "dummies" ]; then

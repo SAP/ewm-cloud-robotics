@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:order-auctioneer
+  name: sap-ewm:order-auctioneer:{{ .Values.tenant }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -29,12 +29,16 @@ spec:
     metadata:
       labels:
         app: order-auctioneer
+      annotations:
+        sidecar.istio.io/inject: "false"
     spec:
       serviceAccountName: order-auctioneer
       containers:
       - image: {{ .Values.image }}
         name: order-auctioneer
         env:
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
         - name: DEPLOYED_ROBOTS
           value: "{{- range $.Values.robots }}{{ .name }},{{- end }}"
         - name: LOG_LEVEL
@@ -90,7 +94,7 @@ spec:
 apiVersion: admissionregistration.k8s.io/v1
 kind: ValidatingWebhookConfiguration
 metadata:
-  name: order-auctioneer
+  name: order-auctioneer.{{ .Values.tenant }}
 webhooks:
 - name: auctioneers.ewm.sap.com
   admissionReviewVersions: ["v1"]
@@ -111,4 +115,8 @@ webhooks:
     - UPDATE
     resources:
     - auctioneers
+    scope: "Namespaced"
+  namespaceSelector:
+    matchLabels:
+      cloud-robotics-tenant: {{ .Values.tenant }}
   sideEffects: None

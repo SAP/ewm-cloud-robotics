@@ -1,5 +1,7 @@
 image: "ewmcloudrobotics/mir-travel-time-calculator"
 
+tenant_main_namespace: "default"
+
 envs:
   miruser: "admin"
   mirpassword: ""

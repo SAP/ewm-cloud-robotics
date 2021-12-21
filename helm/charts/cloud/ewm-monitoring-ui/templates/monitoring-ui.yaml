@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:monitoring-ui
+  name: sap-ewm:monitoring-ui:{{ .Values.tenant }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -47,25 +47,25 @@ data:
            root /app;
        }
        location /robots/ {
-           proxy_pass http://localhost:8001/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/;
+           proxy_pass http://localhost:8001/apis/registry.cloudrobotics.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/robots/;
            proxy_set_header Accept-Encoding "";
            sub_filter_once off;
            sub_filter_types *;
-           sub_filter '/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default' '{{ $.Values.nginxpath }}';
+           sub_filter '/apis/registry.cloudrobotics.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.nginxpath }}';
        }
        location /warehouseorders/ {
-           proxy_pass http://localhost:8002/apis/ewm.sap.com/v1alpha1/namespaces/default/warehouseorders/;
+           proxy_pass http://localhost:8002/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/warehouseorders/;
            proxy_set_header Accept-Encoding "";
            sub_filter_once off;
            sub_filter_types *;
-           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/default' '{{ $.Values.nginxpath }}';
+           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.nginxpath }}';
        }
        location /robotconfigurations/ {
-           proxy_pass http://localhost:8003/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/;
+           proxy_pass http://localhost:8003/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/robotconfigurations/;
            proxy_set_header Accept-Encoding "";
            sub_filter_once off;
            sub_filter_types *;
-           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/default' '{{ $.Values.nginxpath }}';
+           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.nginxpath }}';
        }
        include /odata/location.conf;
     }
@@ -92,7 +92,7 @@ spec:
       containers:
       - name: kubectl-proxy-robots
         image: bitnami/kubectl:latest
-        args: ["proxy", "--port=8001", "--accept-paths=^/apis/registry.cloudrobotics.com/v1alpha1/namespaces/default/robots/*", "--reject-methods='DELETE,POST,PUT,PATCH'", "--keepalive=10s"]
+        args: ["proxy", "--port=8001", "--accept-paths=^/apis/registry.cloudrobotics.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/robots/*", "--reject-methods='DELETE,POST,PUT,PATCH'", "--keepalive=10s"]
         resources:
           requests:
             memory: "16Mi"
@@ -102,7 +102,7 @@ spec:
             cpu: "250m"
       - name: kubectl-proxy-warehouseorders
         image: bitnami/kubectl:latest
-        args: ["proxy", "--port=8002", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/warehouseorders/*", "--reject-methods='DELETE,POST,PUT,PATCH'", "--keepalive=10s"]
+        args: ["proxy", "--port=8002", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/warehouseorders/*", "--reject-methods='DELETE,POST,PUT,PATCH'", "--keepalive=10s"]
         resources:
           requests:
             memory: "16Mi"
@@ -112,7 +112,7 @@ spec:
             cpu: "250m"
       - name: kubectl-proxy-robotconfigurations
         image: bitnami/kubectl:latest
-        args: ["proxy", "--port=8003", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/default/robotconfigurations/*", "--reject-methods='DELETE,POST'", "--keepalive=10s"]
+        args: ["proxy", "--port=8003", "--accept-paths=^/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/robotconfigurations/*", "--reject-methods='DELETE,POST'", "--keepalive=10s"]
         resources:
           requests:
             memory: "16Mi"
@@ -129,7 +129,7 @@ spec:
           name: nginx-configmap-volume
         env:
         - name: CLOUD_ROBOTICS_DOMAIN
-          value: {{ $.Values.domain }}
+          value: {{ .Values.tenant_domain }}
         - name: ODATA_USER
           valueFrom:
             secretKeyRef:
@@ -201,33 +201,33 @@ spec:
   selector:
     app: monitoring-ui
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
 metadata:
   name: monitoring-ui
-  annotations:
-    nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local/apis/core.token-vendor/v1/token.verify"
-    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $.Values.domain }}/oauth2/start?rd=$escaped_request_uri"
-    nginx.ingress.kubernetes.io/backend-protocol: HTTP
-    nginx.ingress.kubernetes.io/rewrite-target: /$2
-    # HACK: oauth2-proxy will return 403, but nginx-ingress-controller only handles
-    # 401 with an error page.
-    nginx.ingress.kubernetes.io/configuration-snippet: |
-      error_page 403 = https://{{ $.Values.domain }}/oauth2/start?rd=$escaped_request_uri;
-      rewrite ^([^.\?]*[^/])$ $1/ permanent;
 spec:
-  ingressClassName: nginx
-  tls:
-  - hosts:
-    - {{ $.Values.domain }}
-  rules:
-  - host: {{ $.Values.domain }}
-    http:
-      paths:
-      - path: {{ $.Values.nginxpath }}(/|$)(.*)
-        pathType: Prefix 
-        backend:
-          service:
-            name: monitoring-ui
-            port:
-              number: 80
+  hosts:
+  - monitoring-ui.{{ .Values.tenant_domain }}
+  gateways:
+  - {{ .Values.tenant_main_namespace }}/tenant-gateway
+  http:
+  - name: monitoring-ui
+    match:
+    - uri:
+        prefix: {{ $.Values.nginxpath }}
+    route:
+    - destination:
+        port:
+          number: 80
+        # Via app-router
+        host: app-auth-proxy
+  - name: monitoring-ui-oauth
+    match:
+    - uri:
+        prefix: /oauth
+    route:
+    - destination:
+        port:
+          number: 80
+        # Via app-router
+        host: app-auth-proxy

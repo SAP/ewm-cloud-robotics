@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: fetch-mission-controller
+  name: fetch-mission-controller::{{ .Values.tenant }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -19,7 +19,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: fetch-mission-controller:read-crds
+  name: fetch-mission-controller:read-crds:{{ .Values.tenant }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -92,6 +92,8 @@ spec:
           value: {{ .Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
         resources:
           requests:
             memory: "64Mi"
@@ -119,7 +121,7 @@ kind: ServiceMonitor
 metadata:
   name: fetch-mission-controller
   labels:
-    prometheus: kube-prometheus
+    prometheus: {{ .Values.tenant }}-kube-prometheus
 spec:
   endpoints:
   - port: metrics

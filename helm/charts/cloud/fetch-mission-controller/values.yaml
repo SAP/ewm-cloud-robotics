@@ -1,5 +1,8 @@
 image: "ewmcloudrobotics/fetch-mission-controller:latest"
 
+tenant_main_namespace: "default"
+tenant: "t"
+
 envs:
   clientsecret: ""
   password: ""

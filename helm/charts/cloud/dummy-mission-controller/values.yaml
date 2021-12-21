@@ -1,5 +1,8 @@
 image: "ewmcloudrobotics/dummy-mission-controller:latest"
 
+tenant_main_namespace: "default"
+tenant: "t"
+
 robots:
   - name: "z"
 
