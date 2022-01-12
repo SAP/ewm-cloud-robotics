@@ -25,16 +25,6 @@ spec:
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
-  name: monitoring-ui-credentials
-spec:
-  instanceRef:
-    name: xsuaa-monitoring-ui-{{ .Values.tenant }}
-  parameters: {}
-  secretName: monitoring-ui-credentials
----
-apiVersion: servicecatalog.k8s.io/v1beta1
-kind: ServiceBinding
-metadata:
   name: xsuaa-app-auth-proxy-bind
   labels:
     app: app-auth-proxy
@@ -78,18 +68,41 @@ spec:
         checksum/config: {{ include (print $.Template.BasePath "/app-router-config.yaml") . | sha256sum }}
     spec:
       containers:
-        - image: "{{ .Values.registry }}/{{ .Values.images.app_auth_proxy }}"
-          name: app-auth-proxy
-          ports:
-            - name: http
-              containerPort: 8000
-          volumeMounts:
-            - name: config-volume
-              mountPath: /config
-      volumes:
+      - image: "{{ .Values.registry }}/{{ .Values.images.app_auth_proxy }}"
+        name: app-auth-proxy
+        env:
+        - name: IDP_clientid
+          valueFrom:
+            secretKeyRef:
+              name: xsuaa-app-auth-proxy-bind
+              key: clientid
+        - name: IDP_clientsecret
+          valueFrom:
+            secretKeyRef:
+              name: xsuaa-app-auth-proxy-bind
+              key: clientsecret
+        - name: IDP_url
+          valueFrom:
+            secretKeyRef:
+              name: xsuaa-app-auth-proxy-bind
+              key: url
+        - name: IDP_token_endpoint_auth_method
+          value: client_secret_post
+        - name: IDP_xsappname
+          valueFrom:
+            secretKeyRef:
+              name: xsuaa-app-auth-proxy-bind
+              key: xsappname
+        ports:
+        - name: http
+          containerPort: 8000
+        volumeMounts:
         - name: config-volume
-          configMap:
-            name: app-auth-proxy
+          mountPath: /config
+      volumes:
+      - name: config-volume
+        configMap:
+          name: app-auth-proxy
 ---
 apiVersion: v1
 kind: Service

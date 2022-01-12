@@ -16,10 +16,9 @@ data:
               "forward_auth_token": false,
               "http_method_scopes": [{
                 "http_method": "*",
-                "scope": "*"
+                "scope": "$XSAPPNAME.Edit"
             }]
           }],
-      "token_endpoint_auth_method": "client_secret_post",
       "redirect_uri": "https://monitoring-ui.{{ .Values.tenant_domain }}/oauth/callback",
       "debug": false,
       "redis_store": {
