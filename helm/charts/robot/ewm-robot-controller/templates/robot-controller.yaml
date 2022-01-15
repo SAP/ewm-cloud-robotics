@@ -46,6 +46,7 @@ spec:
   ports:
   - name: metrics
     port: 8000
+    appProtocol: http
   selector:
     app: robot-controller-{{ .Values.robot.name }}
   type: ClusterIP

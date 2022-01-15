@@ -131,6 +131,7 @@ spec:
   ports:
   - name: metrics
     port: 8000
+    appProtocol: http
   selector:
     app: order-manager
   type: ClusterIP

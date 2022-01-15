@@ -112,6 +112,7 @@ spec:
   ports:
   - name: metrics
     port: 8000
+    appProtocol: http
   selector:
     app: fetch-mission-controller
   type: ClusterIP
@@ -125,6 +126,12 @@ metadata:
 spec:
   endpoints:
   - port: metrics
+    scheme: https
+    tlsConfig:
+      caFile: /etc/istio-certs/root-cert.pem
+      certFile: /etc/istio-certs/cert-chain.pem
+      insecureSkipVerify: true
+      keyFile: /etc/istio-certs/key.pem
   selector:
     matchLabels:
       app: fetch-mission-controller
