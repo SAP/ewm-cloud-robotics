@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:monitoring-ui:{{ .Values.tenant }}
+  name: sap-ewm:monitoring-ui{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -51,21 +51,21 @@ data:
            proxy_set_header Accept-Encoding "";
            sub_filter_once off;
            sub_filter_types *;
-           sub_filter '/apis/registry.cloudrobotics.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.nginxpath }}';
+           sub_filter '/apis/registry.cloudrobotics.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.urlpath }}';
        }
        location /warehouseorders/ {
            proxy_pass http://localhost:8002/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/warehouseorders/;
            proxy_set_header Accept-Encoding "";
            sub_filter_once off;
            sub_filter_types *;
-           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.nginxpath }}';
+           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.urlpath }}';
        }
        location /robotconfigurations/ {
            proxy_pass http://localhost:8003/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}/robotconfigurations/;
            proxy_set_header Accept-Encoding "";
            sub_filter_once off;
            sub_filter_types *;
-           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.nginxpath }}';
+           sub_filter '/apis/ewm.sap.com/v1alpha1/namespaces/{{ .Values.tenant_main_namespace }}' '{{ $.Values.urlpath }}';
        }
        include /odata/location.conf;
     }
@@ -200,34 +200,3 @@ spec:
     port: 80
   selector:
     app: monitoring-ui
----
-apiVersion: networking.istio.io/v1beta1
-kind: VirtualService
-metadata:
-  name: monitoring-ui
-spec:
-  hosts:
-  - monitoring-ui.{{ .Values.tenant_domain }}
-  gateways:
-  - {{ .Values.tenant_main_namespace }}/tenant-gateway
-  http:
-  - name: monitoring-ui
-    match:
-    - uri:
-        prefix: {{ $.Values.nginxpath }}
-    route:
-    - destination:
-        port:
-          number: 80
-        # Via app-router
-        host: app-auth-proxy
-  - name: monitoring-ui-oauth
-    match:
-    - uri:
-        prefix: /oauth
-    route:
-    - destination:
-        port:
-          number: 80
-        # Via app-router
-        host: app-auth-proxy

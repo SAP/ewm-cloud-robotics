@@ -11,3 +11,7 @@ dependencies:
 - name: order-auction-roles
   version: "0.0.1"
   repository: "file://../dependency-charts/order-auction-roles"
+- name: mission-crd
+  version: "0.0.1"
+  repository: "file://../dependency-charts/mission-crd"
+  condition: missionCRD.enabled

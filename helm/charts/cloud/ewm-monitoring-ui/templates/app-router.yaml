@@ -1,3 +1,4 @@
+{{ if and (eq .Values.k8s_service_catalog "true") (eq .Values.use_istio "true") }}
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
@@ -118,3 +119,4 @@ spec:
       protocol: TCP
   selector:
     app: app-auth-proxy
+{{ end }}

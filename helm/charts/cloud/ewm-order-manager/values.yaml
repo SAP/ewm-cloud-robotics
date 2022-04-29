@@ -1,7 +1,7 @@
 image: "ewmcloudrobotics/order-manager:latest"
 
 tenant_main_namespace: "default"
-tenant: "t"
+tenant: ""
 
 envs:
   ewmuser: ""

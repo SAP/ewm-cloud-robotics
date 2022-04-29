@@ -1,7 +1,7 @@
 image: "ewmcloudrobotics/robot-controller:latest"
 
 tenant_main_namespace: "default"
-tenant: "t"
+tenant: ""
 
 robots:
   - name: "z"

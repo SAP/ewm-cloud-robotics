@@ -6,6 +6,7 @@ apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
 metadata:
   name: ewm-order-auction
+  namespace: default
   labels:
     app: ewm-order-auction
 spec:

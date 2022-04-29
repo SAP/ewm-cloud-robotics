@@ -1,0 +1,18 @@
+## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
+##
+##
+
+---
+apiVersion: apps.cloudrobotics.com/v1alpha1
+kind: AppRollout
+metadata:
+  name: ewm-base-cloud
+  namespace: default
+  labels:
+    app: ewm-base-cloud
+spec:
+  appName: ewm-base-cloud-$APP_VERSION
+  cloud:
+    values:
+      missionCRD:
+        enabled: false

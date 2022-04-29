@@ -84,7 +84,7 @@ kind: ServiceMonitor
 metadata:
   name: mir-mission-controller-{{ .Values.robot.name }}
   labels:
-    prometheus: {{ .Values.tenant }}-kube-prometheus
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
 spec:
   endpoints:
   - port: metrics

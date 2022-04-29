@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-configurator:{{ .Values.tenant }}
+  name: sap-ewm:robot-configurator{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -19,7 +19,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-configurator:read-crds:{{ .Values.tenant }}
+  name: sap-ewm:robot-configurator:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole

@@ -1,0 +1,32 @@
+{{ if ne .Values.use_istio "true" }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: monitoring-ui
+  annotations:
+    nginx.ingress.kubernetes.io/auth-url: "http://oauth2-proxy.default.svc.cluster.local/apis/core.token-vendor/v1/token.verify"
+    nginx.ingress.kubernetes.io/auth-signin: "https://{{ $.Values.domain }}/oauth2/start?rd=$escaped_request_uri"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    # HACK: oauth2-proxy will return 403, but nginx-ingress-controller only handles
+    # 401 with an error page.
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      error_page 403 = https://{{ $.Values.domain }}/oauth2/start?rd=$escaped_request_uri;
+      rewrite ^([^.\?]*[^/])$ $1/ permanent;
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - {{ $.Values.domain }}
+  rules:
+  - host: {{ $.Values.domain }}
+    http:
+      paths:
+      - path: {{ $.Values.urlpath }}(/|$)(.*)
+        pathType: Prefix 
+        backend:
+          service:
+            name: monitoring-ui
+            port:
+              number: 80
+{{ end }}

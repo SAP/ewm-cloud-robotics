@@ -6,6 +6,7 @@ apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
 metadata:
   name: mir-mission-controller
+  namespace: default
   labels:
     app: mir-mission-controller
 spec:

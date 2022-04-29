@@ -8,10 +8,10 @@ data:
   config.json: |
     {
       "routes": [{
-              "path": "{{ $.Values.nginxpath }}",
+              "path": "{{ $.Values.urlpath }}",
               "priority": 10,
               "protected": true,
-              "remove_from_path": "{{ $.Values.nginxpath }}",
+              "remove_from_path": "{{ $.Values.urlpath }}",
               "target": "http://monitoring-ui:80",
               "forward_auth_token": false,
               "http_method_scopes": [{

@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:order-manager:{{ .Values.tenant }}
+  name: sap-ewm:order-manager{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -19,7 +19,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:order-manager:read-crds:{{ .Values.tenant }}
+  name: sap-ewm:order-manager:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -141,16 +141,18 @@ kind: ServiceMonitor
 metadata:
   name: order-manager
   labels:
-    prometheus: {{ .Values.tenant }}-kube-prometheus
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
 spec:
   endpoints:
   - port: metrics
+{{ if eq .Values.use_istio "true" }}
     scheme: https
     tlsConfig:
       caFile: /etc/istio-certs/root-cert.pem
       certFile: /etc/istio-certs/cert-chain.pem
       insecureSkipVerify: true
       keyFile: /etc/istio-certs/key.pem
+{{ end }}
   selector:
     matchLabels:
       app: order-manager
