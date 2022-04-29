@@ -1,5 +1,7 @@
 image: "ewmcloudrobotics/order-bid-agent:latest"
 
+tenant_main_namespace: "default"
+
 robot:
   name: "z"
 

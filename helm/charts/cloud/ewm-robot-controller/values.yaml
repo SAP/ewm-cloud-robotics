@@ -1,5 +1,8 @@
 image: "ewmcloudrobotics/robot-configurator:latest"
 
+tenant_main_namespace: "default"
+tenant: ""
+
 envs:
   ewmuser: ""
   ewmhost: ""

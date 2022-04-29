@@ -1,8 +1,18 @@
-domain: "example.com"
+domain: "domain.local"
+tenant_domain: "domain.local"
 
 image: "ewmcloudrobotics/monitoring-ui:latest"
 
-nginxpath: "/ewm-monitoring-ui"
+images:
+  app_auth_proxy: "app-auth-proxy:latest"
+
+tenant: ""
+tenant_main_namespace: "default"
+
+k8s_service_catalog: "false"
+use_istio: "false"
+
+urlpath: "/ewm-monitoring-ui"
 
 envs:
   ewmuser: ""

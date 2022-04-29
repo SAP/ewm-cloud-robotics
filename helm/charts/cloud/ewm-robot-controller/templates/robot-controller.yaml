@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-configurator
+  name: sap-ewm:robot-configurator{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -19,7 +19,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-configurator:read-crds
+  name: sap-ewm:robot-configurator:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -125,6 +125,8 @@ spec:
           value: {{ .Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
         resources:
           requests:
             memory: "64Mi"

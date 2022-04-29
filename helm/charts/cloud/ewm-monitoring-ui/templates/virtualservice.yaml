@@ -1,0 +1,32 @@
+{{ if eq .Values.use_istio "true" }}
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: monitoring-ui
+spec:
+  hosts:
+  - monitoring-ui.{{ .Values.tenant_domain }}
+  gateways:
+  - {{ .Values.tenant_main_namespace }}/tenant-gateway
+  http:
+  - name: monitoring-ui
+    match:
+    - uri:
+        prefix: {{ $.Values.urlpath }}
+    route:
+    - destination:
+        port:
+          number: 80
+        # Via app-router
+        host: app-auth-proxy
+  - name: monitoring-ui-oauth
+    match:
+    - uri:
+        prefix: /oauth
+    route:
+    - destination:
+        port:
+          number: 80
+        # Via app-router
+        host: app-auth-proxy
+{{ end }}

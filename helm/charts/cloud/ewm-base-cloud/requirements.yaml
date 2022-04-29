@@ -1,0 +1,17 @@
+dependencies:
+- name: ewm-crds
+  version: "0.0.1"
+  repository: "file://../dependency-charts/ewm-crds"
+- name: ewm-roles
+  version: "0.0.1"
+  repository: "file://../dependency-charts/ewm-roles"
+- name: order-auction-crds
+  version: "0.0.1"
+  repository: "file://../dependency-charts/order-auction-crds"
+- name: order-auction-roles
+  version: "0.0.1"
+  repository: "file://../dependency-charts/order-auction-roles"
+- name: mission-crd
+  version: "0.0.1"
+  repository: "file://../dependency-charts/mission-crd"
+  condition: missionCRD.enabled

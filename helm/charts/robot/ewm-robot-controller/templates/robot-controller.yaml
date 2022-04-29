@@ -26,6 +26,8 @@ spec:
           value: {{ .Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ .Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
         resources:
           requests:
             memory: "64Mi"
@@ -44,6 +46,7 @@ spec:
   ports:
   - name: metrics
     port: 8000
+    appProtocol: http
   selector:
     app: robot-controller-{{ .Values.robot.name }}
   type: ClusterIP
@@ -53,7 +56,7 @@ kind: ServiceMonitor
 metadata:
   name: robot-controller-{{ .Values.robot.name }}
   labels:
-    prometheus: kube-prometheus
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
 spec:
   endpoints:
   - port: metrics

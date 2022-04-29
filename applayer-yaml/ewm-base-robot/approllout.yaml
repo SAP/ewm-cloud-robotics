@@ -1,20 +1,20 @@
 ## Check the Cloud Robotics documentation for more information about deploying applications to the apps.cloudrobotics.com/v1alpha1 API
 ##
 ##
+
 ---
 apiVersion: apps.cloudrobotics.com/v1alpha1
 kind: AppRollout
 metadata:
-  name: dummy-mission-controller-robot
+  name: ewm-base-robot
   namespace: default
   labels:
-    app: dummy-mission-controller-robot
+    app: ewm-base-robot
 spec:
-  appName: dummy-mission-controller-robot-$APP_VERSION
-  ## Select dummy robots only!
+  appName: ewm-base-robot-$APP_VERSION
   robots:
   - selector:
-      matchLabels:
-        model: dummy-model
+      any: true
     values:
-    image: "ewmcloudrobotics/dummy-mission-controller:latest"
+      missionCRD:
+        enabled: false

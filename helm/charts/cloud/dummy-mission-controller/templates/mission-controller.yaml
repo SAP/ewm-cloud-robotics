@@ -6,11 +6,24 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: dummy-mission-controller
+  name: dummy-mission-controller{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
   name: cloud-robotics:mission-controller
+subjects:
+- namespace: {{ .Release.Namespace }}
+  kind: ServiceAccount
+  name: dummy-mission-controller
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: sap-ewm:order-manager:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: sap-ewm:read-crds
 subjects:
 - namespace: {{ .Release.Namespace }}
   kind: ServiceAccount
@@ -39,6 +52,8 @@ spec:
         env:
         - name: ROBCO_ROBOT_NAME
           value: "{{ .name }}"
+        - name: K8S_NAMESPACE
+          value: {{ $.Values.tenant_main_namespace }}
         - name: LOG_LEVEL
           value: {{ $.Values.envs.log.level }}
         - name: LOG_FORMAT

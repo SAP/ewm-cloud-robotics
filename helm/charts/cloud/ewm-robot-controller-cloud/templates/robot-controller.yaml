@@ -6,7 +6,7 @@ metadata:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-controller-cloud
+  name: sap-ewm:robot-controller-cloud{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -19,7 +19,7 @@ subjects:
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
-  name: sap-ewm:robot-controller-cloud:read-crds
+  name: sap-ewm:robot-controller-cloud:read-crds{{ if .Values.tenant }}:{{ .Values.tenant }}{{ end }}
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
@@ -57,6 +57,8 @@ spec:
           value: {{ $.Values.envs.log.level }}
         - name: LOG_FORMAT
           value: {{ $.Values.envs.log.format }}
+        - name: K8S_NAMESPACE
+          value: {{ .Values.tenant_main_namespace }}
         resources:
           requests:
             memory: "256Mi"
@@ -75,6 +77,7 @@ spec:
   ports:
   - name: metrics
     port: 8000
+    appProtocol: http
   selector:
     app: robot-controller-cloud
   type: ClusterIP
@@ -84,10 +87,18 @@ kind: ServiceMonitor
 metadata:
   name: robot-controller-cloud
   labels:
-    prometheus: kube-prometheus
+    prometheus: {{ if .Values.tenant }}{{ .Values.tenant }}-{{ end }}kube-prometheus 
 spec:
   endpoints:
   - port: metrics
+{{ if eq .Values.use_istio "true" }}
+    scheme: https
+    tlsConfig:
+      caFile: /etc/istio-certs/root-cert.pem
+      certFile: /etc/istio-certs/cert-chain.pem
+      insecureSkipVerify: true
+      keyFile: /etc/istio-certs/key.pem
+{{ end }}
   selector:
     matchLabels:
       app: robot-controller-cloud
