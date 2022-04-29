@@ -14,27 +14,30 @@ It is assumed that access has been established beforehand.
 # (1)
 skaffold run --profile gcp
 
-# (2)
-./deploy.sh build ewm-order-manager <PROJECT>
+# (2a)
+./deploy.sh --project=<PROJECT> build ewm-order-manager
+# (2b)
+export EWM_PROJECT=<PROJECT>
+./deploy.sh build ewm-order-manager
 
 # (3)
-./deploy.sh --registry=eu.gcr.io/my-gcp-project build ewm-order-manager <PROJECT>
+./deploy.sh --registry=eu.gcr.io/my-gcp-project build ewm-order-manager
 ```
 
 ## Configuration
 In order to customize the settings of any Cloud Robotics application, adjust the YAML of the [AppRollout](https://github.com/SAP/ewm-cloud-robotics/tree/main/applayer-yaml). It allows overwriting all variables of the underlying [helm chart](https://github.com/SAP/ewm-cloud-robotics/tree/main/helm/charts). By default the `deploy.sh` script uses the `approllout.yaml`/`app.yaml` files at `~/.config/ewm-cloud-robotics-deployments/<PROJECT>/<APP>/`, thus one gets the best user experience by doing the following:
 ```bash
-export CR_PROJECT=my-project
+export EWM_PROJECT=my-project
 # (1) create the dir
-mkdir -p ~/.config/ewm-cloud-robotics-deployments/$CR_PROJECT
+mkdir -p ~/.config/ewm-cloud-robotics-deployments/$EWM_PROJECT
 
 # (2) copy the templates to the created dir
-cp -R applayer-yaml/ ~/.config/ewm-cloud-robotics-deployments/$CR_PROJECT
+cp -R applayer-yaml/ ~/.config/ewm-cloud-robotics-deployments/$EWM_PROJECT
 
 # (3) verify that app folders are in the correct place (expected print: 13 app directories)
-ls ~/.config/ewm-cloud-robotics-deployments/$CR_PROJECT
+ls ~/.config/ewm-cloud-robotics-deployments/$EWM_PROJECT
 ```
-If you work on multiple projects, switch your `CR_PROJECT` configuration and repeat the steps above. This way you do not interfere with any of your previous configurations. Alternatively copy the AppRollout template files to adjust the values and continue using the copy within the installation process by specifying the path via the corresponding flag (`./deploy.sh -f <path> rollout <APP>`).
+If you work on multiple projects, switch your `EWM_PROJECT` environment variable and repeat the steps above. This way you do not interfere with any of your previous configurations. Alternatively copy the AppRollout template files to adjust the values and continue using the copy within the installation process by specifying the path via the corresponding flag (`./deploy.sh -f <path> rollout <APP>`).
 
 ## Installation
 Installing the apps to your Cloud Robotics cluster is a two-step process (ref. [Cloud Robotics Application Management](https://sap.github.io/cloud-robotics/concepts/app-management.html)): 
@@ -43,13 +46,13 @@ Installing the apps to your Cloud Robotics cluster is a two-step process (ref. [
 
 If you have complected the [configuration steps](#configuration), you can leverage the `deploy.sh` script as follows:
 ```bash
-export CR_PROJECT=my-project
+export EWM_PROJECT=my-project
 # Example: ewm-order-manager
 
 # (1) Register 'dev' version of the ewm-order-manager App
-./deploy.sh push ewm-order-manager $CR_PROJECT
+./deploy.sh push ewm-order-manager
 
 # (2) Create a corresponding AppRollout
-./deploy.sh rollout ewm-order-manager $CR_PROJECT
+./deploy.sh rollout ewm-order-manager
 ```
 Otherwise you need to specify `approllout.yaml`/`app.yaml` files for `push` and `rollout`. You can get examples and further information about this by running `./deploy.sh help`.

@@ -77,13 +77,15 @@ replace_tags_by_digests() {
 ## COMMANDS
 
 help() {
-    printf 'Usage: "./deploy.sh COMMAND <APP> <PROJECT>"\n'
+    printf 'Usage: "./deploy.sh COMMAND <APP>"\n'
+    printf 'OPTION arguments must be set first (left to COMMAND)\n'
     printf '    COMMANDS:\n'
     printf '    build:     Build Docker images and push to container registry\n'
     printf '               DEFAULT:\n'
     printf '                   - "./deploy.sh build ewm-order-manager"\n'
     printf '               OPTIONS:\n'
-    printf '               registry ("-r <R> | --registry <R> | --Registry=<R>"): Specify the container registry (default = "")\n'
+    printf '               project ("-p <P> | --project <P>"): Specify the project (default = "ENV \$EWM_PROJECT")\n'
+    printf '               registry ("-r <R> | --registry <R>"): Specify the container registry (default = "")\n'
     printf '                   - "./deploy.sh --registry=eu.gcr.io/my-gcp-project build ewm-order-manager"\n'    
     printf '                   - "./deploy.sh -r gcr.io/my-other-gcp-project build mir-mission-controller"\n'    
     printf '    push:      Package application and create an App at the Cloud Robotics application registry\n'
@@ -92,7 +94,8 @@ help() {
     printf '               OPTIONS:\n'
     printf '               file ("-f <F> | --file <F> | --file=<F>"): Specify the App YAML file you want to use (default = "~/.config/ewm-cloud-robotics-deployments/<GCP_PROJECT>/<APP>/app.yaml")\n'
     printf '                   - "./deploy.sh --file=sample/dir/app.yaml push mir-mission-controller"\n'
-    printf '                   - "./deploy.sh --f another/sample/dir/app.yaml push ewm-order-manager"\n'    
+    printf '                   - "./deploy.sh --f another/sample/dir/app.yaml push ewm-order-manager"\n'  
+    printf '               project ("-p <P> | --project <P>"): Specify the project (default = "ENV \$EWM_PROJECT")\n'      
     printf '               version ("-v <V> | --version <V> | --version=<V>"): Specify the version used within the App (default = "dev")\n'
     printf '                   - "./deploy.sh --version=0.0.1 push ewm-order-manager"\n'
     printf '                   - "./deploy.sh -v 0.0.1 push mir-mission-controller"\n'
@@ -103,6 +106,7 @@ help() {
     printf '               file ("-f <F> | --file <F> | --file=<F>"): Specify the AppRollout YAML file you want to use for instantiation (default = "~/.config/ewm-cloud-robotics-deployments/<GCP_PROJECT>/<APP>/approllout.yaml")\n'
     printf '                   - "./deploy.sh --file=sample/dir/approllout.yaml rollout mir-mission-controller"\n'
     printf '                   - "./deploy.sh --f another/sample/dir/approllout.yaml rollout ewm-order-manager"\n'
+    printf '               project ("-p <P> | --project <P>"): Specify the project (default = "ENV \$EWM_PROJECT")\n'
     printf '               version ("-v <V> | --version <V> | --version=<V>"): Specify the version used within the AppRollout (default = "dev")\n'
     printf '                   - "./deploy.sh --version=0.0.1 rollout ewm-order-manager"\n'
     printf '                   - "./deploy.sh -v 0.0.1 rollout mir-mission-controller"\n'
@@ -285,6 +289,7 @@ dummies() {
 version='dev'
 file=''
 registry=''
+project=$EWM_PROJECT
 
 #############################################
 ## GET OPTIONS
@@ -317,6 +322,20 @@ while :; do
             ;;
         --file=)    
             die 'ERROR: "--file=" flag detected, but file was not specified.'
+            ;;
+        -p | --project)
+            if [ "$2" ]; then
+                project=$2
+                shift
+            else
+                die 'ERROR: "-p" | "--project " detected, but no project was specified'
+            fi
+            ;;
+        --project=?*)
+            project=${1#*=}
+            ;;
+        --project=)    
+            die 'ERROR: "--project=" flag detected, but project was not specified.'
             ;;
         -r | --registry)
             if [ "$2" ]; then
@@ -351,12 +370,10 @@ done
 if [[ ! ""$1"" =~ ^(build|push|rollout|bpr|br|pr|help|dummies)$ ]]; then
     help && exit 1
 else
-    if [ "$3" ]; then
-        project=$3
-    else
-        help && die 'Please specify the project you want to '$1
-    fi
     if [ "$2" ]; then
+        if [ "$project" == "" ]; then
+            help && die 'Please specify a project'
+        fi
         "$@"
     elif [ ""$1"" =  "dummies" ]; then
         "$@"
