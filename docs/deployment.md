@@ -22,7 +22,7 @@ skaffold run --profile gcp
 ```
 
 ## Configuration
-In order to customize the settings of any Cloud Robotics application, adjust the YAML of the [AppRollout](https://github.com/SAP/ewm-cloud-robotics/tree/master/applayer-yaml). It allows overwriting all variables of the underlying [helm chart](https://github.com/SAP/ewm-cloud-robotics/tree/master/helm/charts). By default the `deploy.sh` script uses the `approllout.yaml`/`app.yaml` files at `~/.config/ewm-cloud-robotics-deployments/<PROJECT>/<APP>/`, thus one gets the best user experience by doing the following:
+In order to customize the settings of any Cloud Robotics application, adjust the YAML of the [AppRollout](https://github.com/SAP/ewm-cloud-robotics/tree/main/applayer-yaml). It allows overwriting all variables of the underlying [helm chart](https://github.com/SAP/ewm-cloud-robotics/tree/main/helm/charts). By default the `deploy.sh` script uses the `approllout.yaml`/`app.yaml` files at `~/.config/ewm-cloud-robotics-deployments/<PROJECT>/<APP>/`, thus one gets the best user experience by doing the following:
 ```bash
 export CR_PROJECT=my-project
 # (1) create the dir
