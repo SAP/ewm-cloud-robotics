@@ -95,7 +95,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_conf_exc_str	     type char4,
@@ -853,7 +853,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum         type /scwm/lgnum,
@@ -900,7 +900,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum         type /scwm/lgnum,
@@ -988,7 +988,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum      type /scwm/lgnum,
@@ -1040,7 +1040,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: s_lgnum       type range of /scwm/lgnum,
@@ -1138,7 +1138,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum     type /scwm/lgnum,
@@ -1187,7 +1187,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: s_lgnum      type range of /scwm/lgnum,
@@ -1269,7 +1269,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum      type /scwm/lgnum,
@@ -1321,7 +1321,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: s_lgnum       type range of /scwm/lgnum,
@@ -1417,7 +1417,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum             type /scwm/lgnum,
@@ -1466,7 +1466,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: s_lgnum              type range of /scwm/lgnum,
@@ -1548,7 +1548,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: ls_zewm_trsrc_typ type zewm_trsrc_typ,
@@ -1668,7 +1668,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum type /scwm/lgnum,
@@ -1719,7 +1719,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: s_lgnum     type range of /scwm/lgnum,
@@ -1816,7 +1816,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: ls_zewm_trsrc_typ type zewm_trsrc_typ,
@@ -1993,7 +1993,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum      type /scwm/lgnum,
@@ -2040,7 +2040,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum      type /scwm/lgnum,
@@ -2117,7 +2117,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum                type /scwm/lgnum,
@@ -2164,7 +2164,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum                type /scwm/lgnum,
@@ -2253,7 +2253,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum           type /scwm/lgnum,
@@ -2296,7 +2296,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lt_warehousenumber type zcl_zewm_robco_mpc=>tt_warehousenumber.
@@ -2357,7 +2357,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lv_lgnum          type /scwm/lgnum,
@@ -2404,7 +2404,7 @@ CLASS ZCL_ZEWM_ROBCO_DPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lt_filter         type /iwbep/t_mgw_select_option,

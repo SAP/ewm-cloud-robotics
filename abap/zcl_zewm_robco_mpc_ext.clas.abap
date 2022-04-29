@@ -23,7 +23,7 @@ CLASS ZCL_ZEWM_ROBCO_MPC_EXT IMPLEMENTATION.
 ** This file is part of ewm-cloud-robotics
 ** (see https://github.com/SAP/ewm-cloud-robotics).
 **
-** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/master/LICENSE)
+** This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 **
 
     data: lo_entity_type  type ref to /iwbep/if_mgw_odata_entity_typ,
