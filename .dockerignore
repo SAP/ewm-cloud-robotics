@@ -1,0 +1,27 @@
+# This .dockerignore should be treated as a white list for more security
+
+# Ignore everything by default:
+**
+# -----------------------------------------------------------------------
+
+
+# ALLOW:
+
+!Dockerfile   # Dockerfile might be needed for pushing containers to registry later
+
+!go.mod
+!go.sum
+!vendor/**
+
+!go/**
+!openui5
+!python-modules/**
+
+!nodejs/ewm-sim/lib/**
+!nodejs/ewm-sim/mockdata/**
+!nodejs/ewm-sim/test/**
+!nodejs/ewm-sim/tools/**
+!nodejs/ewm-sim/*.js
+!nodejs/ewm-sim/*.xml
+!nodejs/ewm-sim/package.json
+!nodejs/ewm-sim/package-lock.json

@@ -28,7 +28,7 @@ jobs:
       node_js:
       - 14.15.0
       install:
-      - cd docker/ewm-sim
+      - cd nodejs/ewm-sim
       - npm install
       script:
       - npm run test

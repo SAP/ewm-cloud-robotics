@@ -12,12 +12,7 @@
 tag=$(date +%s)
 cr="ewmcloudrobotics"
 
-loc=$(pwd)
-cd "$3"
-
-docker build -f $2 -t $1:"dirty" -t $cr"/"$1:$tag -t $cr"/"$1":latest" .
+docker build -f $2 --target $1 -t $1:"dirty" -t $cr"/"$1:$tag -t $cr"/"$1":latest" .
 
 docker push $cr"/"$1:$tag 
 docker push $cr"/"$1":latest"
-
-cd "$loc"

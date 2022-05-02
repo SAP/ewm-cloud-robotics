@@ -12,12 +12,7 @@
 tag=$(date +%s)
 gcr="eu.gcr.io/"$(gcloud config get-value project)
 
-loc=$(pwd)
-cd "$3"
-
-docker build -f $2 -t $1:"dirty" -t $gcr"/"$1:$tag -t $gcr"/"$1":latest" .
+docker build -f $2 --target $1 -t $1:"dirty" -t $gcr"/"$1:$tag -t $gcr"/"$1":latest" .
 
 docker push $gcr"/"$1:$tag 
 docker push $gcr"/"$1":latest"
-
-cd "$loc"

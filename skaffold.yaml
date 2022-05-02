@@ -19,82 +19,93 @@ build:
       context: docker/ewm-sim/
       docker:
         dockerfile: Dockerfile
+        target: ewm-sim
     - image: dummy-mission-controller
       context: .
       docker:
-        dockerfile: docker/dummy-mission-controller/Dockerfile
+        dockerfile: Dockerfile
+        target: dummy-mission-controller
     - image: fetch-mission-controller
       context: .
       docker:
-        dockerfile: docker/fetch-mission-controller/Dockerfile
+        dockerfile: Dockerfile
+        target: fetch-mission-controller
     - image: mir-mission-controller
       context: .
       docker:
-        dockerfile: docker/mir-mission-controller/Dockerfile
+        dockerfile: Dockerfile
+        target: mir-mission-controller
     - image: order-manager
       context: .
       docker:
-        dockerfile: docker/order-manager/Dockerfile
+        dockerfile: Dockerfile
+        target: order-manager
     - image: robot-controller
       context: .
       docker:
-        dockerfile: docker/robot-controller/Dockerfile
+        dockerfile: Dockerfile
+        target: robot-controller
     - image: robot-configurator
       context: .
       docker:
-        dockerfile: docker/robot-configurator/Dockerfile
+        dockerfile: Dockerfile
+        target: robot-configurator
     - image: monitoring-ui
       context: .
       docker:
-        dockerfile: docker/monitoring-ui/Dockerfile
+        dockerfile: Dockerfile
+        target: monitoring-ui
     - image: order-auctioneer
       context: .
       docker:
-        dockerfile: docker/order-auctioneer/Dockerfile
+        dockerfile: Dockerfile
+        target: order-auctioneer
     - image: order-bid-agent
       context: .
       docker:
-        dockerfile: docker/order-bid-agent/Dockerfile
+        dockerfile: Dockerfile
+        target: order-bid-agent
     - image: mir-travel-time-calculator
       context: .
       docker:
-        dockerfile: docker/mir-travel-time-calculator/Dockerfile
+        dockerfile: Dockerfile
+        target: mir-travel-time-calculator
   local: 
     push: false
 test:
   - image: ewm-sim
     structureTests:
-      - docker/ewm-sim/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/ewm-sim.yaml
   - image: dummy-mission-controller
     structureTests:
-      - docker/dummy-mission-controller/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/dummy-mission-controller.yaml
   - image: mir-mission-controller
     structureTests:
-      - docker/mir-mission-controller/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/mir-mission-controller.yaml
   - image: fetch-mission-controller
     structureTests:
-      - docker/fetch-mission-controller/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/fetch-mission-controller.yaml
   - image: order-manager
     structureTests:
-      - docker/order-manager/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/order-manager.yaml
   - image: robot-controller
     structureTests:
-      - docker/robot-controller/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/robot-controller.yaml
   - image: robot-configurator
     structureTests:
-      - docker/robot-configurator/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/robot-configurator.yaml
   - image: monitoring-ui
     structureTests:
-      - docker/monitoring-ui/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/monitoring-ui.yaml
   - image: order-auctioneer
     structureTests:
-      - docker/order-auctioneer/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/order-auctioneer.yaml
   - image: order-bid-agent
     structureTests:
-      - docker/order-bid-agent/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/order-bid-agent.yaml
   - image: mir-travel-time-calculator
     structureTests:
-      - docker/mir-travel-time-calculator/test/container-structure-test/prod.yaml
+      - tests/container-structure-tests/mir-travel-time-calculator.yaml
 
 #########################################################################################
 
@@ -110,67 +121,67 @@ profiles:
       artifacts:
         - image: ewm-sim
           custom:
-            buildCommand: ./scripts/gcr-build.sh ewm-sim ./Dockerfile docker/ewm-sim/
+            buildCommand: ./scripts/gcr-build.sh ewm-sim ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: dummy-mission-controller
           custom:
-            buildCommand: ./scripts/gcr-build.sh dummy-mission-controller docker/dummy-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh dummy-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: mir-mission-controller
           custom:
-            buildCommand: ./scripts/gcr-build.sh mir-mission-controller docker/mir-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh mir-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: fetch-mission-controller
           custom:
-            buildCommand: ./scripts/gcr-build.sh fetch-mission-controller docker/fetch-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh fetch-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-manager
           custom:
-            buildCommand: ./scripts/gcr-build.sh order-manager docker/order-manager/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh order-manager ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: robot-controller
           custom:
-            buildCommand: ./scripts/gcr-build.sh robot-controller docker/robot-controller/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh robot-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: robot-configurator
           custom:
-            buildCommand: ./scripts/gcr-build.sh robot-configurator docker/robot-configurator/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh robot-configurator ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: monitoring-ui
           custom:
-            buildCommand: ./scripts/gcr-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh monitoring-ui ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-auctioneer
           custom:
-            buildCommand: ./scripts/gcr-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh order-auctioneer ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-bid-agent
           custom:
-            buildCommand: ./scripts/gcr-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh order-bid-agent ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: mir-travel-time-calculator
           custom:
-            buildCommand: ./scripts/gcr-build.sh mir-travel-time-calculator docker/mir-travel-time-calculator/Dockerfile ./
+            buildCommand: ./scripts/gcr-build.sh mir-travel-time-calculator ./Dockerfile
             dependencies:
               paths: 
                 - .
@@ -186,67 +197,67 @@ profiles:
       artifacts:
         - image: ewm-sim
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh ewm-sim ./Dockerfile docker/ewm-sim/
+            buildCommand: ./scripts/dockerhub-build.sh ewm-sim ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: dummy-mission-controller
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh dummy-mission-controller docker/dummy-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh dummy-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: mir-mission-controller
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh mir-mission-controller docker/mir-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh mir-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: fetch-mission-controller
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh fetch-mission-controller docker/fetch-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh fetch-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-manager
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh order-manager docker/order-manager/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh order-manager ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: robot-controller
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh robot-controller docker/robot-controller/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh robot-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: robot-configurator
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh robot-configurator docker/robot-configurator/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh robot-configurator ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: monitoring-ui
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh monitoring-ui ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-auctioneer
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh order-auctioneer ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-bid-agent
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh order-bid-agent ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: mir-travel-time-calculator
           custom:
-            buildCommand: ./scripts/dockerhub-build.sh mir-travel-time-calculator docker/mir-travel-time-calculator/Dockerfile ./
+            buildCommand: ./scripts/dockerhub-build.sh mir-travel-time-calculator ./Dockerfile
             dependencies:
               paths: 
                 - .
@@ -262,14 +273,14 @@ profiles:
       artifacts:
         - image: order-manager
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh order-manager docker/order-manager/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh order-manager ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: order-manager
         structureTests:
-          - docker/order-manager/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/order-manager.yaml
   ## ewm-robot-controller
   - name: ewm-robot-controller
     build:
@@ -279,23 +290,23 @@ profiles:
       artifacts:
         - image: robot-controller
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh robot-controller docker/robot-controller/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh robot-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: robot-configurator
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh robot-configurator docker/robot-configurator/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh robot-configurator ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: robot-controller
         structureTests:
-          - docker/robot-controller/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/robot-controller.yaml
       - image: robot-configurator
         structureTests:
-          - docker/robot-configurator/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/robot-configurator.yaml
     ## ewm-monitoring-ui
   - name: ewm-monitoring-ui
     build:
@@ -305,14 +316,14 @@ profiles:
       artifacts:
         - image: monitoring-ui
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh monitoring-ui docker/monitoring-ui/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh monitoring-ui ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: monitoring-ui
         structureTests:
-          - docker/monitoring-ui/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/monitoring-ui.yaml
     ## ewm-order-auction
   - name: ewm-order-auction
     build:
@@ -322,23 +333,23 @@ profiles:
       artifacts:
         - image: order-auctioneer
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh order-auctioneer docker/order-auctioneer/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh order-auctioneer ./Dockerfile
             dependencies:
               paths: 
                 - .
         - image: order-bid-agent
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh order-bid-agent docker/order-bid-agent/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh order-bid-agent ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: order-auctioneer
         structureTests:
-          - docker/order-auctioneer/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/order-auctioneer.yaml
       - image: order-bid-agent
         structureTests:
-          - docker/order-bid-agent/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/order-bid-agent.yaml
   ## ewm-sim        
   - name: ewm-sim
     build:
@@ -348,14 +359,14 @@ profiles:
       artifacts:
         - image: ewm-sim
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh ewm-sim ./Dockerfile docker/ewm-sim/
+            buildCommand: ./scripts/custom-cr-build.sh ewm-sim ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: ewm-sim
         structureTests:
-          - docker/ewm-sim/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/ewm-sim.yaml
   ## mir-mission-controller
   - name: mir-mission-controller
     build:
@@ -365,14 +376,14 @@ profiles:
       artifacts:
         - image: mir-mission-controller
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh mir-mission-controller docker/mir-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh mir-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .      
     test:
       - image: mir-mission-controller
         structureTests:
-          - docker/mir-mission-controller/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/mir-mission-controller.yaml
   ## mir-travel-time-calculator
   - name: mir-travel-time-calculator
     build:
@@ -382,14 +393,14 @@ profiles:
       artifacts:
         - image: mir-travel-time-calculator
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh mir-travel-time-calculator docker/mir-travel-time-calculator/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh mir-travel-time-calculator ./Dockerfile
             dependencies:
               paths: 
                 - .      
     test:
       - image: mir-travel-time-calculator
         structureTests:
-          - docker/mir-travel-time-calculator/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/mir-travel-time-calculator.yaml
   ## dummy-mission-controller
   - name: dummy-mission-controller
     build:
@@ -399,14 +410,14 @@ profiles:
       artifacts:
         - image: dummy-mission-controller
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh dummy-mission-controller docker/dummy-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh dummy-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: dummy-mission-controller
         structureTests:
-          - docker/dummy-mission-controller/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/dummy-mission-controller.yaml
   ## fetch-mission-controller
   - name: fetch-mission-controller
     build:
@@ -416,11 +427,11 @@ profiles:
       artifacts:
         - image: fetch-mission-controller
           custom:
-            buildCommand: ./scripts/custom-cr-build.sh fetch-mission-controller docker/fetch-mission-controller/Dockerfile ./
+            buildCommand: ./scripts/custom-cr-build.sh fetch-mission-controller ./Dockerfile
             dependencies:
               paths: 
                 - .
     test:
       - image: fetch-mission-controller
         structureTests:
-          - docker/fetch-mission-controller/test/container-structure-test/prod.yaml
+          - tests/container-structure-tests/fetch-mission-controller.yaml

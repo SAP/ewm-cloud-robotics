@@ -167,11 +167,11 @@ ci/scan-modules/whitesource-fs-agent-configs/
 ci/scan-modules/whitesource-fs-agent-configs/*
 
 # whitelist for ewm-sim logger
-!docker/ewm-sim/lib/
-!docker/ewm-sim/lib/*
+!nodejs/ewm-sim/lib/
+!nodejs/ewm-sim/lib/*
 
 # ewm-sim mocha tests and node_modules
-docker/ewm-sim/.nyc_output/
-docker/ewm-sim/.nyc_output/*
-docker/ewm-sim/node_modules/
-docker/ewm-sim/node_modules/*
+nodejs/ewm-sim/.nyc_output/
+nodejs/ewm-sim/.nyc_output/*
+nodejs/ewm-sim/node_modules/
+nodejs/ewm-sim/node_modules/*

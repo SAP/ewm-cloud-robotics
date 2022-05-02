@@ -19,19 +19,14 @@ tmpdir="$(mktemp)"
 trap "cleanup" INT TERM EXIT
 # Do things...
 
-
 tag=$(date +%s)
 
-loc=$(pwd)
-cd $3
-
-docker build -f $2 -t $1:"dirty" -t $CR"/"$1:$tag -t $CR"/"$1":latest" .
+docker build -f $2 --target $1 -t $1:"dirty" -t $CR"/"$1:$tag -t $CR"/"$1":latest" .
 if [ $? -eq 0 ] 
 then
     docker push $CR"/"$1:$tag 
     docker push $CR"/"$1":latest"
 
-    cd "$loc"
     exit 0
 else
     exit 1

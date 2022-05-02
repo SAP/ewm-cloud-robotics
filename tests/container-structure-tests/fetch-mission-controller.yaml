@@ -1,0 +1,9 @@
+schemaVersion: 2.0.0
+
+fileExistenceTests:
+  - name: "verify that python venv directory exists"
+    path: "/app"
+    shouldExist: true
+
+metadataTest:
+  entrypoint: [ "python3", "-m", "fetchcontroller" ]

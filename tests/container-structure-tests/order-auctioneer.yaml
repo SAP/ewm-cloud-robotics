@@ -1,0 +1,6 @@
+schemaVersion: 2.0.0
+
+fileExistenceTests:
+  - name: "verify that go binary order-auctioneer is in '/' directory"
+    path: "/order-auctioneer"
+    shouldExist: true
