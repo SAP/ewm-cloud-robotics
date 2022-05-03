@@ -18,17 +18,6 @@ jobs:
         sudo install skaffold /usr/local/bin/ && \
         rm -f skaffold
 
-    - name: Install tests/container-structure-test
-      run: |
-        curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64 && \
-        chmod +x container-structure-test-linux-amd64 && \
-        sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
-
-    - name: Set Kubernetes environment variables
-      run: |
-        echo "KUBERNETES_SERVICE_HOST=127.0.0.1" >>${GITHUB_ENV} && \
-        echo "KUBERNETES_SERVICE_PORT=6443" >>${GITHUB_ENV}
-
     - uses: actions/checkout@v2
 
     - name: Login to GitHub Container Registry
@@ -43,7 +32,7 @@ jobs:
         echo "REPO=$(echo $GITHUB_REPOSITORY | tr '[:upper:]' '[:lower:]')" >>${GITHUB_ENV}
 
     - name: Build and push images with v20060102-gitSHA tag
-      run: skaffold run --default-repo ghcr.io/${REPO} -p push-all
+      run: skaffold build --default-repo ghcr.io/${REPO} -p push-all
 
     - name: Push images with latest tag
-      run: skaffold run --default-repo ghcr.io/${REPO} -p push-all-latest --skip-tests=true
+      run: skaffold build --default-repo ghcr.io/${REPO} -p push-all-latest
