@@ -12,13 +12,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - name: Install kubectl
-      run: |
-        curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" && \
-        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl && \
-        rm -f kubectl && \
-        kubectl version --client
-
     - name: Install skaffold
       run: |
         curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64 && \
@@ -30,6 +23,11 @@ jobs:
         curl -LO https://storage.googleapis.com/container-structure-test/latest/container-structure-test-linux-amd64 && \
         chmod +x container-structure-test-linux-amd64 && \
         sudo mv container-structure-test-linux-amd64 /usr/local/bin/container-structure-test
+
+    - name: Set Kubernetes environment variables
+      run: |
+        echo "KUBERNETES_SERVICE_HOST=127.0.0.1" >>${GITHUB_ENV} && \
+        echo "KUBERNETES_SERVICE_PORT=6443" >>${GITHUB_ENV}
 
     - uses: actions/checkout@v2
 
