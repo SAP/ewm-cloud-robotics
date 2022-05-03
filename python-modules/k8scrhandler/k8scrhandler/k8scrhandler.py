@@ -106,7 +106,7 @@ class K8sCRHandler:
 
         # Instantiate required K8s APIs
         self.core_api = client.CoreV1Api()
-        self.crd_api = client.ApiextensionsV1beta1Api()
+        self.crd_api = client.ApiextensionsV1Api()
         self.co_api = client.CustomObjectsApi()
 
         # K8s stream watcher
@@ -186,15 +186,15 @@ class K8sCRHandler:
                 name, _request_timeout=cls.REQUEST_TIMEOUT)
         except ApiException as err:
             _LOGGER.error(
-                '%s/%s: Exception when calling ApiextensionsV1beta1Api->'
+                '%s/%s: Exception when calling ApiextensionsV1Api->'
                 'read_custom_resource_definition: %s', self.group, self.plural, err)
             raise
         else:
             _LOGGER.debug(
                 '%s/%s: Successfully read custom resource definition %s', self.group, self.plural,
                 name)
-            if api_response.spec.subresources is not None:
-                if api_response.spec.subresources.status is not None:
+            if api_response.spec.versions[0].subresources is not None:
+                if api_response.spec.versions[0].subresources.status is not None:
                     self.status_update_method = self.co_api.patch_namespaced_custom_object_status
                     _LOGGER.info('There is a status subresource defined in CRD %s', name)
                     return
