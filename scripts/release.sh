@@ -9,8 +9,12 @@
 ## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 ##
 
-echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+set -e
 
-curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/v0.31.0/skaffold-linux-amd64 
-chmod +x skaffold
-skaffold run -p dockerhub
+# Directory of this script
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
+cd $dir/..
+
+skaffold run --cache-artifacts=false --default-repo ewmcloudrobotics -p push-all
+skaffold run --cache-artifacts=false --default-repo ewmcloudrobotics -p push-all-latest

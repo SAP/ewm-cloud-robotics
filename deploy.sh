@@ -19,6 +19,9 @@ set -e
 #########################################################################################
 ## UTILITIES
 
+# Directory of this script
+dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+
 die() {
     printf '\n%s\n' "$1" >&2
     exit 1
@@ -128,9 +131,8 @@ build() {
         registry=$(cat ~/.config/ewm-cloud-robotics-deployments/$project/REGISTRY)
     fi
     printf "Building images for "$1" and pushing to "$registry"\n"
-    export CR=$registry
-    skaffold run --cache-artifacts=false -p $1
-    unset CR
+    skaffold run --cache-artifacts=false --default-repo $registry -p $1
+    skaffold run --cache-artifacts=false --default-repo $registry --tag 'latest' -p $1
 }
 
 create_package() {
@@ -283,6 +285,8 @@ dummies() {
 ## COMMANDS
 #########################################################################################
 ## MAIN
+
+cd $dir
 
 #############################################
 ## DEFAULT OPTIONS

@@ -7,16 +7,27 @@
 ## This file is licensed under the Apache Software License, v. 2 except as noted otherwise in the LICENSE file (https://github.com/SAP/ewm-cloud-robotics/blob/main/LICENSE)
 ##
 
-apiVersion: skaffold/v1beta11
+apiVersion: skaffold/v2beta28
 kind: Config
 
 ## Default profile:
 ## Use local Docker daemon & registry to build and test all images, then exit without deployment
 ## to verify that builds and tests are OK. 
 build:
+  tagPolicy:
+    customTemplate:
+      template: "v{{.date}}-{{.gitSHA}}"
+      components:
+      - name: date
+        dateTime:
+          format: "20060102"
+          timezone: "UTC"
+      - name: gitSHA
+        gitCommit:
+          variant: AbbrevCommitSha
   artifacts:
     - image: ewm-sim
-      context: docker/ewm-sim/
+      context: .
       docker:
         dockerfile: Dockerfile
         target: ewm-sim
@@ -110,173 +121,31 @@ test:
 #########################################################################################
 
 profiles:
-  ## Build profile to push images to GCR (Google Container Registry). It uses 'eu.gcr.io'
-  ## as host and determines your project dynamically via 'gcloud config get-value project'.
-  ## Each image gets tagged with the current Unix timestamp and 'latest'.
-  - name: gcp
-    build: 
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
-      artifacts:
-        - image: ewm-sim
-          custom:
-            buildCommand: ./scripts/gcr-build.sh ewm-sim ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: dummy-mission-controller
-          custom:
-            buildCommand: ./scripts/gcr-build.sh dummy-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: mir-mission-controller
-          custom:
-            buildCommand: ./scripts/gcr-build.sh mir-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: fetch-mission-controller
-          custom:
-            buildCommand: ./scripts/gcr-build.sh fetch-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: order-manager
-          custom:
-            buildCommand: ./scripts/gcr-build.sh order-manager ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: robot-controller
-          custom:
-            buildCommand: ./scripts/gcr-build.sh robot-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: robot-configurator
-          custom:
-            buildCommand: ./scripts/gcr-build.sh robot-configurator ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: monitoring-ui
-          custom:
-            buildCommand: ./scripts/gcr-build.sh monitoring-ui ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: order-auctioneer
-          custom:
-            buildCommand: ./scripts/gcr-build.sh order-auctioneer ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: order-bid-agent
-          custom:
-            buildCommand: ./scripts/gcr-build.sh order-bid-agent ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: mir-travel-time-calculator
-          custom:
-            buildCommand: ./scripts/gcr-build.sh mir-travel-time-calculator ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-  ## Build profile to push images to hub.docker.com (ewmcloudrobotics/<IMAGE>)
-  ## Tests are executed to verify that correct Dockerfiles were used
-  ## Deploy is left blank since this profile is for updating the container registry.
-  ## Used within CI
-  - name: dockerhub
+  - name: push-all
     build:
+      local:
+        push: true
+  - name: push-all-latest
+    build:
+      local:
+        push: true
       tagPolicy:
-        envTemplate:
-          template: "dirty"
-      artifacts:
-        - image: ewm-sim
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh ewm-sim ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: dummy-mission-controller
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh dummy-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: mir-mission-controller
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh mir-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: fetch-mission-controller
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh fetch-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: order-manager
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh order-manager ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: robot-controller
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh robot-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: robot-configurator
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh robot-configurator ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: monitoring-ui
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh monitoring-ui ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: order-auctioneer
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh order-auctioneer ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: order-bid-agent
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh order-bid-agent ./Dockerfile
-            dependencies:
-              paths: 
-                - .
-        - image: mir-travel-time-calculator
-          custom:
-            buildCommand: ./scripts/dockerhub-build.sh mir-travel-time-calculator ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+        sha256: {}
+
   ## Profiles to build and push application specific images via deploy.sh to
   ## custom container registry
   ##
   ## ewm-order-manager
   - name: ewm-order-manager
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: order-manager
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh order-manager ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: order-manager
+      local:
+        push: true
     test:
       - image: order-manager
         structureTests:
@@ -284,22 +153,19 @@ profiles:
   ## ewm-robot-controller
   - name: ewm-robot-controller
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: robot-controller
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh robot-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: robot-controller
         - image: robot-configurator
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh robot-configurator ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: robot-configurator
+      local:
+        push: true
     test:
       - image: robot-controller
         structureTests:
@@ -310,16 +176,14 @@ profiles:
     ## ewm-monitoring-ui
   - name: ewm-monitoring-ui
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: monitoring-ui
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh monitoring-ui ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: monitoring-ui
+      local:
+        push: true
     test:
       - image: monitoring-ui
         structureTests:
@@ -327,22 +191,19 @@ profiles:
     ## ewm-order-auction
   - name: ewm-order-auction
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: order-auctioneer
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh order-auctioneer ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: order-auctioneer
         - image: order-bid-agent
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh order-bid-agent ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: order-bid-agent
+      local:
+        push: true
     test:
       - image: order-auctioneer
         structureTests:
@@ -353,16 +214,14 @@ profiles:
   ## ewm-sim        
   - name: ewm-sim
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: ewm-sim
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh ewm-sim ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: ewm-sim
+      local:
+        push: true
     test:
       - image: ewm-sim
         structureTests:
@@ -370,16 +229,14 @@ profiles:
   ## mir-mission-controller
   - name: mir-mission-controller
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: mir-mission-controller
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh mir-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .      
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: mir-mission-controller 
+      local:
+        push: true
     test:
       - image: mir-mission-controller
         structureTests:
@@ -387,16 +244,14 @@ profiles:
   ## mir-travel-time-calculator
   - name: mir-travel-time-calculator
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: mir-travel-time-calculator
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh mir-travel-time-calculator ./Dockerfile
-            dependencies:
-              paths: 
-                - .      
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: mir-travel-time-calculator
+      local:
+        push: true
     test:
       - image: mir-travel-time-calculator
         structureTests:
@@ -404,16 +259,14 @@ profiles:
   ## dummy-mission-controller
   - name: dummy-mission-controller
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: dummy-mission-controller
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh dummy-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: dummy-mission-controller
+      local:
+        push: true
     test:
       - image: dummy-mission-controller
         structureTests:
@@ -421,16 +274,14 @@ profiles:
   ## fetch-mission-controller
   - name: fetch-mission-controller
     build:
-      tagPolicy:
-        envTemplate:
-          template: "dirty"
       artifacts:
         - image: fetch-mission-controller
-          custom:
-            buildCommand: ./scripts/custom-cr-build.sh fetch-mission-controller ./Dockerfile
-            dependencies:
-              paths: 
-                - .
+          context: .
+          docker:
+            dockerfile: Dockerfile
+            target: fetch-mission-controller
+      local:
+        push: true
     test:
       - image: fetch-mission-controller
         structureTests:
