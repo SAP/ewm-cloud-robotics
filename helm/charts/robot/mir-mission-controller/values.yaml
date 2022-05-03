@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/mir-mission-controller:latest"   # Default image available at docker hub https://hub.docker.com/u/ewmcloudrobotics
+image: "ghcr.io/sap/ewm-cloud-robotics/mir-mission-controller:latest"
 
 tenant_main_namespace: "default"
 

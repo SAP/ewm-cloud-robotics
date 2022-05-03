@@ -4,7 +4,7 @@
 If you don't have a Cloud Robotics cluster yet, follow the instructions given [here for Kyma](https://sap.github.io/cloud-robotics/how-to/deploy-from-sources.html) and [here for Google](https://googlecloudrobotics.github.io/core/how-to/deploy-from-sources) flavor to set up your Robotics Core instance.
 
 ## Container registry
-You can use the default images for all apps we publish at [docker hub](https://hub.docker.com/u/ewmcloudrobotics) and skip this step.
+You can use the default images for all apps we publish at [ghcr.io/sap/ewm-cloud-robotics](https://github.com/orgs/SAP/packages?repo_name=ewm-cloud-robotics) and skip this step.
 - If you have modified the images and would like to use the GCR of your project you can use the predefined skaffold profile to build, test & push all images. The container registry is dynamically generated based upon your gcloud configuration (`gcloud config get-value project` - configurable via `gcloud config set project <GCP_PROJECT>`) and host `eu.gcr.io`. Consequently, images are pushed to `eu.gcr.io/<GCP_PROJECT>/<IMAGE_NAME>` (1).
 - The second options is building images for single cloud robotics applications and push them to an arbitrary container registry defined in the file `~/.config/ewm-cloud-robotics-deployments/<PROJECT>/REGISTRY` (2).
 - You can also use a specific container registry (3).

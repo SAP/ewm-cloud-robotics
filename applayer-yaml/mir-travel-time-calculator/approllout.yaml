@@ -16,7 +16,7 @@ spec:
       matchLabels:
         model: mir100
     values:
-      image: "ewmcloudrobotics/mir-travel-time-calculator:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/mir-travel-time-calculator:latest"
       envs:
         miruser: "" # User to connect to MiR API
         mirpassword: "" # Password for MiR user

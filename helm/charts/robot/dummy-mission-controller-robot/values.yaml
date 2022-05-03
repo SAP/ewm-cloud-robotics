@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/dummy-mission-controller:latest"
+image: "ghcr.io/sap/ewm-cloud-robotics/dummy-mission-controller:latest"
 
 tenant_main_namespace: "default"
 

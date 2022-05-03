@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/mir-travel-time-calculator"
+image: "ghcr.io/sap/ewm-cloud-robotics/mir-travel-time-calculator"
 
 tenant_main_namespace: "default"
 

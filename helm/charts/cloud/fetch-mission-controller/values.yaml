@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/fetch-mission-controller:latest"
+image: "ghcr.io/sap/ewm-cloud-robotics/fetch-mission-controller:latest"
 
 tenant_main_namespace: "default"
 tenant: ""

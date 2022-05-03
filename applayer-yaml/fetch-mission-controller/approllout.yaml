@@ -13,7 +13,7 @@ spec:
   appName: fetch-mission-controller-$APP_VERSION
   cloud: 
     values:
-      image: "ewmcloudrobotics/fetch-mission-controller:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/fetch-mission-controller:latest"
       envs:
         clientsecret: "" # Client secret of fetch core instance
         user: "" # User to connect to fetch core

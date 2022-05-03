@@ -1,7 +1,7 @@
 domain: "domain.local"
 tenant_domain: "domain.local"
 
-image: "ewmcloudrobotics/monitoring-ui:latest"
+image: "ghcr.io/sap/ewm-cloud-robotics/monitoring-ui:latest"
 
 images:
   app_auth_proxy: "app-auth-proxy:latest"

@@ -13,7 +13,7 @@ spec:
   appName: ewm-robot-controller-cloud-$APP_VERSION
   cloud: 
     values:
-      image: "ewmcloudrobotics/robot-controller:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/robot-controller:latest"
       envs:
         maxretrycount: 1 # Maximum number of retries for failed missions
   ## Select only those robot models that require cloud controllers

@@ -1,5 +1,5 @@
 replicaCount: 1
-image: "ewmcloudrobotics/ewm-sim:latest"
+image: "ghcr.io/sap/ewm-cloud-robotics/ewm-sim:latest"
 envs:
   ewm:
     user: "someuser"

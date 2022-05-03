@@ -13,7 +13,7 @@ spec:
   appName: ewm-sim-$APP_VERSION
   cloud:
     values:
-      image: "ewmcloudrobotics/ewm-sim:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/ewm-sim:latest"
       envs:
         ewm:
           user: "someuser" # Technical user for all warehouseorder related API calls

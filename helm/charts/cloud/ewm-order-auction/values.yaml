@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/order-auctioneer:latest"
+image: "ghcr.io/sap/ewm-cloud-robotics/order-auctioneer:latest"
 
 tenant_main_namespace: "default"
 tenant: ""

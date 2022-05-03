@@ -13,7 +13,7 @@ spec:
   appName: dummy-mission-controller-$APP_VERSION
   cloud: 
     values:
-      image: "ewmcloudrobotics/dummy-mission-controller:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/dummy-mission-controller:latest"
   ## Select dummy robots only!
   robots:
   - selector:

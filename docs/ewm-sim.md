@@ -15,11 +15,11 @@ To get the project up and running, issue the following commands in the root dire
 ### Docker :whale:
 Start your docker daemon and run: 
 ```sh
-$ docker pull ewmcloudrobotics/ewm-sim:latest
+$ docker pull ghcr.io/sap/ewm-cloud-robotics/ewm-sim:latest
 ```
 Now we need to set our environment variables, forward traffic to the host's port and run our docker image.
 ```sh
-$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -e GEN_INT=30000 -p 8080:8080 ewmcloudrobotics/ewm-sim:latest
+$ docker run -e ODATA_USER=root -e ODATA_PASSWD=123 -e GEN_INT=30000 -p 8080:8080 ghcr.io/sap/ewm-cloud-robotics/ewm-sim:latest
 ```
 (Surely the first occurrence of 8080 can be replaced with any desired and free port of the host. **DO NOT** specify $ODATA_PORT when running in docker mode.)
 

@@ -18,7 +18,7 @@ spec:
       matchLabels:
         model: mir100
     values:
-      image: "ewmcloudrobotics/order-bid-agent:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/order-bid-agent:latest"
   cloud:
     values:
-      image: "ewmcloudrobotics/order-auctioneer:latest"
+      image: "ghcr.io/sap/ewm-cloud-robotics/order-auctioneer:latest"

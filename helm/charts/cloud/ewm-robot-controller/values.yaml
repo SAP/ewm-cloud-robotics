@@ -1,4 +1,4 @@
-image: "ewmcloudrobotics/robot-configurator:latest"
+image: "ghcr.io/sap/ewm-cloud-robotics/robot-configurator:latest"
 
 tenant_main_namespace: "default"
 tenant: ""

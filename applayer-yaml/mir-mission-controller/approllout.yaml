@@ -16,7 +16,7 @@ spec:
       matchLabels:
         model: mir100
     values:
-      image: "ewmcloudrobotics/mir-mission-controller:latest"   # Default image available at docker hub https://hub.docker.com/u/ewmcloudrobotics
+      image: "ghcr.io/sap/ewm-cloud-robotics/mir-mission-controller:latest"
       envs:
         plctrolley: 5   # PLC register of robot which is set to 1 when a trolley is attached
         miruser: ""  # User to connect to MiR API
