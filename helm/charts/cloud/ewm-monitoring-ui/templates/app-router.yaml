@@ -1,13 +1,11 @@
-{{ if and (eq .Values.k8s_service_catalog "true") (eq .Values.use_istio "true") }}
-apiVersion: servicecatalog.k8s.io/v1beta1
+{{ if and (eq .Values.sap_btp_service_operator "true") (eq .Values.use_istio "true") }}
+apiVersion: services.cloud.sap.com/v1alpha1
 kind: ServiceInstance
 metadata:
   name: xsuaa-monitoring-ui-{{ .Values.tenant }}
 spec:
-  clusterServiceClassExternalName: xsuaa
-  clusterServiceClassRef:
-    name: xsuaa
-  clusterServicePlanExternalName: application
+  serviceOfferingName: xsuaa
+  servicePlanName: application
   parameters:
     oauth2-configuration:
       redirect-uris:
@@ -23,15 +21,15 @@ spec:
       name: $XSAPPNAME.Edit
     xsappname: monitoring-ui-{{ .Values.tenant }}
 ---
-apiVersion: servicecatalog.k8s.io/v1beta1
+apiVersion: services.cloud.sap.com/v1alpha1
 kind: ServiceBinding
 metadata:
   name: xsuaa-app-auth-proxy-bind
   labels:
     app: app-auth-proxy
 spec:
-  instanceRef:
-    name: xsuaa-monitoring-ui-{{ .Values.tenant }}
+  secretName: xsuaa-app-auth-proxy-bind
+  serviceInstanceName: xsuaa-monitoring-ui-{{ .Values.tenant }}
 ---
 apiVersion: servicecatalog.kyma-project.io/v1alpha1
 kind: ServiceBindingUsage

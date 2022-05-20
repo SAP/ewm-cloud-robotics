@@ -9,7 +9,7 @@ images:
 tenant: ""
 tenant_main_namespace: "default"
 
-k8s_service_catalog: "false"
+sap_btp_service_operator: "false"
 use_istio: "false"
 
 urlpath: "/ewm-monitoring-ui"
