@@ -7,7 +7,7 @@ require (
 	github.com/google/gofuzz v1.1.0
 	github.com/googlecloudrobotics/core/src v0.0.0-20211216123140-f2f4b08489fe
 	github.com/pkg/errors v0.9.1
-	github.com/rs/zerolog v1.26.1
+	github.com/rs/zerolog v1.32.0
 	github.com/stretchr/testify v1.8.4
 	k8s.io/apimachinery v0.23.0
 	k8s.io/client-go v0.23.0
@@ -29,6 +29,8 @@ require (
 	github.com/googleapis/gnostic v0.5.5 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
+	github.com/mattn/go-colorable v0.1.13 // indirect
+	github.com/mattn/go-isatty v0.0.19 // indirect
 	github.com/matttproud/golang_protobuf_extensions v1.0.2-0.20181231171920-c182affec369 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
