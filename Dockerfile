@@ -20,7 +20,7 @@ RUN pip3 install --no-cache-dir ./k8scrhandler ./robcoewmtypes && \
     python3 -c "import k8scrhandler; import robcoewmtypes"
 
 # Base golang image containing all go applications
-FROM golang:1.17 AS go_builder
+FROM golang:1.22 AS go_builder
 
 ARG SKIP_TESTS=false
 # Copy go code
