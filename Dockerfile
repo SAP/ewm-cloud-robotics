@@ -8,7 +8,7 @@
 ##
 
 # Base build image image containing packages required in all apps
-FROM python:3.9-slim as python_base
+FROM python:3.12-slim as python_base
 
 COPY ./python-modules /python-modules
 WORKDIR /python-modules
@@ -93,7 +93,7 @@ RUN pip3 install --no-cache-dir ./robcoewmrobotcontroller && \
 
 # Executable container bases
 # --------------------------
-FROM python:3.9-slim as python_runner
+FROM python:3.12-slim as python_runner
 
 STOPSIGNAL SIGTERM
 RUN adduser --disabled-password --gecos "" appuser
