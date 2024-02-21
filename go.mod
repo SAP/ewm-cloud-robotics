@@ -3,7 +3,7 @@ module github.com/SAP/ewm-cloud-robotics
 go 1.17
 
 require (
-	github.com/go-logr/zerologr v1.2.1
+	github.com/go-logr/zerologr v1.2.3
 	github.com/google/gofuzz v1.1.0
 	github.com/googlecloudrobotics/core/src v0.0.0-20211216123140-f2f4b08489fe
 	github.com/pkg/errors v0.9.1
@@ -20,7 +20,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/evanphx/json-patch v4.12.0+incompatible // indirect
 	github.com/fsnotify/fsnotify v1.5.1 // indirect
-	github.com/go-logr/logr v1.2.0 // indirect
+	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
