@@ -4,7 +4,7 @@ go 1.17
 
 require (
 	github.com/go-logr/zerologr v1.2.3
-	github.com/google/gofuzz v1.1.0
+	github.com/google/gofuzz v1.2.0
 	github.com/googlecloudrobotics/core/src v0.0.0-20211216123140-f2f4b08489fe
 	github.com/pkg/errors v0.9.1
 	github.com/rs/zerolog v1.32.0
