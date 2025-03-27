@@ -100,7 +100,7 @@ RUN adduser --disabled-password --gecos "" appuser
 USER appuser
 ENV PATH="/app/bin:$PATH"
 
-FROM alpine:3.19 AS ssl_runner
+FROM alpine:3.20 AS ssl_runner
 # Install SSL ca certificates
 RUN apk add --no-cache ca-certificates
 # Create user to be used in executable containers
