@@ -151,7 +151,7 @@ WORKDIR /
 COPY --from=go_builder /build/mir-travel-time-calculator /mir-travel-time-calculator
 ENTRYPOINT [ "./mir-travel-time-calculator" ]
 
-FROM nginx:1.25-alpine as monitoring-ui
+FROM nginx:1.27-alpine as monitoring-ui
 WORKDIR /
 # Install SSL ca certificates
 RUN apk add --no-cache ca-certificates
